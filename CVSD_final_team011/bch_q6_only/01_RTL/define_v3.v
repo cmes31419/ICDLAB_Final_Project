@@ -1,0 +1,1 @@
+`define PARALLEL_NUM 32

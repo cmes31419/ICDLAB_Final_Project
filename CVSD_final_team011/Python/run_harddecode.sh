@@ -1,0 +1,1 @@
+python hard_decoding.py --m 6 --case 0  --verbose

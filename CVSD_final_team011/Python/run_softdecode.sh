@@ -1,0 +1,1 @@
+python soft_decoding.py --m 6 --case 0  --verbose
