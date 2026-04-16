@@ -1,7 +1,6 @@
 module core(
 	input			clk,
 	input			rstn,
-	input			mode,
 	input			reset,
 	input			syn_rdy,
 	input [5:0]		Sa[2:0],
