@@ -12,7 +12,7 @@ module core(
 	output			chien_proc,
 	output			proc_done,
 	output			out_stop,
-	output [9:0]	out_loc
+	output [5:0]	out_loc
 );
 
 	localparam S_IDLE = 2'd0;
@@ -48,10 +48,6 @@ module core(
 	assign corr_now = chien_corr;
 
 	assign proc_done = (state == S_DONE && sort_done) ? 1 : 0;
-
-	// To remove ==========
-	assign out_loc[9:6] = 0;
-	// ====================
 
 	always @(*) begin
 		for (i=0;i<3;i=i+1) begin
@@ -137,7 +133,7 @@ module core(
 		.loc(loc_rec_next),
 		.sort_done(sort_done),
 		.out_stop(out_stop),
-		.out_loc(out_loc[5:0])
+		.out_loc(out_loc)
 	);
 
 	always @(posedge clk) begin

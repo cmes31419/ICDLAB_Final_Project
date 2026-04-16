@@ -32,7 +32,7 @@ module bch(
 	// Core
 	wire [6:0]		chien_data[`PARALLEL_NUM-1:0];
 	wire			chien_proc, proc_done, out_stop;
-	wire [9:0]		out_loc;
+	wire [5:0]		out_loc;
 	wire out_done;
 
 	integer i;
@@ -42,7 +42,7 @@ module bch(
 	assign out_done = (finish & out_stop) ? 1 : 0;
 
 	assign finish = (state == S_OUTPUT) ? 1 : 0;
-	assign odata = (out_loc == 10'd0) ? 10'd1023 : {4'b0, ~out_loc[5:0]};
+	assign odata = (out_loc == 6'd0) ? 10'd1023 : {4'b0, ~out_loc};
 
 	memory mem0(
 		.clk(clk),
