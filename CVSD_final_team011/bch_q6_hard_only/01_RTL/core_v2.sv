@@ -5,14 +5,7 @@ module core(
 	input [1:0]		code,
 	input			reset,
 	input			syn_rdy,
-	input [5:0]		taggle_loc0,
-	input [5:0]		taggle_loc1,
-	input [6:0]		taggle_corr0,
-	input [6:0]		taggle_corr1,
 	input [5:0]		Sa[2:0],
-	input [5:0]		Sb[2:0],
-	input [5:0]		Sc[2:0],
-	input [5:0]		Sd[2:0],
 	input [9:0]		mem_cnt,
 	input [5:0]		factor8,
 	input [5:0]		factor16,
@@ -53,7 +46,7 @@ module core(
 
 	integer i;
 
-	assign corr_now = chien_corr + (cnt[0] ? taggle_corr0 : 0) + (cnt[1] ? taggle_corr1 : 0);
+	assign corr_now = chien_corr;
 
 	assign proc_done = (state == S_DONE && sort_done) ? 1 : 0;
 
@@ -63,15 +56,7 @@ module core(
 
 	always @(*) begin
 		for (i=0;i<3;i=i+1) begin
-			if (state == S_PROC) begin
-				case(cnt)
-					2'd0: S[i] = Sb[i];
-					2'd1: S[i] = Sc[i];
-					2'd2: S[i] = Sd[i];
-					2'd3: S[i] = Sa[i];
-				endcase
-			end
-			else S[i] = Sa[i];
+			S[i] = Sa[i];
 		end
 	end
 
@@ -80,8 +65,8 @@ module core(
 			corr_rec_next = corr_now;
 			loc_rec_next[0] = chien_loc[0];
 			loc_rec_next[1] = chien_loc[1];
-			loc_rec_next[2] = cnt[0] ? {4'b0, taggle_loc0} : 0;
-			loc_rec_next[3] = cnt[1] ? {4'b0, taggle_loc1} : 0;
+			loc_rec_next[2] = 0;
+			loc_rec_next[3] = 0;
 		end
 		else if (state == S_PROC) begin
 			corr_rec_next = corr_rec;

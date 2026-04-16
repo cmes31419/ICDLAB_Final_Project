@@ -28,14 +28,7 @@ module bch(
 
 	// Syndrome
 	wire			syn_rdy;
-	wire [5:0]		taggle_loc0;
-	wire [5:0]		taggle_loc1;
-	wire [6:0]		taggle_corr0;
-	wire [6:0]		taggle_corr1;
 	wire [5:0]		Sa[2:0];
-	wire [5:0]		Sb[2:0];
-	wire [5:0]		Sc[2:0];
-	wire [5:0]		Sd[2:0];
 
 	// Core
 	wire [6:0]		chien_data[`PARALLEL_NUM-1:0];
@@ -72,14 +65,7 @@ module bch(
 		.reset(out_done),
 		.data(idata),
 		.valid(syn_rdy),
-		.taggle_loc0(taggle_loc0),
-		.taggle_loc1(taggle_loc1),
-		.taggle_corr0(taggle_corr0),
-		.taggle_corr1(taggle_corr1),
-		.Sa(Sa),
-		.Sb(Sb),
-		.Sc(Sc),
-		.Sd(Sd)
+		.Sa(Sa)
 	);
 
 	core core0(
@@ -89,14 +75,7 @@ module bch(
 		.code(code_set),
 		.reset(out_done),
 		.syn_rdy(syn_rdy),
-		.taggle_loc0(taggle_loc0),
-		.taggle_loc1(taggle_loc1),
-		.taggle_corr0(taggle_corr0),
-		.taggle_corr1(taggle_corr1),
 		.Sa(Sa),
-		.Sb(Sb),
-		.Sc(Sc),
-		.Sd(Sd),
 		.mem_cnt(mem_cnt),
 		.factor8(factor8),
 		.factor16(factor16),
