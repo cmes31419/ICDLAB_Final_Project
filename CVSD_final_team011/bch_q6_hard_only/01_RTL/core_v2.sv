@@ -21,8 +21,7 @@ module core(
 	reg [1:0]	cnt, cnt_next;
 	reg [1:0]	state, state_next;
 
-	reg [9:0]	corr_rec, corr_rec_next;
-	reg [9:0]	loc_rec[3:0], loc_rec_next[3:0];
+	reg [9:0]	loc_rec[1:0], loc_rec_next[1:0];
 
 	reg [5:0]	S[2:0];
 	
@@ -36,15 +35,11 @@ module core(
 	wire		chien_done;
 	wire		chien_success;
 	wire [9:0]	chien_loc[3:0];
-	wire [8:0]	chien_corr;
 
-	wire [9:0]	corr_now;
 	wire		sort_ready;
 	wire		sort_done;
 
 	integer i;
-
-	assign corr_now = chien_corr;
 
 	assign proc_done = (state == S_DONE && sort_done) ? 1 : 0;
 
@@ -55,22 +50,17 @@ module core(
 	end
 
     always @(*) begin
-		if (state == S_PROC && chien_done && chien_success && corr_now < corr_rec) begin
-			corr_rec_next = corr_now;
+		if (state == S_PROC && chien_done && chien_success) begin
 			loc_rec_next[0] = chien_loc[0];
 			loc_rec_next[1] = chien_loc[1];
-			loc_rec_next[2] = 0;
-			loc_rec_next[3] = 0;
 		end
 		else if (state == S_PROC) begin
-			corr_rec_next = corr_rec;
-			for (i=0;i<4;i=i+1) begin
+			for (i=0;i<2;i=i+1) begin
 				loc_rec_next[i] = loc_rec[i];
 			end
 		end
 		else begin
-			corr_rec_next = 10'd1023;
-			for (i=0;i<4;i=i+1) begin
+			for (i=0;i<2;i=i+1) begin
 				loc_rec_next[i] = 0;
 			end
 		end
@@ -122,7 +112,7 @@ module core(
 		.chien_done(chien_done),
     	.chien_success(chien_success),
 		.error_loc(chien_loc),
-		.corr_val(chien_corr)
+		.corr_val()
 	);
 
 	sort_desc sort0(
@@ -139,16 +129,14 @@ module core(
 		if (~rstn) begin
 			state		<= S_IDLE;
 			cnt			<= 0;
-			corr_rec	<= 10'd1023;
-			for (i=0;i<4;i=i+1) begin
+			for (i=0;i<2;i=i+1) begin
 				loc_rec[i]	<= 0;
 			end
 		end
 		else begin
 			state		<= state_next;
 			cnt			<= cnt_next;
-			corr_rec	<= corr_rec_next;
-			for (i=0;i<4;i=i+1) begin
+			for (i=0;i<2;i=i+1) begin
 				loc_rec[i]	<= loc_rec_next[i];
 			end
 		end
