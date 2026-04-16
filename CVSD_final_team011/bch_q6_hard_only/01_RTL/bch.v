@@ -18,8 +18,6 @@ module bch(
 	reg [1:0]		state, state_next;
 	reg [6:0]		cnt, cnt_next;
 
-	reg 			mode_set, mode_set_next;
-
 	// Memory
 	wire [9:0]		mem_cnt;
 	wire [5:0]		factor8;
@@ -70,7 +68,6 @@ module bch(
 	core core0(
 		.clk(clk),
 		.rstn(rstn),
-		.mode(mode_set),
 		.reset(out_done),
 		.syn_rdy(syn_rdy),
 		.Sa(Sa),
@@ -83,15 +80,6 @@ module bch(
 		.out_stop(out_stop),
 		.out_loc(out_loc)
 	);
-
-	always @(*) begin
-		if (set) begin
-			mode_set_next = mode;
-		end
-		else begin
-			mode_set_next = mode_set;
-		end
-	end
 
 	always @(*) begin
 		cnt_next = 0;
@@ -116,12 +104,10 @@ module bch(
 		if (~rstn) begin
 			state		<= S_IDLE;
 			cnt			<= 0;
-			mode_set	<= 0;
 		end
 		else begin
 			state		<= state_next;
 			cnt			<= cnt_next;
-			mode_set	<= mode_set_next;
 		end
 	end
 

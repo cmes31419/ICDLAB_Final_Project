@@ -85,7 +85,7 @@ module core(
 	always @(*) begin
 		case(state)
 			S_IDLE:		state_next = syn_rdy ? S_PROC : S_IDLE;
-			S_PROC:		state_next = chien_done ? ((mode && cnt != 2'd3) ? S_PROC : S_DONE): S_PROC;
+			S_PROC:		state_next = chien_done ? S_DONE : S_PROC;
 			S_DONE:		state_next = sort_done ? S_IDLE : S_DONE;
 			default:	state_next = S_IDLE;
 		endcase
@@ -94,8 +94,8 @@ module core(
 	BM bm0(
 		.clk(clk),
 		.rstn(rstn),
-		.syndrome_rdy(syn_rdy | (chien_wait && mode && cnt != 2'd3)),
-		.reset(chien_wait && ~(mode && cnt != 2'd3)),
+		.syndrome_rdy(syn_rdy),
+		.reset(chien_wait),
 		.S1(S[0]),
 		.S2(S[1]),
 		.S3(S[2]),
