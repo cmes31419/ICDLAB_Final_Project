@@ -20,7 +20,7 @@ module core(
 	reg [1:0]	cnt, cnt_next;
 	reg [1:0]	state, state_next;
 
-	reg [9:0]	loc_rec[1:0], loc_rec_next[1:0];
+	reg [5:0]	loc_rec[1:0], loc_rec_next[1:0];
 
 	reg [5:0]	S[2:0];
 	
@@ -33,7 +33,7 @@ module core(
 	wire		chien_wait;
 	wire		chien_done;
 	wire		chien_success;
-	wire [9:0]	chien_loc[1:0];
+	wire [5:0]	chien_loc[1:0];
 
 	wire		sort_ready;
 	wire		sort_done;

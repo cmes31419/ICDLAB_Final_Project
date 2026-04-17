@@ -13,14 +13,12 @@ module chien_search(
     output              chien_proc,
     output              chien_done,
     output              chien_success,
-    output reg [9:0]    error_loc[1:0]
+    output reg [5:0]    error_loc[1:0]
 );
 
 	localparam MAX_CYCLES_M6 = 64 / `PARALLEL_NUM;
-    localparam MAX_CYCLES_M8 = 256 / `PARALLEL_NUM;
-    localparam MAX_CYCLES_M10 = 1024 / `PARALLEL_NUM;
     localparam PAR_BITS = $clog2(`PARALLEL_NUM);
-    localparam CNT_BITS = $clog2(MAX_CYCLES_M10);
+    localparam CNT_BITS = $clog2(MAX_CYCLES_M6);
 
     localparam S_IDLE = 3'd0;
     localparam S_PROC = 3'd1;
@@ -31,7 +29,7 @@ module chien_search(
 
     reg [2:0]                   state, state_next;
     reg [CNT_BITS:0]            cnt, cnt_next;
-    reg [9:0]                   error_loc_next[1:0];
+    reg [5:0]                   error_loc_next[1:0];
 
     reg                         zero_sum_valid, zero_sum_valid_next;
 
@@ -59,9 +57,9 @@ module chien_search(
     wire                        col_valid, col_stall;
     wire [PAR_BITS-1:0]         col_loc;
 
-    reg [9:0]                   loc;
-    reg [12:0]                  loc_tmp;
-    reg [10:0]                  loc_tmp2;
+    reg [5:0]                   loc;
+    reg [8:0]                   loc_tmp;
+    reg [7:0]                   loc_tmp2;
 
     integer i, j;
 
@@ -116,9 +114,9 @@ module chien_search(
         loc_tmp2 = 0;
         loc = 0;
         if (state == S_PROC || state == S_LATE) begin
-            loc_tmp = (col_loc[PAR_BITS-1:3] << CNT_BITS-1) + ((mem_cnt-2) << 3) + col_loc[2:0];
-            loc_tmp2[7:0] = loc_tmp[12:6] + loc_tmp[5:0];
-            loc[5:0] = loc_tmp2[10:6] + loc_tmp2[5:0];
+            loc_tmp = (col_loc[PAR_BITS-1:3] << CNT_BITS+3) + ((mem_cnt-2) << 3) + col_loc[2:0];
+            loc_tmp2 = loc_tmp[8:6] + loc_tmp[5:0];
+            loc = loc_tmp2[7:6] + loc_tmp2[5:0];
         end
                 
         if (state == S_PROC || state == S_LATE) begin
@@ -171,7 +169,7 @@ module chien_search(
     end
 
     always @(*) begin
-        proc_finish = (cnt[CNT_BITS-4:0] == MAX_CYCLES_M6-1) ? 1 : 0;
+        proc_finish = (cnt == MAX_CYCLES_M6-1) ? 1 : 0;
     end
 
     always @(*) begin
