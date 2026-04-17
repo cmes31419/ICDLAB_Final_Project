@@ -33,7 +33,7 @@ module core(
 	wire		chien_wait;
 	wire		chien_done;
 	wire		chien_success;
-	wire [9:0]	chien_loc[3:0];
+	wire [9:0]	chien_loc[1:0];
 
 	wire		sort_ready;
 	wire		sort_done;
@@ -50,8 +50,9 @@ module core(
 
     always @(*) begin
 		if (state == S_PROC && chien_done && chien_success) begin
-			loc_rec_next[0] = chien_loc[0];
-			loc_rec_next[1] = chien_loc[1];
+			for (i=0;i<2;i=i+1) begin
+				loc_rec_next[i] = chien_loc[i];
+			end
 		end
 		else if (state == S_PROC) begin
 			for (i=0;i<2;i=i+1) begin

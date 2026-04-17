@@ -13,7 +13,7 @@ module chien_search(
     output              chien_proc,
     output              chien_done,
     output              chien_success,
-    output reg [9:0]    error_loc[3:0]
+    output reg [9:0]    error_loc[1:0]
 );
 
 	localparam MAX_CYCLES_M6 = 64 / `PARALLEL_NUM;
@@ -31,7 +31,7 @@ module chien_search(
 
     reg [2:0]                   state, state_next;
     reg [CNT_BITS:0]            cnt, cnt_next;
-    reg [9:0]                   error_loc_next[3:0];
+    reg [9:0]                   error_loc_next[1:0];
 
     reg                         zero_sum_valid, zero_sum_valid_next;
 
@@ -124,23 +124,23 @@ module chien_search(
         if (state == S_PROC || state == S_LATE) begin
             if (col_valid) begin
                 error_loc_next[0] = loc;
-                for (i=1;i<4;i=i+1) begin
+                for (i=1;i<2;i=i+1) begin
                     error_loc_next[i] = error_loc[i-1];
                 end
             end
             else begin
-                for (i=0;i<4;i=i+1) begin
+                for (i=0;i<2;i=i+1) begin
                     error_loc_next[i] = error_loc[i];
                 end
             end
         end
         else if (state == S_DONE) begin
-            for (i=0;i<4;i=i+1) begin
+            for (i=0;i<2;i=i+1) begin
                 error_loc_next[i] = error_loc[i];
             end
         end
         else begin
-            for (i=0;i<4;i=i+1) begin
+            for (i=0;i<2;i=i+1) begin
                 error_loc_next[i] = 0;
             end
         end
@@ -195,7 +195,7 @@ module chien_search(
         if (~rstn) begin
             state           <= S_IDLE;
             cnt             <= 0;
-            for (i=0;i<4;i=i+1) begin
+            for (i=0;i<2;i=i+1) begin
                 error_loc[i]    <= 0;
             end
             zero_sum_valid  <= 0;
@@ -209,7 +209,7 @@ module chien_search(
         else begin
             state           <= state_next;
             cnt             <= cnt_next;
-            for (i=0;i<4;i=i+1) begin
+            for (i=0;i<2;i=i+1) begin
                 error_loc[i]    <= error_loc_next[i];
             end
             zero_sum_valid  <= zero_sum_valid_next;
