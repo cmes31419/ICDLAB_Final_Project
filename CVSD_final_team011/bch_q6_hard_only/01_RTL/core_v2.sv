@@ -106,13 +106,11 @@ module core(
 		.mem_cnt(mem_cnt),
 		.factor8(factor8),
 		.factor16(factor16),
-		.data(chien_data),
 		.chien_wait(chien_wait),
 		.chien_proc(chien_proc),
 		.chien_done(chien_done),
     	.chien_success(chien_success),
-		.error_loc(chien_loc),
-		.corr_val()
+		.error_loc(chien_loc)
 	);
 
 	sort_desc sort0(

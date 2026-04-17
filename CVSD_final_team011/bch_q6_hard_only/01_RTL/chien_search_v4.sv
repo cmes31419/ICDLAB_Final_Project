@@ -9,13 +9,11 @@ module chien_search(
 	input [9:0]		    mem_cnt,
 	input [5:0]		    factor8,
 	input [5:0]		    factor16,
-    input [6:0]         data[`PARALLEL_NUM-1:0],
     output              chien_wait,
     output              chien_proc,
     output              chien_done,
     output              chien_success,
-    output reg [9:0]    error_loc[3:0],
-    output reg [8:0]    corr_val
+    output reg [9:0]    error_loc[3:0]
 );
 
 	localparam MAX_CYCLES_M6 = 64 / `PARALLEL_NUM;
@@ -34,7 +32,6 @@ module chien_search(
     reg [2:0]                   state, state_next;
     reg [CNT_BITS:0]            cnt, cnt_next;
     reg [9:0]                   error_loc_next[3:0];
-    reg [8:0]                   corr_val_next;
 
     reg                         zero_sum_valid, zero_sum_valid_next;
 
@@ -130,26 +127,22 @@ module chien_search(
                 for (i=1;i<4;i=i+1) begin
                     error_loc_next[i] = error_loc[i-1];
                 end
-                corr_val_next = corr_val + data[col_loc];
             end
             else begin
                 for (i=0;i<4;i=i+1) begin
                     error_loc_next[i] = error_loc[i];
                 end
-                corr_val_next = corr_val;
             end
         end
         else if (state == S_DONE) begin
             for (i=0;i<4;i=i+1) begin
                 error_loc_next[i] = error_loc[i];
             end
-            corr_val_next = corr_val;
         end
         else begin
             for (i=0;i<4;i=i+1) begin
                 error_loc_next[i] = 0;
             end
-            corr_val_next = 0;
         end
     end
 
@@ -205,7 +198,6 @@ module chien_search(
             for (i=0;i<4;i=i+1) begin
                 error_loc[i]    <= 0;
             end
-            corr_val        <= 0;
             zero_sum_valid  <= 0;
             sigma0_rec	    <= 0;
             sigma1_rec	    <= 0;
@@ -220,7 +212,6 @@ module chien_search(
             for (i=0;i<4;i=i+1) begin
                 error_loc[i]    <= error_loc_next[i];
             end
-            corr_val        <= corr_val_next;
             zero_sum_valid  <= zero_sum_valid_next;
 			sigma0_rec	    <= sigma0_rec_next;
 			sigma1_rec	    <= sigma1_rec_next;
