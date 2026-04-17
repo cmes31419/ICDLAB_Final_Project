@@ -1,41 +1,53 @@
+import galois
+import numpy as np
+
 class GF:
-    # prim_poly stores the primive polynomial of given m
-    # example m = 6, p(x) = 1 + x + x^6
-    # x^6 = 1 + x (3 in table)
-    prim_poly = {6:3, 8:29, 10:9}
-
-    def __init__(self, m):
+    def __init__(self,m):
         self.m = m
-        self.field_order = 2 ** m
-        self.power_max = self.field_order - 1
-        self.prim = self.prim_poly[m]
-        self.power2poly = [0] * (self.field_order)  # Increased size to include 0
-        self.poly2power = [0] * (self.field_order) 
-        self.gentables()
+        self.power_max = (2**m) - 1
+        self.field = galois.GF(2**m)
+        self.alpha = self.field.primitive_element
 
-    def gentables(self):
-        self.power2poly[0] = 1 #alpha^0 = 1
-        self.poly2power[0] = -1 # 0 has no power representation
-        self.poly2power[1] = 0 # 1 = alpha^0
-        for i in range(1, self.power_max):
-            temp = self.power2poly[i-1] << 1
-            if temp >= self.field_order:
-                result = (temp % (self.field_order)) ^ self.prim
-                self.power2poly[i] = result
-                self.poly2power[result] = i
-            else:
-                self.power2poly[i]  = temp
-                self.poly2power[temp] = i
-                
-    def print_table(self):
-        for i in range(self.field_order):
-            print(f"polyform: {self.power2poly[i]:0{self.m}b}, powerform: {self.poly2power[self.power2poly[i]]}")
+    # ------ cyclotomic cosets and minimal polynomial -----
+    def get_cyclotomic_coset(self, start_root):
+        """Generates the cyclotomic coset for a given root."""
+        coset = []
+        val = start_root
+        while val not in coset:
+            coset.append(val)
+            val = (val * 2) % self.power_max
+        return coset
+
+    def get_minimal_polynomial(self, coset):
+        """Constructs the minimal polynomial natively using the galois library."""
+        # 1. Generate the actual roots in the field: alpha^p
+        roots = [self.alpha**p for p in coset]
+        
+        # 2. galois automatically multiplies (x - r) for all roots
+        poly = galois.Poly.Roots(roots, field=self.field)
+        
+        # 3. Extract coefficients. galois outputs descending order [x^m ... x^0].
+        # We reverse it to match the ascending hardware array format [x^0 ... x^m].
+        coeffs = poly.coeffs.tolist()
+        coeffs.reverse()
+        return [int(c) for c in coeffs]
     
-    def print_poly(self, a):
-        print(f"{a:0{self.m}b}")
+    # --- Binary Polynomial Operations ---
 
-    def poly_bin(self, a):
-        return f"{a:0{self.m}b}"
+    def poly_mul(self, p1, p2):
+        """Multiplies two binary polynomials using galois GF(2) arithmetic."""
+        if not p1 or not p2: return []
+        
+        GF2 = galois.GF(2)
+        # Convert our ascending lists [x^0, x^1...] to galois descending Poly objects
+        poly1 = galois.Poly(p1[::-1], field=GF2)
+        poly2 = galois.Poly(p2[::-1], field=GF2)
+        
+        # Multiply and extract
+        res_poly = poly1 * poly2
+        res_coeffs = res_poly.coeffs.tolist()
+        res_coeffs.reverse()
+        return [int(c) for c in res_coeffs]
 
     def print_binary_poly(self, name, poly):
         """Helper to print the polynomial in standard mathematical notation."""
@@ -48,71 +60,40 @@ class GF:
                     terms.append("x")
                 else:
                     terms.append(f"x^{deg}")
+        if not terms:
+            terms.append("0")
         print(f"{name} = " + " + ".join(terms))
+    
+    # --- GII-BCH Matrix Operations ---
 
-    def add(self, a, b):
-        # add a, b in polyform
-        return a ^ b
+    def get_pi_vector(self, m_interleaves, v_layers, i_layer):
+        """
+        Dynamically calculates the pi^(i) target polynomial multiplier vector 
+        for GII-BCH encoding using native finite field matrix inversion.
+        """
+        # 1. Build the H Matrix: H[l, i] = alpha^(l*i)
+        H_elements = [[self.alpha**(l * i) for i in range(m_interleaves)] for l in range(v_layers)]
+        H = self.field(H_elements)
 
-    def mul(self, a, b):
-        """Multiply two elements using power form"""
-        if a == 0 or b == 0:
-            return 0
-        a_power = self.poly2power[a]
-        b_power = self.poly2power[b]
-        result_power = (a_power + b_power) % self.power_max
-        return self.power2poly[result_power]
+        # 2. Extract Gamma and Theta sub-matrices for the current layer
+        Gamma = H[0 : i_layer + 1, 0 : i_layer + 1]
+        Theta = H[0 : i_layer + 1, i_layer + 1 : m_interleaves]
 
-    def inv(self, a):
-        """Multiplicative inverse in GF(2^m), input in poly form."""
-        if a == 0:
-            raise ZeroDivisionError("Attempted to invert 0 in GF(2^m)")
-        a_power = self.poly2power[a]
-        inv_power = (self.power_max - a_power) % self.power_max
-        return self.power2poly[inv_power]
+        # 3. Invert Gamma using numpy and multiply its i-th row by Theta
+        Gamma_inv = np.linalg.inv(Gamma)
+        pi_vector_gf = Gamma_inv[i_layer, :] @ Theta
 
-    def div(self, a, b):
-        """Division a / b in GF(2^m), inputs in poly form."""
-        if b == 0:
-            raise ZeroDivisionError("Attempted to divide by 0 in GF(2^m)")
-        if a == 0:
-            return 0
-        a_power = self.poly2power[a]
-        b_power = self.poly2power[b]
-        res_power = (a_power - b_power) % self.power_max
-        return self.power2poly[res_power]
-
-    def get_cyclotomic_coset(self, start_root):
-        """Generates the cyclotomic coset for a given root."""
-        coset = []
-        val = start_root
-        while val not in coset:
-            coset.append(val)
-            val = (val * 2) % self.power_max
-        return coset
-
-    def poly_mul(self, p1, p2):
-        """Multiplies two polynomials over GF(2^m).
-        p1 and p2 are lists of coefficients where index i is the coeff for x^i."""
-        deg1 = len(p1) - 1
-        deg2 = len(p2) - 1
-        res = [0] * (deg1 + deg2 + 1)
-        
-        for i, c1 in enumerate(p1):
-            for j, c2 in enumerate(p2):
-                # Multiply the coefficients and add (XOR) them to the corresponding degree
-                product = self.mul(c1, c2)
-                res[i+j] = self.add(res[i+j], product)
+        # 4. Map the GF(2^m) elements to their binary basis polynomials for the VLSI shift registers
+        pi_binary_polys = []
+        for element in pi_vector_gf:
+            # .vector() gives the binary representation [x^(m-1), ..., x^1, x^0]
+            bin_array = element.vector().tolist()
+            bin_array.reverse() 
+            
+            # Strip trailing zeros so the array length matches the true polynomial degree
+            while len(bin_array) > 0 and bin_array[-1] == 0:
+                bin_array.pop()
                 
-        return res
-
-    def get_minimal_polynomial(self, coset):
-        """Constructs the minimal polynomial from a cyclotomic coset."""
-        res = [1]  # Start with the polynomial '1'
-        for p in coset:
-            # factor is (x - alpha^p) -> in GF(2) this is (alpha^p + x)
-            # represented as [alpha^p, 1] since index 0 is x^0, index 1 is x^1
-            alpha_p = self.power2poly[p]
-            factor = [alpha_p, 1]
-            res = self.poly_mul(res, factor)
-        return res
+            pi_binary_polys.append(bin_array)
+            
+        return pi_binary_polys
