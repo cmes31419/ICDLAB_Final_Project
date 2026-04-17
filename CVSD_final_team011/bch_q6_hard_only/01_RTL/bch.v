@@ -28,7 +28,6 @@ module bch(
 	wire [5:0]		Sa[2:0];
 
 	// Core
-	wire [6:0]		chien_data[`PARALLEL_NUM-1:0];
 	wire			chien_proc, proc_done, out_stop;
 	wire [5:0]		out_loc;
 	wire out_done;
@@ -51,8 +50,7 @@ module bch(
 		.reset(out_done),
 		.cnt(mem_cnt),
 		.factor8(factor8),
-		.factor16(factor16),
-		.chien_data(chien_data)
+		.factor16(factor16)
 	);
 
 	syndrome syn0(
@@ -74,7 +72,6 @@ module bch(
 		.mem_cnt(mem_cnt),
 		.factor8(factor8),
 		.factor16(factor16),
-		.chien_data(chien_data),
 		.chien_proc(chien_proc),
 		.proc_done(proc_done),
 		.out_stop(out_stop),

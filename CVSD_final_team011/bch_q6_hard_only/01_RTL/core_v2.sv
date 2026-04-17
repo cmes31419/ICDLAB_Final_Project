@@ -7,7 +7,6 @@ module core(
 	input [9:0]		mem_cnt,
 	input [5:0]		factor8,
 	input [5:0]		factor16,
-	input [6:0]		chien_data[`PARALLEL_NUM-1:0],
 	output			chien_proc,
 	output			proc_done,
 	output			out_stop,
