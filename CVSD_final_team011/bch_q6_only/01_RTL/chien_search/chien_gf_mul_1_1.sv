@@ -1,4 +1,4 @@
-module gf_mul_1_1(
+module chien_gf_mul_1_1(
     input [5:0]     in1,
     input [5:0]     in2,
     output [5:0]    out1
@@ -6,20 +6,20 @@ module gf_mul_1_1(
 
     wire [10:0]  tmp1;
 
-    bin_mul_1_1 bm0(
+    chien_bin_mul_1_1 bm0(
         .in1(in1),
         .in2(in2),
         .out1(tmp1)
     );
 
-    rotate_table_1_1 rt0(
+    chien_rotate_table_1_1 rt0(
         .in1(tmp1),
         .out1(out1)
     );
 
 endmodule
 
-module bin_mul_1_1(
+module chien_bin_mul_1_1(
     input [5:0]         in1,
     input [5:0]         in2,
     output reg [10:0]   out1
@@ -41,7 +41,7 @@ module bin_mul_1_1(
 
 endmodule
 
-module rotate_table_1_1(
+module chien_rotate_table_1_1(
     input [10:0]        in1,
     output reg [5:0]    out1
 );

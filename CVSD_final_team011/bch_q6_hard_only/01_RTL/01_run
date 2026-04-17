@@ -1,0 +1,1 @@
+vcs -f rtl.f -pvalue+CYCLE=$2 -pvalue+PATTERN=$1 -full64 -R -debug_access+all +v2k +notimingcheck -sverilog

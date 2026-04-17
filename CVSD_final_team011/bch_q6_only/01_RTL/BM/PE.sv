@@ -17,8 +17,8 @@ module PE(
     reg [5:0] delta_next, theta, theta_next;
     wire [5:0] mul0_out, mul1_out;
 
-    gf_mul_1_1 u_gfmul0(.in1(delta_in), .in2(gamma), .out1(mul0_out));
-    gf_mul_1_1 u_gfmul1(.in1(discrepancy), .in2(theta), .out1(mul1_out));
+    BM_gf_mul_1_1 u_gfmul0(.in1(delta_in), .in2(gamma), .out1(mul0_out));
+    BM_gf_mul_1_1 u_gfmul1(.in1(discrepancy), .in2(theta), .out1(mul1_out));
 
     always @(*) begin
         if (start) begin
