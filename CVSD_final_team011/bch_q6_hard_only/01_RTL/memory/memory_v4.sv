@@ -1,22 +1,25 @@
-module memory(
-	input				clk,
-	input				rstn,
-	input [63:0]		idata,
-	input				ready,
-	input				chien,
-	input				reset,
-	output reg [9:0]	cnt,
-	output reg [5:0]	factor8,
-	output reg [5:0]	factor16
+module memory #(
+	parameter MAX_CYCLES_M6 = 64 / `PARALLEL_NUM,
+	parameter CNT_BITS = $clog2(MAX_CYCLES_M6)
+)(
+	input					clk,
+	input					rstn,
+	input [63:0]			idata,
+	input					ready,
+	input					chien,
+	input					reset,
+	output reg [CNT_BITS:0]	cnt,
+	output reg [5:0]		factor8,
+	output reg [5:0]		factor16
 );
 
-	reg [9:0]		cnt_next;
+	reg [CNT_BITS:0]	cnt_next;
 
-	reg [5:0]		factor8_next;
-	reg [5:0]		factor16_next;
+	reg [5:0]			factor8_next;
+	reg [5:0]			factor16_next;
 
-	wire [5:0]		factor8_rot;
-	wire [5:0]		factor16_rot;
+	wire [5:0]			factor8_rot;
+	wire [5:0]			factor16_rot;
 
 	integer i, j;
 

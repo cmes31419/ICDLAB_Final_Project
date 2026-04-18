@@ -1,23 +1,25 @@
-module core(
-	input			clk,
-	input			rstn,
-	input			reset,
-	input			syn_rdy,
-	input [5:0]		Sa[2:0],
-	input [9:0]		mem_cnt,
-	input [5:0]		factor8,
-	input [5:0]		factor16,
-	output			chien_proc,
-	output			proc_done,
-	output			out_stop,
-	output [5:0]	out_loc
+module core#(
+	parameter MAX_CYCLES_M6 = 64 / `PARALLEL_NUM,
+	parameter CNT_BITS = $clog2(MAX_CYCLES_M6)
+)(
+	input				clk,
+	input				rstn,
+	input				reset,
+	input				syn_rdy,
+	input [5:0]			Sa[2:0],
+	input [CNT_BITS:0]	mem_cnt,
+	input [5:0]			factor8,
+	input [5:0]			factor16,
+	output				chien_proc,
+	output				proc_done,
+	output				out_stop,
+	output [5:0]		out_loc
 );
 
 	localparam S_IDLE = 2'd0;
 	localparam S_PROC = 2'd1;
 	localparam S_DONE = 2'd2;
 
-	reg [1:0]	cnt, cnt_next;
 	reg [1:0]	state, state_next;
 
 	reg [5:0]	loc_rec[1:0], loc_rec_next[1:0];
@@ -65,11 +67,6 @@ module core(
 			end
 		end
     end
-	
-	always @(*) begin
-		if (state == S_PROC) cnt_next = chien_done ? cnt + 1 : cnt;
-		else cnt_next = 0;
-	end
 
 	always @(*) begin
 		case(state)
@@ -126,14 +123,12 @@ module core(
 	always @(posedge clk) begin
 		if (~rstn) begin
 			state		<= S_IDLE;
-			cnt			<= 0;
 			for (i=0;i<2;i=i+1) begin
 				loc_rec[i]	<= 0;
 			end
 		end
 		else begin
 			state		<= state_next;
-			cnt			<= cnt_next;
 			for (i=0;i<2;i=i+1) begin
 				loc_rec[i]	<= loc_rec_next[i];
 			end

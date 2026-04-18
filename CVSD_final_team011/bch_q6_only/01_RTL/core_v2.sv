@@ -1,25 +1,28 @@
-module core(
-	input			clk,
-	input			rstn,
-	input			mode,
-	input			reset,
-	input			syn_rdy,
-	input [5:0]		taggle_loc0,
-	input [5:0]		taggle_loc1,
-	input [6:0]		taggle_corr0,
-	input [6:0]		taggle_corr1,
-	input [5:0]		Sa[2:0],
-	input [5:0]		Sb[2:0],
-	input [5:0]		Sc[2:0],
-	input [5:0]		Sd[2:0],
-	input [9:0]		mem_cnt,
-	input [5:0]		factor8,
-	input [5:0]		factor16,
-	input [6:0]		chien_data[`PARALLEL_NUM-1:0],
-	output			chien_proc,
-	output			proc_done,
-	output			out_stop,
-	output [5:0]	out_loc
+module core#(
+	parameter MAX_CYCLES_M6 = 64 / `PARALLEL_NUM,
+	parameter CNT_BITS = $clog2(MAX_CYCLES_M6)
+)(
+	input					clk,
+	input					rstn,
+	input					mode,
+	input					reset,
+	input					syn_rdy,
+	input [5:0]				taggle_loc0,
+	input [5:0]				taggle_loc1,
+	input [6:0]				taggle_corr0,
+	input [6:0]				taggle_corr1,
+	input [5:0]				Sa[2:0],
+	input [5:0]				Sb[2:0],
+	input [5:0]				Sc[2:0],
+	input [5:0]				Sd[2:0],
+	input [CNT_BITS+3:0]	mem_cnt,
+	input [5:0]				factor8,
+	input [5:0]				factor16,
+	input [6:0]				chien_data[`PARALLEL_NUM-1:0],
+	output					chien_proc,
+	output					proc_done,
+	output					out_stop,
+	output [5:0]			out_loc
 );
 
 	localparam S_IDLE = 2'd0;

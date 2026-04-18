@@ -1,4 +1,8 @@
-module chien_search(
+module chien_search #(
+    parameter MAX_CYCLES_M6 = 64 / `PARALLEL_NUM,
+    parameter PAR_BITS = $clog2(`PARALLEL_NUM),
+    parameter CNT_BITS = $clog2(MAX_CYCLES_M6)
+)(
     input               clk,
     input               rstn,
     input               decode_fail,
@@ -6,7 +10,7 @@ module chien_search(
     input [5:0]         sigma0,
     input [5:0]         sigma1,
     input [5:0]         sigma2,
-	input [9:0]		    mem_cnt,
+	input [CNT_BITS:0]  mem_cnt,
 	input [5:0]		    factor8,
 	input [5:0]		    factor16,
     output              chien_wait,
@@ -15,10 +19,6 @@ module chien_search(
     output              chien_success,
     output reg [5:0]    error_loc[1:0]
 );
-
-	localparam MAX_CYCLES_M6 = 64 / `PARALLEL_NUM;
-    localparam PAR_BITS = $clog2(`PARALLEL_NUM);
-    localparam CNT_BITS = $clog2(MAX_CYCLES_M6);
 
     localparam S_IDLE = 3'd0;
     localparam S_PROC = 3'd1;

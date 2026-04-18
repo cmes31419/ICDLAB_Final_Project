@@ -10,27 +10,30 @@ module bch(
 	output [9:0] odata
 );
 
+	localparam MAX_CYCLES_M6 = 64 / `PARALLEL_NUM;
+	localparam CNT_BITS = $clog2(MAX_CYCLES_M6);
+
 	localparam S_IDLE	= 2'd0;
 	localparam S_INPUT	= 2'd1;
 	localparam S_CALC	= 2'd2;
 	localparam S_OUTPUT	= 2'd3;
 
-	reg [1:0]		state, state_next;
-	reg [6:0]		cnt, cnt_next;
+	reg [1:0]			state, state_next;
+	reg [6:0]			cnt, cnt_next;
 
 	// Memory
-	wire [9:0]		mem_cnt;
-	wire [5:0]		factor8;
-	wire [5:0]		factor16;
+	wire [CNT_BITS:0]	mem_cnt;
+	wire [5:0]			factor8;
+	wire [5:0]			factor16;
 
 	// Syndrome
-	wire			syn_rdy;
-	wire [5:0]		Sa[2:0];
+	wire				syn_rdy;
+	wire [5:0]			Sa[2:0];
 
 	// Core
-	wire			chien_proc, proc_done, out_stop;
-	wire [5:0]		out_loc;
-	wire out_done;
+	wire				chien_proc, proc_done, out_stop;
+	wire [5:0]			out_loc;
+	wire 				out_done;
 
 	integer i;
 	

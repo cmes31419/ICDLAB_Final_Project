@@ -10,6 +10,9 @@ module bch(
 	output [9:0] odata
 );
 
+	localparam MAX_CYCLES_M6 = 64 / `PARALLEL_NUM;
+	localparam CNT_BITS = $clog2(MAX_CYCLES_M6);
+
 	localparam S_IDLE	= 2'd0;
 	localparam S_INPUT	= 2'd1;
 	localparam S_CALC	= 2'd2;
@@ -21,26 +24,26 @@ module bch(
 	reg 			mode_set, mode_set_next;
 
 	// Memory
-	wire [9:0]		mem_cnt;
-	wire [5:0]		factor8;
-	wire [5:0]		factor16;
+	wire [CNT_BITS+3:0]	mem_cnt;
+	wire [5:0]			factor8;
+	wire [5:0]			factor16;
 
 	// Syndrome
-	wire			syn_rdy;
-	wire [5:0]		taggle_loc0;
-	wire [5:0]		taggle_loc1;
-	wire [6:0]		taggle_corr0;
-	wire [6:0]		taggle_corr1;
-	wire [5:0]		Sa[2:0];
-	wire [5:0]		Sb[2:0];
-	wire [5:0]		Sc[2:0];
-	wire [5:0]		Sd[2:0];
+	wire				syn_rdy;
+	wire [5:0]			taggle_loc0;
+	wire [5:0]			taggle_loc1;
+	wire [6:0]			taggle_corr0;
+	wire [6:0]			taggle_corr1;
+	wire [5:0]			Sa[2:0];
+	wire [5:0]			Sb[2:0];
+	wire [5:0]			Sc[2:0];
+	wire [5:0]			Sd[2:0];
 
 	// Core
-	wire [6:0]		chien_data[`PARALLEL_NUM-1:0];
-	wire			chien_proc, proc_done, out_stop;
-	wire [5:0]		out_loc;
-	wire out_done;
+	wire [6:0]			chien_data[`PARALLEL_NUM-1:0];
+	wire				chien_proc, proc_done, out_stop;
+	wire [5:0]			out_loc;
+	wire 				out_done;
 
 	integer i;
 	
