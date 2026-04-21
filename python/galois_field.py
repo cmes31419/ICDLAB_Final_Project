@@ -5,7 +5,16 @@ class GF:
     def __init__(self,m):
         self.m = m
         self.power_max = (2**m) - 1
-        self.field = galois.GF(2**m)
+        if m == 6:
+            irr = galois.Poly.Str("x^6 + x + 1")
+        elif m == 8:
+            irr = galois.Poly.Str("x^8 + x^4 + x^3 + x^2 + 1")
+        elif m == 10:
+            irr = galois.Poly.Str("x^10 + x^3 + 1")
+        else:
+            raise ValueError("unsupported m")
+
+        self.field = galois.GF(2**m, irreducible_poly=irr, primitive_element="x")
         self.alpha = self.field.primitive_element
 
     # ------ cyclotomic cosets and minimal polynomial -----
