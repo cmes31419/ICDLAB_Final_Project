@@ -16,7 +16,7 @@ def write_to_file(gii_code:list, case:int):
             file.write(code+'\n')
 
 
-gii = GII_code(q=6, m=4, v=2, t_list=[2, 4, 6])
+gii = GII_code(q=6, m=4, v=2, t_list=[2, 4, 6], p_str="x^6 + x + 1")
     
 print("\n--- Generating Polynomials ---")
 gii.print_generators()

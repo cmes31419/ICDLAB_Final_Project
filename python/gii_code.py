@@ -3,14 +3,15 @@ from galois_field import GF
 
 class GII_code:
 
-    def __init__(self,q, m ,v, t_list):
+    def __init__(self,q, m ,v, t_list, p_str:str):
         """
         q: degree of Galois field, e.g. GF(2^q)
         m: number of interleaves
         v: number of nested layers
         t_list: list of error correcting capability, e.g. [t0, t1, ..., tv]
+        p_str: primitive polynomial string, e.g. x^6 + x + 1
         """
-        self.gf = GF(q)
+        self.gf = GF(q, p_str)
         self.m = m
         self.v = v
         self.t_list = t_list
