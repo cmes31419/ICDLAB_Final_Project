@@ -6,11 +6,11 @@ module test;
 // parameters
 parameter CYCLE = 10;
 parameter PATTERN = 1;
-integer NTEST = 1;
-
+integer CODEWORD_CNT = 1;
+integer NTEST = CODEWORD_CNT*4;
 // --------------------------
 // signals
-reg clk, rstn;
+reg clk, rst;
 reg [7:0] idata;
 reg ivalid;
 wire iready;
@@ -21,17 +21,17 @@ wire ovalid;
 // test data
 reg [63:0] testdata [0:8191];
 reg [63:0] testa [0:8191];
-integer i1, i2, i3;
-integer ibyte_cnt;
+integer i1, i2;
+integer ibyte_cnt, obyte_cnt;
 integer errcnt, correctcnt;
 
 // --------------------------
 // read files and dump files
 initial begin
 	if (PATTERN == 0) begin
-		NTEST = 2;
-		$readmemb("testdata/p100.txt", testdata);
-		$readmemb("testdata/p100a.txt", testa);
+		CODEWORD_CNT = 2;
+		$readmemb("../00_TB/testdata/pattern/p0.txt", testdata);
+		$readmemb("../00_TB/testdata/codeword/p0a.txt", testa);
 	end
 	// ===========================	
 end
@@ -45,7 +45,7 @@ end
 // modules
 CHIP dut(
 	.clk(clk),
-	.rstn(rst),
+	.rst(rst),
 	.idata(idata),
     .ivalid(ivalid),
     .iready(iready),
@@ -68,8 +68,11 @@ always #(CYCLE/2.0) clk = ~clk;
 initial begin
 	i1 = 0;
 	i2 = 0;
-	i3 = 0;
     ibyte_cnt = 0;
+    obyte_cnt = 0;
+
+    errcnt = 0;
+    correctcnt = 0;
 
 	rst = 0;
 	idata = 0;
@@ -78,7 +81,7 @@ initial begin
     // reset ======
 	#(CYCLE*5);
 	@(negedge clk);
-	rstn = 1;
+	rst = 1;
     #(CYCLE*2)
 	@(negedge clk);
     rst = 0;
@@ -116,16 +119,12 @@ end
 always @(negedge clk) begin
 	if (iready === 1) begin
         ivalid = 1;
-        if (ibyte_cnt < 4) begin
-		    idata = testdata[i1][(63-ibyte_cnt*8)-:8];
-            ibyte_cnt = ibyte_cnt + 1;
-        end
-        else begin
+        if (ibyte_cnt >= 4) begin
             i1 = i1 + 1;
             ibyte_cnt = 0;
-		    idata = testdata[i1][(63-ibyte_cnt*8)-:8];
-            ibyte_cnt = ibyte_cnt + 1;
         end
+		idata = testdata[i1][(63-ibyte_cnt*8)-:8];
+        ibyte_cnt = ibyte_cnt + 1;
 	end
     else begin
         ivalid = 0;
@@ -133,29 +132,35 @@ always @(negedge clk) begin
 end
 
 // check output
-// always @(negedge clk) begin
-// 	if (finish === 1 && $time >= CYCLE * 5) begin
-// 		if (odata !== testa[i3]) begin
-// 			errcnt = errcnt + 1;
-// 			$write("design output = %4d, golden output = %4d. Error\n", odata, testa[i3]);
-// 		end else begin
-// 			correctcnt = correctcnt + 1;
-// 			$write("design output = %4d, golden output = %4d\n", odata, testa[i3]);
-// 		end
-// 		i3 = i3 + 1;
-// 	end
-// end
-// initial begin
-// 	wait(i2 == NTEST);
-// 	$write("Correct count = %0d\n", correctcnt);
-// 	$write("Error count = %0d\n", errcnt);
-// 	$write("Time = %0d\n", $time - CYCLE * 5);
-// 	#(CYCLE*5);
-// 	$finish;
-// end
+always @(negedge clk) begin
+	if (ovalid === 1 && $time >= CYCLE * 10) begin
+        if (obyte_cnt >= 4) begin
+            i2 = i2 + 1;
+            obyte_cnt = 0;
+        end
+        if (odata !== testa[i2][(63-ibyte_cnt**8)-:8]) begin          
+			errcnt = errcnt + 1;
+			$write("design output = %8b, golden output = %8b. Byte Error\n", odata, testa[i2][(63-ibyte_cnt**8)-:8]);
+        end
+        else begin
+			correctcnt = correctcnt + 1;
+            $write("design output = %8b, golden output = %8b. Byte Correct\n", odata, testa[i2][(63-ibyte_cnt**8)-:8]);
+        end
+
+        obyte_cnt = obyte_cnt + 1; 
+	end
+end
+initial begin
+	wait(i2 == NTEST);
+	$write("Correct count = %0d\n", correctcnt);
+	$write("Error count = %0d\n", errcnt);
+	$write("Time = %0d\n", $time - CYCLE * 5);
+	#(CYCLE*5);
+	$finish;
+end
 initial begin
 	#(CYCLE*1000000);
-	$write("Timeout\n");
+	$write("Simulation Timeout!!!\n");
 	$finish;
 end
 
