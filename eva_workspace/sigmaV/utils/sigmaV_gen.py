@@ -153,20 +153,14 @@ def gen_sigmaE_case_body(E, q: int, idx: int, prim_poly: int):
     也就是把原本的 y[0..4][j][bit] 合起來 XOR，集中寫在 y[0][j][bit]。
     """
     lines = []
-    t_plus_1 = len(E)   # E 的列數 = t+1
-    n = len(E[0])       # column 數 (8)
-    max_sigma = 5       # sigma0 ~ sigma4
+    n = len(E[0])       # column 數
 
     for j in range(n):
-        # lines.append(f"      // y[0][{j}] = Σ_i sigma_i * E(i, {j})")
-
         # 有效 bits 0..(q-1)
         for r in range(q):
             terms = []
             # 對所有 sigma_i 累積貢獻
             for i in range(len(E)):
-                if i >= t_plus_1:
-                    continue
                 c = E[i][j]
                 if c == 0:
                     continue
@@ -177,10 +171,6 @@ def gen_sigmaE_case_body(E, q: int, idx: int, prim_poly: int):
 
             expr = " ^ ".join(terms) if terms else "1'b0"
             lines.append(f"        y[{idx}][{j}][{r}] = {expr};")
-
-        # 高位補 0 到 6 bit
-        for r in range(q, 6):
-            lines.append(f"        y[{idx}][{j}][{r}] = 1'b0;")
 
         lines.append("")  # 空行分隔每個 j
 
@@ -314,7 +304,7 @@ if __name__ == "__main__":
     f.write(f"    output reg [{q-1}:0]    y[{parallel_num-1}:0]\n")
     f.write(");\n\n")
 
-    f.write(f"    wire [{q-1}:0]  sigmaE[{t_max//2}][{parallel_num-1}:0];\n\n")
+    f.write(f"    wire [{q-1}:0]  sigmaE[{t_max//2}:0][{parallel_num-1}:0];\n\n")
 
     f.write(f"    sigmaE se0(\n")
     f.write(f"        .sigma(sigma),\n")
@@ -335,7 +325,7 @@ if __name__ == "__main__":
     #========================
     f.write("module sigmaE(\n")
     f.write(f"    input  [{q-1}:0]      sigma[{t_max}:0],\n")
-    f.write(f"    output reg [{q-1}:0]  y[{t_max//2}][{parallel_num-1}:0]\n")
+    f.write(f"    output reg [{q-1}:0]  y[{t_max//2}:0][{parallel_num-1}:0]\n")
     f.write(");\n\n")
 
     f.write("    always @* begin\n")
@@ -353,12 +343,12 @@ if __name__ == "__main__":
     # module sigmaEB
     #========================
     f.write("module sigmaEB(\n")
-    f.write(f"    input  [{q-1}:0]      sigmaE[{t_max//2}][{parallel_num-1}:0],\n")
+    f.write(f"    input  [{q-1}:0]      sigmaE[{t_max//2}:0][{parallel_num-1}:0],\n")
     f.write(f"    input  [{q-1}:0]      sigma0,\n")
     f.write(f"    output reg [{q-1}:0]  y[{parallel_num-1}:0]\n")
     f.write(");\n\n")
 
-    f.write(f"    reg [{q-1}:0]    tmp[{t_max//2}][{parallel_num-1}:0];\n\n")
+    f.write(f"    reg [{q-1}:0]    tmp[{t_max//2}:0][{parallel_num-1}:0];\n\n")
 
     f.write("    always @* begin\n")
 

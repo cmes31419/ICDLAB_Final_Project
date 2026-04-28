@@ -1,28 +1,28 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-t_max = np.array([2, 6, 10, 20, 30, 50])
+t_max = np.array([2, 6, 10, 20, 30])
 
 data = {
     8: {
-        "conventional": np.array([172, 670, 1217, 2602, 3957, 6630]),
-        "baseline": np.array([118, 563, 1051, 2385, 3729, 6365]),
-        "ours":     np.array([88, 381, 728, 1631, 2503, 4215]),
+        "conventional": np.array([172, 670, 1217, 2602, 3957]),
+        "baseline": np.array([118, 563, 1051, 2385, 3729]),
+        "ours":     np.array([88, 381, 728, 1631, 2503]),
     },
     16: {
-        "conventional": np.array([445, 1547, 2687, 5597, 8369, 13985]),
-        "baseline": np.array([135, 1032, 1951, 4537, 7307, 12758]),
-        "ours":     np.array([105, 456, 841, 1871, 2864, 4819]),
+        "conventional": np.array([445, 1547, 2687, 5597, 8369]),
+        "baseline": np.array([135, 1032, 1951, 4537, 7307]),
+        "ours":     np.array([105, 456, 841, 1871, 2864]),
     },
     32: {
-        "conventional": np.array([1077, 3340, 5665, 11509, 17214, 28754]),
-        "baseline": np.array([188, 1869, 3641, 8733, 14101, 24873]),
-        "ours":     np.array([158, 600, 1058, 2341, 3590, 5994]),
+        "conventional": np.array([1077, 3340, 5665, 11509, 17214]),
+        "baseline": np.array([188, 1869, 3641, 8733, 14101]),
+        "ours":     np.array([158, 600, 1058, 2341, 3590]),
     },
     63: {
-        "conventional": np.array([2304, 6912, 11566, 23132, 34554, 57542]),
-        "baseline": np.array([300, 3626, 7101, 17279, 28176, 49481]),
-        "ours":     np.array([270, 908, 1500, 3280, 5023, 8275]),
+        "conventional": np.array([2304, 6912, 11566, 23132, 34554]),
+        "baseline": np.array([300, 3626, 7101, 17279, 28176]),
+        "ours":     np.array([270, 908, 1500, 3280, 5023]),
     },
 }
 
@@ -34,21 +34,23 @@ fig, axes = plt.subplots(2, 2, figsize=(11, 7), sharey=False)
 axes = axes.flatten()
 
 x = np.arange(len(t_max))
-width = 0.35
+width = 0.25
 
 for ax, P in zip(axes, data.keys()):
-    ax.bar(x - width / 2, data[P]["baseline"], width, label="baseline")
-    ax.bar(x + width / 2, data[P]["ours"], width, label="ours")
+    ax.bar(x - width, data[P]["conventional"], width, label="conventional")
+    ax.bar(x, data[P]["baseline"], width, label="baseline")
+    ax.bar(x + width, data[P]["ours"], width, label="ours")
 
-    ax.set_title(f"q = 6, P = {P}")
-    ax.set_xlabel(r"$t_{max}$")
-    ax.set_ylabel("XOR Gate Count")
+    ax.set_title(f"q = 6, P = {P}", fontsize=12)
+    ax.set_xlabel(r"$t_{max}$", fontsize=11)
+    ax.set_ylabel("XOR Gate Count", fontsize=11)
     ax.set_xticks(x)
-    ax.set_xticklabels(t_max)
+    ax.set_xticklabels(t_max, fontsize=10)
+    ax.tick_params(axis='y', labelsize=10)
     ax.grid(True, axis="y", linestyle="--", alpha=0.5)
-    ax.legend()
+    ax.legend(fontsize=10)
 
-fig.suptitle("XOR Gate Count Comparison: Baseline vs Ours", fontsize=14)
+fig.suptitle("XOR Gate Count Comparison: Conventional vs Baseline vs Ours", fontsize=16)
 fig.tight_layout()
 fig.savefig("complexity_grouped_bar.png", dpi=300, bbox_inches="tight")
 plt.close(fig)
@@ -80,7 +82,7 @@ ax.set_yticklabels(P_values)
 
 ax.set_xlabel(r"$t_{max}$")
 ax.set_ylabel("P")
-ax.set_title("Reduction Ratio of XOR Gate Count (%)")
+ax.set_title("XOR Gate Count Reduction of Ours Compared with Baseline (%)")
 
 cbar = plt.colorbar(im, ax=ax)
 cbar.set_label("Reduction (%)")

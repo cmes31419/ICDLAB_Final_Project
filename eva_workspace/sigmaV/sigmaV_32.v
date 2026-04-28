@@ -3,7 +3,7 @@ module sigmaV(
     output reg [5:0]    y[31:0]
 );
 
-    wire [5:0]  sigmaE[3][31:0];
+    wire [5:0]  sigmaE[3:0][31:0];
 
     sigmaE se0(
         .sigma(sigma),
@@ -20,7 +20,7 @@ endmodule
 
 module sigmaE(
     input  [5:0]      sigma[6:0],
-    output reg [5:0]  y[3][31:0]
+    output reg [5:0]  y[3:0][31:0]
 );
 
     always @* begin
@@ -155,12 +155,12 @@ module sigmaE(
 endmodule
 
 module sigmaEB(
-    input  [5:0]      sigmaE[3][31:0],
+    input  [5:0]      sigmaE[3:0][31:0],
     input  [5:0]      sigma0,
     output reg [5:0]  y[31:0]
 );
 
-    reg [5:0]    tmp[3][31:0];
+    reg [5:0]    tmp[3:0][31:0];
 
     always @* begin
         tmp[0][0] = sigmaE[0][0];

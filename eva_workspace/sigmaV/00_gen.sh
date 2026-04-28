@@ -1,5 +1,6 @@
 #!/bin/bash
 
+seed=42
 ntest=100
 parallel_num=32
 n=64
@@ -17,4 +18,4 @@ python utils/sigmaV_gen_baseline.py $out_fname_baseline $parallel_num $n $q $t_m
 python utils/sigmaV_gen.py $out_fname $parallel_num $n $q $t_max $prim_poly $mode
 python utils/rtl_gen.py $out_fname_conventional $out_fname_baseline $out_fname
 python utils/tb_gen.py $ntest $parallel_num $q $t_max
-python utils/testdata_gen.py $ntest
+python utils/testdata_gen.py $ntest $seed $q $t_max
