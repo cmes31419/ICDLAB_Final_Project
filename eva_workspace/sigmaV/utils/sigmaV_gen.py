@@ -113,8 +113,6 @@ def decompose_E_B_improved(q: int, n: int, t: int, poly_list: int):
             for k in range(q):
                 B[k][j] = (aj >> k) & 1
 
-        # print(f"i: {i}, pow: {pow}")
-
         E_list.append(E[:pow])
         B_list.append(B)
 
@@ -145,13 +143,6 @@ def mult_matrix_for_const(c: int, q: int, prim_poly: int):
 #############################
 
 def gen_sigmaE_case_body(E, q: int, idx: int, prim_poly: int):
-    """
-    對每個 j 產生：
-      // y[0][j] = Σ_i sigma_i * E(i, j)
-      y[0][j][bit] = sigma0[..] ^ sigma1[..] ^ ...;
-
-    也就是把原本的 y[0..4][j][bit] 合起來 XOR，集中寫在 y[0][j][bit]。
-    """
     lines = []
     n = len(E[0])       # column 數
 
@@ -183,18 +174,11 @@ def gen_sigmaE_case_body(E, q: int, idx: int, prim_poly: int):
 #############################
 
 def gen_sigmaEB_case_body(B, q: int, idx: int):
-    """
-    產生某一個 m 的 case 分支內容：
-      y[j][r] = XOR_k B[k][j]*sigmaE[0][k][r];
-
-    現在 sigmaE[0][k] 已經是 Σ_i sigma_i * E(i,k) 的結果。
-    """
     lines = []
-    n = len(B)  # 8
+    n = len(B)
     m = len(B[0])
 
     for j in range(m):
-        # lines.append(f"      // y[{j}] = Σ_k B[k][{j}] * sigmaE[0][k]")
         terms = []
         for k in range(n):
             if B[k][j] == 1:

@@ -98,28 +98,15 @@ def mult_matrix_for_const(c: int, q: int, prim_poly: int):
 #############################
 
 def gen_sigmaE_case_body(E, q: int, prim_poly: int):
-    """
-    對每個 j 產生：
-      // y[0][j] = Σ_i sigma_i * E(i, j)
-      y[0][j][bit] = sigma0[..] ^ sigma1[..] ^ ...;
-
-    也就是把原本的 y[0..4][j][bit] 合起來 XOR，集中寫在 y[0][j][bit]。
-    """
     lines = []
-    t_plus_1 = len(E)   # E 的列數 = t+1
-    n = len(E[0])       # column 數 (8)
-    max_sigma = t_plus_1
+    n = len(E[0])       # column 數
 
     for j in range(n):
-        # lines.append(f"      // y[0][{j}] = Σ_i sigma_i * E(i, {j})")
-
         # 有效 bits 0..(q-1)
         for r in range(q):
             terms = []
             # 對所有 sigma_i 累積貢獻
-            for i in range(max_sigma):
-                if i >= t_plus_1:
-                    continue
+            for i in range(len(E)):
                 c = E[i][j]
                 if c == 0:
                     continue
@@ -131,13 +118,10 @@ def gen_sigmaE_case_body(E, q: int, prim_poly: int):
             expr = " ^ ".join(terms) if terms else "1'b0"
             lines.append(f"        y[{j}][{r}] = {expr};")
 
-        # 高位補 0 到 6 bit
-        for r in range(q, 6):
-            lines.append(f"        y[{j}][{r}] = 1'b0;")
-
         lines.append("")  # 空行分隔每個 j
 
     return lines
+
 
 #############################
 # sigmaEB：算 y = (sigmaE row0) * B
@@ -145,18 +129,11 @@ def gen_sigmaE_case_body(E, q: int, prim_poly: int):
 #############################
 
 def gen_sigmaEB_case_body(B, q: int):
-    """
-    產生某一個 m 的 case 分支內容：
-      y[j][r] = XOR_k B[k][j]*sigmaE[0][k][r];
-
-    現在 sigmaE[0][k] 已經是 Σ_i sigma_i * E(i,k) 的結果。
-    """
     lines = []
-    n = len(B)  # 8
+    n = len(B)
     m = len(B[0])
 
     for j in range(m):
-        # lines.append(f"      // y[{j}] = Σ_k B[k][{j}] * sigmaE[0][k]")
         terms = []
         for k in range(n):
             if B[k][j] == 1:

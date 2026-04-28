@@ -10,5 +10,5 @@ random.seed(seed)
 
 with open("testdata.txt", "w") as f:
     for _ in range(ntest):
-        bits = format(random.getrandbits(q * t_max), f"0{q * t_max}b")
+        bits = format(random.getrandbits(q * (t_max + 1)), f"0{q * (t_max + 1)}b")
         f.write(bits + "\n")
