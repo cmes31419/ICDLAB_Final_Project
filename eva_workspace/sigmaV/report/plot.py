@@ -6,23 +6,23 @@ t_max = np.array([2, 6, 10, 20, 30])
 data = {
     8: {
         "conventional": np.array([172, 670, 1217, 2602, 3957]),
-        "baseline": np.array([118, 563, 1051, 2385, 3729]),
-        "ours":     np.array([88, 381, 728, 1631, 2503]),
+        "baseline": np.array([138, 583, 1071, 2405, 3749]),
+        "ours":     np.array([138, 566, 1023, 2281, 3478]),
     },
     16: {
         "conventional": np.array([445, 1547, 2687, 5597, 8369]),
-        "baseline": np.array([135, 1032, 1951, 4537, 7307]),
-        "ours":     np.array([105, 456, 841, 1871, 2864]),
+        "baseline": np.array([240, 1137, 2056, 4642, 7412]),
+        "ours":     np.array([240, 1016, 1701, 3721, 5644]),
     },
     32: {
         "conventional": np.array([1077, 3340, 5665, 11509, 17214]),
-        "baseline": np.array([188, 1869, 3641, 8733, 14101]),
-        "ours":     np.array([158, 600, 1058, 2341, 3590]),
+        "baseline": np.array([558, 2239, 4011, 9103, 14471]),
+        "ours":     np.array([558, 1880, 3003, 6541, 10000]),
     },
     63: {
         "conventional": np.array([2304, 6912, 11566, 23132, 34554]),
-        "baseline": np.array([300, 3626, 7101, 17279, 28176]),
-        "ours":     np.array([270, 908, 1500, 3280, 5023]),
+        "baseline": np.array([1230, 4556, 8031, 18209, 29106]),
+        "ours":     np.array([1230, 3728, 5655, 12175, 18598]),
     },
 }
 
@@ -52,7 +52,7 @@ for ax, P in zip(axes, data.keys()):
 
 fig.suptitle("XOR Gate Count Comparison: Conventional vs Baseline vs Ours", fontsize=16)
 fig.tight_layout()
-fig.savefig("complexity_grouped_bar.png", dpi=300, bbox_inches="tight")
+fig.savefig("report/complexity_grouped_bar.png", dpi=300, bbox_inches="tight")
 plt.close(fig)
 
 
@@ -95,7 +95,7 @@ for i in range(len(P_values)):
         )
 
 fig.tight_layout()
-fig.savefig("reduction_heatmap.png", dpi=300, bbox_inches="tight")
+fig.savefig("report/reduction_heatmap.png", dpi=300, bbox_inches="tight")
 plt.close(fig)
 
 print("Saved figures:")

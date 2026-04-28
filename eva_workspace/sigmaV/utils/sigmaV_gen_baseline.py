@@ -134,15 +134,19 @@ def gen_sigmaEB_case_body(B, q: int):
     m = len(B[0])
 
     for j in range(m):
-        terms = []
-        for k in range(n):
-            if B[k][j] == 1:
-                terms.append(f"sigmaE[{k}]")
-        if terms:
-            expr = " ^ ".join(terms)
-        else:
-            expr = "1'b0"
-        lines.append(f"        y[{j}] = {expr};")
+        for r in range(q):
+            terms = []
+            for k in range(n):
+                if B[k][j] == 1:
+                    terms.append(f"sigmaE[{k}][{r}]")
+            if terms:
+                expr = " ^ ".join(terms)
+            else:
+                expr = "1'b0"
+            lines.append(f"        y[{j}][{r}] = {expr};")
+            
+        lines.append("")  # 空行分隔每個 r
+        
     return lines
 
 

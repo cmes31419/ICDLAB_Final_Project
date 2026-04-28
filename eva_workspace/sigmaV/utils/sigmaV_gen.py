@@ -179,17 +179,18 @@ def gen_sigmaEB_case_body(B, q: int, idx: int):
     m = len(B[0])
 
     for j in range(m):
-        terms = []
-        for k in range(n):
-            if B[k][j] == 1:
-                terms.append(f"sigmaE[{idx}][{k}]")
-        if terms:
-            expr = " ^ ".join(terms)
-        else:
-            expr = "1'b0"
-        lines.append(f"        tmp[{idx}][{j}] = {expr};")
+        for r in range(q):
+            terms = []
+            for k in range(n):
+                if B[k][j] == 1:
+                    terms.append(f"sigmaE[{idx}][{k}][{r}]")
+            if terms:
+                expr = " ^ ".join(terms)
+            else:
+                expr = "1'b0"
+            lines.append(f"        tmp[{idx}][{j}][{r}] = {expr};")
 
-    lines.append("")  # 空行分隔每個 j
+        lines.append("")  # 空行分隔每個 r
 
     return lines
 
@@ -343,11 +344,12 @@ if __name__ == "__main__":
             f.write(ln + "\n")
 
     for i in range(parallel_num):
-        terms = ["sigma0"]
-        for j in range(t_max//2):
-            terms.append(f"tmp[{j}][{i}]")
-        expr = " ^ ".join(terms)
-        f.write(f"        y[{i}] = {expr};\n")
+        for r in range(q):
+            terms = [f"sigma0[{r}]"]
+            for j in range(t_max//2):
+                terms.append(f"tmp[{j}][{i}][{r}]")
+            expr = " ^ ".join(terms)
+            f.write(f"        y[{i}][{r}] = {expr};\n")
 
     f.write("    end\n\n")
     f.write("endmodule\n")
