@@ -24,7 +24,8 @@ reg [{q*(t_max+1)-1}:0]	testdata[0:NTEST-1];
 
 reg [{q-1}:0]	sigma[{t_max}:0];
 
-wire [{q-1}:0]	y_ref[{parallel_num-1}:0];
+wire [{q-1}:0]	y_conv[{parallel_num-1}:0];
+wire [{q-1}:0]	y_base[{parallel_num-1}:0];
 wire [{q-1}:0]	y[{parallel_num-1}:0];
 
 integer i1, i2;
@@ -43,12 +44,17 @@ end
 
 // --------------------------
 // modules
-sigmaV_old U0(
+sigmaV_conventional U0(
     .sigma(sigma),
-    .y(y_ref)
+    .y(y_conv)
 );
 
-sigmaV U1(
+sigmaV_baseline U1(
+    .sigma(sigma),
+    .y(y_base)
+);
+
+sigmaV U2(
     .sigma(sigma),
     .y(y)
 );
@@ -77,12 +83,20 @@ end
 // check output
 always @(posedge clk) begin
 	for (i2=0;i2<{parallel_num};i2=i2+1) begin
-		if (y_ref[i2] !== y[i2]) begin
-			$write("y_ref[%0d] = %6b, y[%0d] = %6b. Error\\n", i2, y_ref[i2], i2, y[i2]);
+		if (y_conv[i2] !== y[i2]) begin
+			$write("y_conv[%0d] = %6b, y[%0d] = %6b. Error\\n", i2, y_conv[i2], i2, y[i2]);
 			errcnt = errcnt + 1;
 		end
 		else begin
-			// $write("y_ref[%0d] = %6b, y[%0d] = %6b. Correct\\n", i2, y_ref[i2], i2, y[i2]);
+			// $write("y_conv[%0d] = %6b, y[%0d] = %6b. Correct\\n", i2, y_conv[i2], i2, y[i2]);
+			correctcnt = correctcnt + 1;
+		end
+        if (y_base[i2] !== y[i2]) begin
+			$write("y_base[%0d] = %6b, y[%0d] = %6b. Error\\n", i2, y_base[i2], i2, y[i2]);
+			errcnt = errcnt + 1;
+        end
+        else begin
+			// $write("y_base[%0d] = %6b, y[%0d] = %6b. Correct\\n", i2, y_base[i2], i2, y[i2]);
 			correctcnt = correctcnt + 1;
 		end
 	end

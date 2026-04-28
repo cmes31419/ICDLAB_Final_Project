@@ -195,7 +195,7 @@ def build_indices(q, n_full, sample, n_parallel):
 
 
 #############################
-# Main: generate sigmaE_sigmaEB.v
+# Main
 #############################
 
 if __name__ == "__main__":
@@ -205,6 +205,7 @@ if __name__ == "__main__":
     q = int(sys.argv[4])
     t_max = int(sys.argv[5])
     prim_poly = int(sys.argv[6], 0)
+    mode = int(sys.argv[7])     # 1: contiguous (default), 2: interleave
 
     E6_full, B6_full = decompose_E_B(q, n, t_max, prim_poly)
 
@@ -212,13 +213,14 @@ if __name__ == "__main__":
     print(f"E6_full: {len(E6_full)} x {len(E6_full[0])}")
     print(f"B6_full: {len(B6_full)} x {len(B6_full[0])}")
 
-    # mode 1: contiguous
-    # idx6_e = [i for i in range(parallel_num)]
-    # idx6_b = [i for i in range(parallel_num)]
-
-    # mode 2: interleave
-    sample = 8 * n // parallel_num
-    idx6_e, idx6_b = build_indices(q, n, sample, parallel_num)
+    if mode != 2:   # mode 1: contiguous (default)
+        print("Using contiguous mode for indices.")
+        idx6_e = [i for i in range(parallel_num)]
+        idx6_b = [i for i in range(parallel_num)]
+    else:   # mode 2: interleave
+        print("Using interleave mode for indices.")
+        sample = 8 * n // parallel_num
+        idx6_e, idx6_b = build_indices(q, n, sample, parallel_num)
 
     print(idx6_e)
     print(idx6_b)
@@ -236,19 +238,19 @@ if __name__ == "__main__":
     #========================
     # module sigmaV
     #========================
-    f.write("module sigmaV_old(\n")
+    f.write("module sigmaV_baseline(\n")
     f.write(f"    input  [{q-1}:0]        sigma[{t_max}:0],\n")
     f.write(f"    output reg [{q-1}:0]    y[{parallel_num-1}:0]\n")
     f.write(");\n\n")
 
     f.write(f"    wire [{q-1}:0]  sigmaE[{parallel_num-1}:0];\n\n")
 
-    f.write(f"    sigmaE_old se0(\n")
+    f.write(f"    sigmaE_baseline se0(\n")
     f.write(f"        .sigma(sigma),\n")
     f.write(f"        .y(sigmaE)\n")
     f.write(f"    );\n\n")
 
-    f.write(f"    sigmaEB_old seb0(\n")
+    f.write(f"    sigmaEB_baseline seb0(\n")
     f.write(f"        .sigmaE(sigmaE),\n")
     f.write(f"        .y(y)\n")
     f.write(f"    );\n\n")
@@ -259,7 +261,7 @@ if __name__ == "__main__":
     #========================
     # module sigmaE
     #========================
-    f.write("module sigmaE_old(\n")
+    f.write("module sigmaE_baseline(\n")
     f.write(f"    input  [{q-1}:0]      sigma[{t_max}:0],\n")
     f.write(f"    output reg [{q-1}:0]  y[{parallel_num-1}:0]\n")
     f.write(");\n\n")
@@ -275,7 +277,7 @@ if __name__ == "__main__":
     #========================
     # module sigmaEB
     #========================
-    f.write("module sigmaEB_old(\n")
+    f.write("module sigmaEB_baseline(\n")
     f.write(f"    input  [{q-1}:0]      sigmaE[{parallel_num-1}:0],\n")
     f.write(f"    output reg [{q-1}:0]  y[{parallel_num-1}:0]\n")
     f.write(");\n\n")

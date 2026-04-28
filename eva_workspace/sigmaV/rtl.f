@@ -2,5 +2,6 @@
 tb.v
 
 // Design
-sigmaV_32_old.v
+sigmaV_32_conventional.v
+sigmaV_32_baseline.v
 sigmaV_32.v

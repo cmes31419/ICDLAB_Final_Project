@@ -113,7 +113,7 @@ def decompose_E_B_improved(q: int, n: int, t: int, poly_list: int):
             for k in range(q):
                 B[k][j] = (aj >> k) & 1
 
-        print(f"i: {i}, pow: {pow}")
+        # print(f"i: {i}, pow: {pow}")
 
         E_list.append(E[:pow])
         B_list.append(B)
@@ -246,7 +246,7 @@ def build_indices(q, n_full, sample, n_parallel):
 
 
 #############################
-# Main: generate sigmaE_sigmaEB.v
+# Main
 #############################
 
 if __name__ == "__main__":
@@ -257,6 +257,7 @@ if __name__ == "__main__":
     t_max = int(sys.argv[5])
     prim_poly = int(sys.argv[6], 0)
     poly_list = [prim_poly]
+    mode = int(sys.argv[7])     # 1: contiguous (default), 2: interleave
 
     for i in range(3, t_max+1, 2):
         mini_poly, _ = minimal_polynomial(i, q, prim_poly)
@@ -267,14 +268,15 @@ if __name__ == "__main__":
 
     E6_list, B6_list = decompose_E_B_improved(q, n, t_max, poly_list)
 
-    # mode 1: contiguous
-    # idx6_e = [i for i in range(min(q, parallel_num))]
-    # idx6_b = [i for i in range(parallel_num)]
-
-    # mode 2: interleave
-    sample = 8 * n // parallel_num
-    idx6_e = [i for i in range(min(q, parallel_num))]
-    _, idx6_b = build_indices(q, n, sample, parallel_num)
+    if mode != 2:   # mode 1: contiguous (default)
+        print("Using contiguous mode for indices.")
+        idx6_e = [i for i in range(min(q, parallel_num))]
+        idx6_b = [i for i in range(parallel_num)]
+    else:   # mode 2: interleave
+        print("Using interleave mode for indices.")
+        sample = 8 * n // parallel_num
+        idx6_e = [i for i in range(min(q, parallel_num))]
+        _, idx6_b = build_indices(q, n, sample, parallel_num)
 
     print(idx6_e)
     print(idx6_b)

@@ -13,11 +13,12 @@ reg clk;
 
 // --------------------------
 // test data
-reg [17:0]	testdata[0:NTEST-1];
+reg [41:0]	testdata[0:NTEST-1];
 
-reg [5:0]	sigma[2:0];
+reg [5:0]	sigma[6:0];
 
-wire [5:0]	y_ref[31:0];
+wire [5:0]	y_conv[31:0];
+wire [5:0]	y_base[31:0];
 wire [5:0]	y[31:0];
 
 integer i1, i2;
@@ -36,12 +37,17 @@ end
 
 // --------------------------
 // modules
-sigmaV_old U0(
+sigmaV_conventional U0(
     .sigma(sigma),
-    .y(y_ref)
+    .y(y_conv)
 );
 
-sigmaV U1(
+sigmaV_baseline U1(
+    .sigma(sigma),
+    .y(y_base)
+);
+
+sigmaV U2(
     .sigma(sigma),
     .y(y)
 );
@@ -61,7 +67,7 @@ end
 
 // feed input 
 always @(negedge clk) begin
-    for (i2=0;i2<=2;i2=i2+1) begin
+    for (i2=0;i2<=6;i2=i2+1) begin
         sigma[i2] = testdata[i1][6*i2+:6];
     end
 	i1 = i1 + 1;
@@ -70,12 +76,20 @@ end
 // check output
 always @(posedge clk) begin
 	for (i2=0;i2<32;i2=i2+1) begin
-		if (y_ref[i2] !== y[i2]) begin
-			$write("y_ref[%0d] = %6b, y[%0d] = %6b. Error\n", i2, y_ref[i2], i2, y[i2]);
+		if (y_conv[i2] !== y[i2]) begin
+			$write("y_conv[%0d] = %6b, y[%0d] = %6b. Error\n", i2, y_conv[i2], i2, y[i2]);
 			errcnt = errcnt + 1;
 		end
 		else begin
-			// $write("y_ref[%0d] = %6b, y[%0d] = %6b. Correct\n", i2, y_ref[i2], i2, y[i2]);
+			// $write("y_conv[%0d] = %6b, y[%0d] = %6b. Correct\n", i2, y_conv[i2], i2, y[i2]);
+			correctcnt = correctcnt + 1;
+		end
+        if (y_base[i2] !== y[i2]) begin
+			$write("y_base[%0d] = %6b, y[%0d] = %6b. Error\n", i2, y_base[i2], i2, y[i2]);
+			errcnt = errcnt + 1;
+        end
+        else begin
+			// $write("y_base[%0d] = %6b, y[%0d] = %6b. Correct\n", i2, y_base[i2], i2, y[i2]);
 			correctcnt = correctcnt + 1;
 		end
 	end
