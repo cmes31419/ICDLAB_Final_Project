@@ -227,8 +227,8 @@ def build_indices(q, n_full, sample, n_parallel):
 if __name__ == "__main__":
     out_fname = str(sys.argv[1])
     parallel_num = int(sys.argv[2])
-    n = int(sys.argv[3])
-    q = int(sys.argv[4])
+    q = int(sys.argv[3])
+    n = int(sys.argv[4])
     t_max = int(sys.argv[5])
     prim_poly = int(sys.argv[6], 0)
     poly_list = [prim_poly]
