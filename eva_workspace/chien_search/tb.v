@@ -76,22 +76,22 @@ always @(negedge clk) begin
     #(CYCLE) ready = 0;
     
     #(CYCLE);
-    if (zeros !== zeros_ans[0+:32]) begin
-        $write("Test %0d: zeros = %6b, expected = %6b. Error\n", i1, zeros, zeros_ans[0+:32]);
-        errcnt = errcnt + 1;
-    end
-    else begin
-        // $write("Test %0d: zeros = %6b, expected = %6b. Correct\n", i1, zeros, zeros_ans[0+:32]);
-        correctcnt = correctcnt + 1;
-    end
-    
-    #(CYCLE);
     if (zeros !== zeros_ans[32+:32]) begin
         $write("Test %0d: zeros = %6b, expected = %6b. Error\n", i1, zeros, zeros_ans[32+:32]);
         errcnt = errcnt + 1;
     end
     else begin
         // $write("Test %0d: zeros = %6b, expected = %6b. Correct\n", i1, zeros, zeros_ans[32+:32]);
+        correctcnt = correctcnt + 1;
+    end
+    
+    #(CYCLE);
+    if (zeros !== zeros_ans[0+:32]) begin
+        $write("Test %0d: zeros = %6b, expected = %6b. Error\n", i1, zeros, zeros_ans[0+:32]);
+        errcnt = errcnt + 1;
+    end
+    else begin
+        // $write("Test %0d: zeros = %6b, expected = %6b. Correct\n", i1, zeros, zeros_ans[0+:32]);
         correctcnt = correctcnt + 1;
     end
 

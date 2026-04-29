@@ -56,8 +56,8 @@ def chien_search(q: int, prim_poly: int, Lambda):
         else:
             zeros += "0"
 
-    zeros += zeros[0]  # for easy rotation in RTL
-    return zeros
+    zeros += zeros[0]   # for easy rotation in RTL
+    return zeros[::-1]  # reverse
 
 
 if __name__ == "__main__":

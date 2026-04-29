@@ -83,7 +83,8 @@ always @(negedge clk) begin
     ready = 1;
     #(CYCLE) ready = 0;"""
 
-for i in range((n + 1) // parallel_num):
+
+for i in range((n + 1) // parallel_num -1, -1, -1):
     print(f"Generating testbench code for checking test {i}...")
     tb += f"""
     
@@ -119,7 +120,7 @@ end
 
 endmodule"""
 
-f = open("./tb.v", "w")
+f = open("tb.v", "w")
 f.write(tb)
 f.close()
 
