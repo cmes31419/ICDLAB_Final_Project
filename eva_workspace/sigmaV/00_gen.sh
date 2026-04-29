@@ -3,7 +3,7 @@
 seed=42
 ntest=100
 parallel_num=32
-n=64
+n=63
 q=6
 t_max=6
 prim_poly=0b1000011     # x^6 + x + 1

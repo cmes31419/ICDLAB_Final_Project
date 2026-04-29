@@ -200,7 +200,7 @@ if __name__ == "__main__":
         idx6_b = [i for i in range(parallel_num)]
     else:   # mode 2: interleave
         print("Using interleave mode for indices.")
-        sample = 8 * n // parallel_num
+        sample = 8 * (n + 1) // parallel_num
         idx6_e, idx6_b = build_indices(q, n, sample, parallel_num)
 
     print(idx6_e)
