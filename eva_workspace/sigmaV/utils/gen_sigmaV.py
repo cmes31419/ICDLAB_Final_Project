@@ -352,6 +352,7 @@ if __name__ == "__main__":
                 terms.append(f"tmp[{j}][{i}][{r}]")
             expr = " ^ ".join(terms)
             f.write(f"        y[{i}][{r}] = {expr};\n")
+        f.write(f"\n")
 
     f.write("    end\n\n")
     f.write("endmodule\n")
