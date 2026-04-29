@@ -2,10 +2,10 @@
 
 seed=42
 ntest=100
-parallel_num=16
+parallel_num=32
 q=6
 n=63                    # n = 2^q - 1
-t_max=10
+t_max=6
 prim_poly=0b1000011     # x^6 + x + 1
 mode=1                  # 1: contiguous (default), 2: interleave
 
