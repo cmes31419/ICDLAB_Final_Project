@@ -185,7 +185,7 @@ fig.savefig("report/reduction_heatmap_ours_vs_baseline.png", dpi=300, bbox_inche
 plt.close(fig)
 
 print("Saved figures:")
-print("1. complexity_grouped_bar.png")
-print("2. reduction_heatmap_baseline_vs_conventional.png")
-print("3. reduction_heatmap_ours_vs_conventional.png")
-print("4. reduction_heatmap_ours_vs_baseline.png")
+print("1. report/complexity_grouped_bar.png")
+print("2. report/reduction_heatmap_baseline_vs_conventional.png")
+print("3. report/reduction_heatmap_ours_vs_conventional.png")
+print("4. report/reduction_heatmap_ours_vs_baseline.png")
