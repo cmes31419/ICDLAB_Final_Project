@@ -57,7 +57,93 @@ plt.close(fig)
 
 
 # =========================
-# Figure 2: reduction heatmap
+# Figure 2: reduction heatmap (Baseline vs Conventional)
+# =========================
+
+P_values = list(data.keys())
+reduction = []
+
+for P in P_values:
+    conventional = data[P]["conventional"]
+    baseline = data[P]["baseline"]
+    red = (conventional - baseline) / conventional * 100
+    reduction.append(red)
+
+reduction = np.array(reduction)
+
+fig, ax = plt.subplots(figsize=(8, 4.5))
+
+im = ax.imshow(reduction, aspect="auto")
+
+ax.set_xticks(np.arange(len(t_max)))
+ax.set_xticklabels(t_max)
+ax.set_yticks(np.arange(len(P_values)))
+ax.set_yticklabels(P_values)
+
+ax.set_xlabel(r"$t_{max}$")
+ax.set_ylabel("P")
+ax.set_title("XOR Gate Count Reduction of Baseline Compared with Conventional (%)")
+
+cbar = plt.colorbar(im, ax=ax)
+cbar.set_label("Reduction (%)")
+
+for i in range(len(P_values)):
+    for j in range(len(t_max)):
+        ax.text(
+            j, i, f"{reduction[i, j]:.1f}%",
+            ha="center", va="center", color="white"
+        )
+
+fig.tight_layout()
+fig.savefig("report/reduction_heatmap_baseline_vs_conventional.png", dpi=300, bbox_inches="tight")
+plt.close(fig)
+
+
+# =========================
+# Figure 3: reduction heatmap (Conventional vs Ours)
+# =========================
+
+P_values = list(data.keys())
+reduction = []
+
+for P in P_values:
+    conventional = data[P]["conventional"]
+    ours = data[P]["ours"]
+    red = (conventional - ours) / conventional * 100
+    reduction.append(red)
+
+reduction = np.array(reduction)
+
+fig, ax = plt.subplots(figsize=(8, 4.5))
+
+im = ax.imshow(reduction, aspect="auto")
+
+ax.set_xticks(np.arange(len(t_max)))
+ax.set_xticklabels(t_max)
+ax.set_yticks(np.arange(len(P_values)))
+ax.set_yticklabels(P_values)
+
+ax.set_xlabel(r"$t_{max}$")
+ax.set_ylabel("P")
+ax.set_title("XOR Gate Count Reduction of Ours Compared with Conventional (%)")
+
+cbar = plt.colorbar(im, ax=ax)
+cbar.set_label("Reduction (%)")
+
+for i in range(len(P_values)):
+    for j in range(len(t_max)):
+        ax.text(
+            j, i, f"{reduction[i, j]:.1f}%",
+            ha="center", va="center", color="white"
+        )
+
+fig.tight_layout()
+fig.savefig("report/reduction_heatmap_ours_vs_conventional.png", dpi=300, bbox_inches="tight")
+plt.close(fig)
+
+
+# =========================
+# Figure 4: reduction heatmap (Baseline vs Ours)
 # =========================
 
 P_values = list(data.keys())
@@ -95,9 +181,11 @@ for i in range(len(P_values)):
         )
 
 fig.tight_layout()
-fig.savefig("report/reduction_heatmap.png", dpi=300, bbox_inches="tight")
+fig.savefig("report/reduction_heatmap_ours_vs_baseline.png", dpi=300, bbox_inches="tight")
 plt.close(fig)
 
 print("Saved figures:")
 print("1. complexity_grouped_bar.png")
-print("2. reduction_heatmap.png")
+print("2. reduction_heatmap_baseline_vs_conventional.png")
+print("3. reduction_heatmap_ours_vs_conventional.png")
+print("4. reduction_heatmap_ours_vs_baseline.png")

@@ -9,9 +9,9 @@ t_max=6
 prim_poly=0b1000011     # x^6 + x + 1
 mode=1                  # 1: contiguous (default), 2: interleave
 
-out_fname_conventional="sigmaV_${parallel_num}_conventional.v"
-out_fname_baseline="sigmaV_${parallel_num}_baseline.v"
-out_fname="sigmaV_${parallel_num}.v"
+out_fname_conventional="sigmaV_conventional.sv"
+out_fname_baseline="sigmaV_baseline.sv"
+out_fname="sigmaV.sv"
 
 python utils/sigmaV_gen_conventional.py $out_fname_conventional $parallel_num $n $q $t_max $prim_poly $mode
 python utils/sigmaV_gen_baseline.py $out_fname_baseline $parallel_num $n $q $t_max $prim_poly $mode
