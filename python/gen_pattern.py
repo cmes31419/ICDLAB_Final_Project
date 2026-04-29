@@ -2,8 +2,6 @@ import random
 from gii_code import GII_code
 
 # Field: GF(2^6), Interleaves: 4, Nested Layers: 2, Error Caps: [2, 4, 6]
-seed = 67
-random.seed(seed)
 
 def replace_char(s, index, new_char):
     return s[:index] + new_char + s[index+1:]
@@ -41,6 +39,8 @@ def write_to_file(gii_code:list, filename):
             file.write(code+'\n')
 
 def main(case):
+    seed = case
+    random.seed(seed)
     gii = GII_code(q=6, m=4, v=2, t_list=[2, 4, 6], p_str="x^6 + x + 1")
     q = 6
     n = 2 ** q - 1
