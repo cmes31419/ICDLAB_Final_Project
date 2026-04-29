@@ -96,4 +96,5 @@ if __name__ == "__main__":
     f.write("endmodule")
 
     f.close()
-    print(f"Generated {out_fname} for P = {parallel_num}!")
+
+    print(f"Generated {out_fname}")

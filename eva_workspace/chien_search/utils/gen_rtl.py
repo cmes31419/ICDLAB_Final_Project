@@ -9,3 +9,5 @@ sigmaV.sv"""
 f = open("rtl.f", "w")
 f.write(text)
 f.close()
+
+print("Generated rtl.f")

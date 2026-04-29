@@ -7,10 +7,10 @@ n = int(sys.argv[3])
 t_max = int(sys.argv[4])
 
 cycle_num = (n + 1) // parallel_num
-cnt_bits = int(math.ceil(math.log2(cycle_num)))
+cnt_bits = (cycle_num - 1).bit_length()
 
-print(f"parallel_num={parallel_num}, q={q}, n={n}, t_max={t_max}")
-print(f"cycle_num={cycle_num}, cnt_bits={cnt_bits}")
+# print(f"parallel_num={parallel_num}, q={q}, n={n}, t_max={t_max}")
+# print(f"cycle_num={cycle_num}, cnt_bits={cnt_bits}")
 
 content = f"""module chien_search(
     input               clk,
@@ -112,3 +112,5 @@ endmodule"""
 f = open("chien_search.sv", "w")
 f.write(content)
 f.close()
+
+print("Generated chien_search.sv")

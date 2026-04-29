@@ -90,3 +90,5 @@ if __name__ == "__main__":
 
     f.close()
     f_ans.close()
+
+print(f"Generated {ntest} test cases in testdata.txt and testdata_ans.txt")

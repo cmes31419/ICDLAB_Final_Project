@@ -186,32 +186,34 @@ if __name__ == "__main__":
     n = int(sys.argv[3])
     t_max = int(sys.argv[4])
     prim_poly = int(sys.argv[5], 0)
-    mode = int(sys.argv[6])     # 1: contiguous (default), 2: interleave
+    mode = 1     # 1: contiguous (default), 2: interleave
+
+    print(f"Generating {out_fname}")
 
     E6_full, B6_full = decompose_E_B(q, n, t_max, prim_poly)
 
-    print(f"n: {n}, q: {q}, t_max: {t_max}, parallel_num: {parallel_num}")
-    print(f"E6_full: {len(E6_full)} x {len(E6_full[0])}")
-    print(f"B6_full: {len(B6_full)} x {len(B6_full[0])}")
+    # print(f"n: {n}, q: {q}, t_max: {t_max}, parallel_num: {parallel_num}")
+    # print(f"E6_full: {len(E6_full)} x {len(E6_full[0])}")
+    # print(f"B6_full: {len(B6_full)} x {len(B6_full[0])}")
 
     if mode != 2:   # mode 1: contiguous (default)
-        print("Using contiguous mode for indices.")
+        print("- Using contiguous mode for indices.")
         idx6_e = [i for i in range(parallel_num)]
         idx6_b = [i for i in range(parallel_num)]
     else:   # mode 2: interleave
-        print("Using interleave mode for indices.")
+        print("- Using interleave mode for indices.")
         sample = 8 * (n + 1) // parallel_num
         idx6_e, idx6_b = build_indices(q, n, sample, parallel_num)
 
-    print(idx6_e)
-    print(idx6_b)
+    # print(idx6_e)
+    # print(idx6_b)
 
     # 切 E / B
     E6 = [[row[c] for c in idx6_e] for row in E6_full]
     B6 = [[B6_full[r][c] for c in idx6_b] for r in idx6_e]
 
-    print(f"E6: {len(E6)} x {len(E6[0])}")
-    print(f"B6: {len(B6)} x {len(B6[0])}")
+    # print(f"E6: {len(E6)} x {len(E6[0])}")
+    # print(f"B6: {len(B6)} x {len(B6[0])}")
 
     
     f = open(out_fname, "w")
@@ -276,5 +278,5 @@ if __name__ == "__main__":
     with open(out_fname, "r") as rf:
         caret_count = rf.read().count("^")
 
-    print(f"Number of XOR in {out_fname}: {caret_count}")
-    print(f"Generated {out_fname}")
+    print(f"- Number of XOR in {out_fname}: {caret_count}")
+    print(f"- Generated {out_fname}")

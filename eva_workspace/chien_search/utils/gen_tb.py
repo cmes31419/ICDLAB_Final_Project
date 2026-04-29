@@ -120,4 +120,4 @@ f = open("tb.v", "w")
 f.write(tb)
 f.close()
 
-print("Generated tb.v for testbench with the given parameters!")
+print("Generated tb.v")

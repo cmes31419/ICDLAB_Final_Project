@@ -12,3 +12,5 @@ with open("testdata.txt", "w") as f:
     for _ in range(ntest):
         bits = format(random.getrandbits(q * (t_max + 1)), f"0{q * (t_max + 1)}b")
         f.write(bits + "\n")
+
+print(f"Generated {ntest} test cases in testdata.txt")

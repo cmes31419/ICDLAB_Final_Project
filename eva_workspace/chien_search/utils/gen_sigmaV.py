@@ -232,29 +232,31 @@ if __name__ == "__main__":
     t_max = int(sys.argv[4])
     prim_poly = int(sys.argv[5], 0)
     poly_list = [prim_poly]
-    mode = int(sys.argv[6])     # 1: contiguous (default), 2: interleave
+    mode = 1     # 1: contiguous (default), 2: interleave
+
+    print(f"Generating {out_fname}")
 
     for i in range(3, t_max+1, 2):
         mini_poly, _ = minimal_polynomial(i, q, prim_poly)
         mini_int = poly_to_bin(mini_poly)
         poly_list.append(mini_int)
 
-    print(f"poly_list: {[bin(p) for p in poly_list]}")
+    # print(f"poly_list: {[bin(p) for p in poly_list]}")
 
     E6_list, B6_list = decompose_E_B_improved(q, n, t_max, poly_list)
 
     if mode != 2:   # mode 1: contiguous (default)
-        print("Using contiguous mode for indices.")
+        print("- Using contiguous mode for indices.")
         idx6_e = [i for i in range(min(q, parallel_num))]
         idx6_b = [i for i in range(parallel_num)]
     else:   # mode 2: interleave
-        print("Using interleave mode for indices.")
+        print("- Using interleave mode for indices.")
         sample = 8 * (n + 1) // parallel_num
         idx6_e = [i for i in range(min(q, parallel_num))]
         _, idx6_b = build_indices(q, n, sample, parallel_num)
 
-    print(idx6_e)
-    print(idx6_b)
+    # print(idx6_e)
+    # print(idx6_b)
 
     # for i in range(len(E6_list)):
     #     E = E6_list[i]
@@ -359,5 +361,5 @@ if __name__ == "__main__":
     with open(out_fname, "r") as rf:
         caret_count = rf.read().count("^")
 
-    print(f"Number of XOR in {out_fname}: {caret_count}")
-    print(f"Generated {out_fname}")
+    print(f"- Number of XOR in {out_fname}: {caret_count}")
+    print(f"- Generated {out_fname}")

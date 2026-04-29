@@ -116,19 +116,21 @@ if __name__ == "__main__":
     n = int(sys.argv[3])
     t_max = int(sys.argv[4])
     prim_poly = int(sys.argv[5], 0)
-    mode = int(sys.argv[6])     # 1: contiguous (default), 2: interleave
+    mode = 1     # 1: contiguous (default), 2: interleave
 
-    print(f"n: {n}, q: {q}, t_max: {t_max}, parallel_num: {parallel_num}")
+    print(f"Generating {out_fname}")
+
+    # print(f"n: {n}, q: {q}, t_max: {t_max}, parallel_num: {parallel_num}")
 
     if mode != 2:   # mode 1: contiguous (default)
-        print("Using contiguous mode for indices.")
+        print("- Using contiguous mode for indices.")
         idx6 = [i for i in range(parallel_num)]
     else:   # mode 2: interleave
-        print("Using interleave mode for indices.")
+        print("- Using interleave mode for indices.")
         sample = 8 * (n + 1) // parallel_num
         _, idx6 = build_indices(q, n, sample, parallel_num)
 
-    print(idx6)
+    # print(idx6)
 
     f = open(out_fname, "w")
 
@@ -153,5 +155,5 @@ if __name__ == "__main__":
     with open(out_fname, "r") as rf:
         caret_count = rf.read().count("^")
 
-    print(f"Number of XOR in {out_fname}: {caret_count}")
-    print(f"Generated {out_fname}")
+    print(f"- Number of XOR in {out_fname}: {caret_count}")
+    print(f"- Generated {out_fname}")

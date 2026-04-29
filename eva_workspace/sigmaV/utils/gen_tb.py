@@ -119,6 +119,8 @@ end
 
 endmodule"""
 
-f = open("./tb.v", "w")
+f = open("tb.v", "w")
 f.write(tb)
 f.close()
+
+print("Generated tb.v")
