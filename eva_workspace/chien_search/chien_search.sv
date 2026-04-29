@@ -3,7 +3,8 @@ module chien_search(
     input               rst,
     input               ready,
     input [5:0]         sigma[6:0],
-    output reg [31:0]   zeros
+    output reg [62:0]   cdata,
+    output              done
 );
 
     localparam S_IDLE = 2'd0;
@@ -12,13 +13,16 @@ module chien_search(
 
     reg [1:0]   state, state_next;
     reg         cnt, cnt_next;
-    reg [31:0]  zeros_next;
+    reg [62:0]  cdata_next;
+    reg [31:0]  zeros;
     reg [5:0]   sigma_rec[6:0], sigma_rec_next[6:0];
 
     wire [5:0]  sigma_rot[6:0];
     wire [5:0]  sigma_V[31:0];
 
     integer i;
+
+    assign done = (state == S_DONE) ? 1 : 0;
 
     chien_rotate cr0(
         .sigma(sigma_rec),
@@ -32,8 +36,14 @@ module chien_search(
 
     always @(*) begin
         for (i=0;i<32;i=i+1) begin
-            zeros_next[i] = (state == S_PROC) ? ~(|sigma_V[31-i]) : 0;
+            zeros[i] = (state == S_PROC) ? ~(|sigma_V[31-i]) : 0;
         end
+
+        if (state == S_PROC) begin
+            cdata_next[32+:31] = (cnt == 0) ? zeros[0+:31] : cdata[32+:31];
+            cdata_next[0+:32] = (cnt == 1) ? zeros : cdata[0+:32];
+        end
+        else cdata_next = 0;
     end
 
     always @(*) begin
@@ -62,7 +72,7 @@ module chien_search(
         if (rst) begin
             state   <= S_IDLE;
             cnt     <= 0;
-            zeros   <= 0;
+            cdata   <= 0;
             for (i=0;i<=6;i=i+1) begin
                 sigma_rec[i]    <= 0;
             end
@@ -70,7 +80,7 @@ module chien_search(
         else begin
             state   <= state_next;
             cnt     <= cnt_next;
-            zeros   <= zeros_next;
+            cdata   <= cdata_next;
             for (i=0;i<=6;i=i+1) begin
                 sigma_rec[i]    <= sigma_rec_next[i];
             end

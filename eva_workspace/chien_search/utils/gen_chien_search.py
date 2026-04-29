@@ -17,7 +17,8 @@ content = f"""module chien_search(
     input               rst,
     input               ready,
     input [{q-1}:0]         sigma[{t_max}:0],
-    output reg [{parallel_num-1}:0]   zeros
+    output reg [{n-1}:0]   cdata,
+    output              done
 );
 
     localparam S_IDLE = 2'd0;
@@ -26,13 +27,16 @@ content = f"""module chien_search(
 
     reg [1:0]   state, state_next;
     reg {f"[{cnt_bits-1}:0]" if cnt_bits > 1 else ""}        cnt, cnt_next;
-    reg [{parallel_num-1}:0]  zeros_next;
+    reg [{n-1}:0]  cdata_next;
+    reg [{parallel_num-1}:0]  zeros;
     reg [{q-1}:0]   sigma_rec[{t_max}:0], sigma_rec_next[{t_max}:0];
 
     wire [{q-1}:0]  sigma_rot[{t_max}:0];
     wire [{q-1}:0]  sigma_V[{parallel_num-1}:0];
 
     integer i;
+
+    assign done = (state == S_DONE) ? 1 : 0;
 
     chien_rotate cr0(
         .sigma(sigma_rec),
@@ -46,8 +50,20 @@ content = f"""module chien_search(
 
     always @(*) begin
         for (i=0;i<{parallel_num};i=i+1) begin
-            zeros_next[i] = (state == S_PROC) ? ~(|sigma_V[{parallel_num-1}-i]) : 0;
+            zeros[i] = (state == S_PROC) ? ~(|sigma_V[{parallel_num-1}-i]) : 0;
         end
+
+        if (state == S_PROC) begin"""
+
+for i in range(cycle_num):
+    if i == 0:
+        content += f"\n            cdata_next[{(cycle_num-1)*parallel_num}+:{parallel_num-1}] = (cnt == 0) ? zeros[0+:{parallel_num-1}] : cdata[{(cycle_num-1)*parallel_num}+:{parallel_num-1}];"
+    else:
+        content += f"\n            cdata_next[{(cycle_num-1-i)*parallel_num}+:{parallel_num}] = (cnt == {i}) ? zeros : cdata[{(cycle_num-1-i)*parallel_num}+:{parallel_num}];"
+
+content += f"""
+        end
+        else cdata_next = 0;
     end
 
     always @(*) begin
@@ -76,7 +92,7 @@ content = f"""module chien_search(
         if (rst) begin
             state   <= S_IDLE;
             cnt     <= 0;
-            zeros   <= 0;
+            cdata   <= 0;
             for (i=0;i<={t_max};i=i+1) begin
                 sigma_rec[i]    <= 0;
             end
@@ -84,7 +100,7 @@ content = f"""module chien_search(
         else begin
             state   <= state_next;
             cnt     <= cnt_next;
-            zeros   <= zeros_next;
+            cdata   <= cdata_next;
             for (i=0;i<={t_max};i=i+1) begin
                 sigma_rec[i]    <= sigma_rec_next[i];
             end

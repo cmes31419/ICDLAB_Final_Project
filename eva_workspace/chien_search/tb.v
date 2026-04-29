@@ -18,9 +18,10 @@ reg [63:0]  testdata_ans[0:NTEST-1];
 
 reg         rst, ready;
 reg [5:0]	sigma[6:0];
-reg [63:0]  zeros_ans;
+reg [62:0]  cdata_ans;
 
-wire [31:0]	zeros;
+wire [62:0]  cdata;
+wire done;
 
 integer i1, i2;
 integer errcnt, correctcnt;
@@ -44,7 +45,8 @@ chien_search U0(
     .rst(rst),
     .ready(ready),
     .sigma(sigma),
-    .zeros(zeros)
+    .cdata(cdata),
+    .done(done)
 );
 
 // --------------------------
@@ -70,32 +72,23 @@ always @(negedge clk) begin
 
     for (i2=0;i2<=6;i2=i2+1) begin
         sigma[i2] = testdata[i1][6*i2+:6];
-        zeros_ans = testdata_ans[i1];
+        cdata_ans = testdata_ans[i1];
     end
     ready = 1;
     #(CYCLE) ready = 0;
-    
-    #(CYCLE);
-    if (zeros !== zeros_ans[32+:32]) begin
-        $write("Test %0d: zeros = %6b, expected = %6b. Error\n", i1, zeros, zeros_ans[32+:32]);
-        errcnt = errcnt + 1;
-    end
-    else begin
-        // $write("Test %0d: zeros = %6b, expected = %6b. Correct\n", i1, zeros, zeros_ans[32+:32]);
-        correctcnt = correctcnt + 1;
-    end
-    
-    #(CYCLE);
-    if (zeros !== zeros_ans[0+:32]) begin
-        $write("Test %0d: zeros = %6b, expected = %6b. Error\n", i1, zeros, zeros_ans[0+:32]);
-        errcnt = errcnt + 1;
-    end
-    else begin
-        // $write("Test %0d: zeros = %6b, expected = %6b. Correct\n", i1, zeros, zeros_ans[0+:32]);
-        correctcnt = correctcnt + 1;
+
+    @(posedge done) begin
+        if (cdata !== cdata_ans) begin
+            $write("Test %0d: cdata = %6b, expected = %6b. Error\n", i1, cdata, cdata_ans);
+            errcnt = errcnt + 1;
+        end
+        else begin
+            // $write("Test %0d: cdata = %6b, expected = %6b. Correct\n", i1, cdata, cdata_ans);
+            correctcnt = correctcnt + 1;
+        end
     end
 
-    #(CYCLE*5) i1 = i1 + 1;
+    #(CYCLE) i1 = i1 + 1;
 end
 
 initial begin

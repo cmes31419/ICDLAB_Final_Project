@@ -26,9 +26,10 @@ reg [{n}:0]  testdata_ans[0:NTEST-1];
 
 reg         rst, ready;
 reg [{q-1}:0]	sigma[{t_max}:0];
-reg [{n}:0]  zeros_ans;
+reg [{n-1}:0]  cdata_ans;
 
-wire [{parallel_num-1}:0]	zeros;
+wire [{n-1}:0]  cdata;
+wire done;
 
 integer i1, i2;
 integer errcnt, correctcnt;
@@ -52,7 +53,8 @@ chien_search U0(
     .rst(rst),
     .ready(ready),
     .sigma(sigma),
-    .zeros(zeros)
+    .cdata(cdata),
+    .done(done)
 );
 
 // --------------------------
@@ -78,29 +80,23 @@ always @(negedge clk) begin
 
     for (i2=0;i2<={t_max};i2=i2+1) begin
         sigma[i2] = testdata[i1][{q}*i2+:{q}];
-        zeros_ans = testdata_ans[i1];
+        cdata_ans = testdata_ans[i1];
     end
     ready = 1;
-    #(CYCLE) ready = 0;"""
+    #(CYCLE) ready = 0;
 
-
-for i in range((n + 1) // parallel_num -1, -1, -1):
-    print(f"Generating testbench code for checking test {i}...")
-    tb += f"""
-    
-    #(CYCLE);
-    if (zeros !== zeros_ans[{i*parallel_num}+:{parallel_num}]) begin
-        $write("Test %0d: zeros = %6b, expected = %6b. Error\\n", i1, zeros, zeros_ans[{i*parallel_num}+:{parallel_num}]);
-        errcnt = errcnt + 1;
+    @(posedge done) begin
+        if (cdata !== cdata_ans) begin
+            $write("Test %0d: cdata = %6b, expected = %6b. Error\\n", i1, cdata, cdata_ans);
+            errcnt = errcnt + 1;
+        end
+        else begin
+            // $write("Test %0d: cdata = %6b, expected = %6b. Correct\\n", i1, cdata, cdata_ans);
+            correctcnt = correctcnt + 1;
+        end
     end
-    else begin
-        // $write("Test %0d: zeros = %6b, expected = %6b. Correct\\n", i1, zeros, zeros_ans[{i*parallel_num}+:{parallel_num}]);
-        correctcnt = correctcnt + 1;
-    end"""
 
-tb += f"""
-
-    #(CYCLE*5) i1 = i1 + 1;
+    #(CYCLE) i1 = i1 + 1;
 end
 
 initial begin
