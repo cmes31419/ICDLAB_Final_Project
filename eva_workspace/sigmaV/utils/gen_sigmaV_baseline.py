@@ -180,13 +180,13 @@ def build_indices(q, n_full, sample, n_parallel):
 #############################
 
 if __name__ == "__main__":
-    out_fname = str(sys.argv[1])
-    parallel_num = int(sys.argv[2])
-    q = int(sys.argv[3])
-    n = int(sys.argv[4])
-    t_max = int(sys.argv[5])
-    prim_poly = int(sys.argv[6], 0)
-    mode = int(sys.argv[7])     # 1: contiguous (default), 2: interleave
+    out_fname = "sigmaV_baseline.sv"
+    parallel_num = int(sys.argv[1])
+    q = int(sys.argv[2])
+    n = int(sys.argv[3])
+    t_max = int(sys.argv[4])
+    prim_poly = int(sys.argv[5], 0)
+    mode = int(sys.argv[6])     # 1: contiguous (default), 2: interleave
 
     E6_full, B6_full = decompose_E_B(q, n, t_max, prim_poly)
 

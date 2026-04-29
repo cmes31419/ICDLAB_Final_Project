@@ -1,16 +1,10 @@
-import sys
-
-out_fname_conventional = str(sys.argv[1])
-out_fname_baseline = str(sys.argv[2])
-out_fname = str(sys.argv[3])
-
 text = f"""// testbench
 tb.v
 
 // Design
-{out_fname_conventional}
-{out_fname_baseline}
-{out_fname}"""
+sigmaV_conventional.sv
+sigmaV_baseline.sv
+sigmaV.sv"""
 
 f = open("rtl.f", "w")
 f.write(text)

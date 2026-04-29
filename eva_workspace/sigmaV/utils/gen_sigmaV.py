@@ -225,14 +225,14 @@ def build_indices(q, n_full, sample, n_parallel):
 #############################
 
 if __name__ == "__main__":
-    out_fname = str(sys.argv[1])
-    parallel_num = int(sys.argv[2])
-    q = int(sys.argv[3])
-    n = int(sys.argv[4])
-    t_max = int(sys.argv[5])
-    prim_poly = int(sys.argv[6], 0)
+    out_fname = "sigmaV.sv"
+    parallel_num = int(sys.argv[1])
+    q = int(sys.argv[2])
+    n = int(sys.argv[3])
+    t_max = int(sys.argv[4])
+    prim_poly = int(sys.argv[5], 0)
     poly_list = [prim_poly]
-    mode = int(sys.argv[7])     # 1: contiguous (default), 2: interleave
+    mode = int(sys.argv[6])     # 1: contiguous (default), 2: interleave
 
     for i in range(3, t_max+1, 2):
         mini_poly, _ = minimal_polynomial(i, q, prim_poly)
