@@ -1,9 +1,9 @@
 import sys
 
 ntest = int(sys.argv[1])
-parallel_num = int(sys.argv[2])
-q = int(sys.argv[3])
-t_max = int(sys.argv[4])
+q = int(sys.argv[2])
+t_max = int(sys.argv[3])
+parallel_num = int(sys.argv[4])
 
 tb = f"""`timescale 1ns/1ps
 

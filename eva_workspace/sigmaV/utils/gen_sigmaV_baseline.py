@@ -181,11 +181,11 @@ def build_indices(q, n_full, sample, n_parallel):
 
 if __name__ == "__main__":
     out_fname = "sigmaV_baseline.sv"
-    parallel_num = int(sys.argv[1])
-    q = int(sys.argv[2])
-    n = int(sys.argv[3])
-    t_max = int(sys.argv[4])
-    prim_poly = int(sys.argv[5], 0)
+    q = int(sys.argv[1])
+    n = int(sys.argv[2])
+    t_max = int(sys.argv[3])
+    prim_poly = int(sys.argv[4], 0)
+    parallel_num = int(sys.argv[5])
     mode = 1     # 1: contiguous (default), 2: interleave
 
     print(f"Generating {out_fname}")
