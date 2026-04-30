@@ -109,7 +109,7 @@ def main(case):
         attempt += 1
 
         codewords = gii.encode_random_data(n)
-        error_pos = gen_random_error_pos(n, num_subcodewords=m, min_err=0, max_err=4)
+        error_pos = gen_random_error_pos(n, num_subcodewords=m, min_err=0, max_err=6)
 
         received = []
         for i in range(m):
@@ -137,4 +137,4 @@ def main(case):
     write_error_pos_to_file(error_pos, error_pos_file)
 
 
-main(2)
+main(3)

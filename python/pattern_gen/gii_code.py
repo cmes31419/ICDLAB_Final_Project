@@ -87,6 +87,39 @@ class GII_code:
             rem.pop()
         return rem
 
+    @staticmethod
+    def bits_str_to_poly_list(bit_string):
+        """
+        Input string format: MSB on left, LSB on right
+        Output list format: ascending-degree, i.e. index 0 is x^0
+        """
+        return [int(ch) for ch in bit_string[::-1]]
+
+    @staticmethod
+    def poly_list_to_bits_str(poly):
+        """
+        Input list format: ascending-degree
+        Output string format: MSB on left, LSB on right
+        """
+        return "".join(str(b) for b in poly[::-1])
+
+    @staticmethod
+    def strip_trailing_zeros(poly):
+        res = list(poly)
+        while len(res) > 0 and res[-1] == 0:
+            res.pop()
+        return res
+
+    def gf_elem_to_binary_poly(self, elem):
+        """
+        Convert a GF(2^q) field element to ascending-degree binary polynomial form.
+        Example:
+            alpha^k  -->  [b0, b1, ..., b_{q-1}]
+        """
+        bin_array = elem.vector().tolist()   # [x^(q-1), ..., x, 1]
+        bin_array.reverse()                  # [1, x, ..., x^(q-1)]
+        return self.strip_trailing_zeros([int(b) for b in bin_array])
+
     # --- Operators for systematic encoding ---
     @staticmethod
     def U_w(f, w):
@@ -118,7 +151,13 @@ class GII_code:
             print(f"--- Layer {i} (t={t}) ---")
             self.gf.print_binary_poly(f"g{i}(x)", g)
             print(f"Parity Length (r_{i}): {len(g) - 1} bits\n")
-
+    def compute_syndromes(self, word, t):
+        """
+        word: ascending-degree binary polynomial
+        return:
+            [S1, S2, ..., S_{2t}] as GF field elements
+        """
+        return [self.gf.eval_poly_at_alpha(word, j) for j in range(1, 2 * t + 1)]
     def encode_random_data(self, n=63):
         c = [None] * self.m
         d = [None] * self.m # Data polynomials
@@ -173,4 +212,138 @@ class GII_code:
 
         return c_str
 
-    
+    # --- Checker ---
+    def check_word_in_code(self, word, layer_idx):
+        """
+        Check whether word belongs to C_layer_idx by verifying
+        S1..S_{2t_layer_idx} are all zero.
+
+        layer_idx = 0 means C0
+        layer_idx = 1 means C1
+        ...
+        """
+        t = self.t_list[layer_idx]
+        syn = self.compute_syndromes(word, t)
+        success = all(s == 0 for s in syn)
+        return success, syn
+
+    def build_nested_codeword(self, codewords, nested_level):
+        """
+        Build nested codeword for level `nested_level`:
+
+            c_tilde_l(x) = sum_i alpha(x^{i*l}) * c_i(x)
+
+        Here we implement it as:
+            coefficient poly of alpha^(i*l)  *  c_i(x)
+        and then XOR all terms together.
+
+        codewords:
+            list of sub-codewords in ascending-degree binary-list form
+        """
+        c_tilde = []
+
+        for i, c_i in enumerate(codewords):
+            elem = self.gf.alpha ** (i * nested_level)
+            coeff_poly = self.gf_elem_to_binary_poly(elem)
+            term = self.poly_mul_bin(c_i, coeff_poly)
+            c_tilde = self.poly_add_bin(c_tilde, term)
+
+        return c_tilde
+
+    def check_gii_codeword(self, codewords, verbose=True):
+        """
+        Check whether a list of codewords satisfies:
+          1. each c_i belongs to C0
+          2. each nested codeword c_tilde_l belongs to C_{v-l}
+
+        Input:
+            codewords:
+                can be either
+                - list of MSB-left bit strings
+                - list of ascending-degree binary lists
+
+        Returns:
+            result = {
+                "base_ok": bool,
+                "nested_ok": bool,
+                "overall_ok": bool,
+                "base_results": [...],
+                "nested_results": [...],
+            }
+        """
+        # normalize input to ascending-degree binary lists
+        if len(codewords) != self.m:
+            raise ValueError(f"Expected {self.m} codewords, got {len(codewords)}")
+
+        if isinstance(codewords[0], str):
+            words = [self.bits_str_to_poly_list(c) for c in codewords]
+        else:
+            words = [list(c) for c in codewords]
+
+        base_results = []
+        base_ok = True
+
+        # 1) check each c_i in C0
+        for i, w in enumerate(words):
+            ok, syn = self.check_word_in_code(w, layer_idx=0)
+            base_results.append({
+                "index": i,
+                "success": ok,
+                "syndromes": syn,
+            })
+            if not ok:
+                base_ok = False
+
+        nested_results = []
+        nested_ok = True
+
+        # 2) check each nested codeword in C_{v-l}
+        for l in range(self.v):
+            c_tilde = self.build_nested_codeword(words, l)
+            layer_idx = self.v - l   # l=0 -> C_v, l=1 -> C_{v-1}, ...
+            ok, syn = self.check_word_in_code(c_tilde, layer_idx=layer_idx)
+
+            nested_results.append({
+                "nested_level": l,
+                "target_layer": layer_idx,
+                "success": ok,
+                "nested_codeword": c_tilde,
+                "syndromes": syn,
+            })
+
+            if not ok:
+                nested_ok = False
+
+        overall_ok = base_ok and nested_ok
+
+        if verbose:
+            print("=" * 60)
+            print("GII encoding check")
+            print("=" * 60)
+
+            print("\n[Base codeword check]")
+            for item in base_results:
+                syn_int = [int(s) for s in item["syndromes"]]
+                print(
+                    f"c[{item['index']}] in C0 ? {item['success']} "
+                    f"| syndromes = {syn_int}"
+                )
+
+            print("\n[Nested codeword check]")
+            for item in nested_results:
+                syn_int = [int(s) for s in item["syndromes"]]
+                print(
+                    f"c_tilde_{item['nested_level']} in C{item['target_layer']} ? "
+                    f"{item['success']} | syndromes = {syn_int}"
+                )
+
+            print(f"\nOverall OK = {overall_ok}")
+
+        return {
+            "base_ok": base_ok,
+            "nested_ok": nested_ok,
+            "overall_ok": overall_ok,
+            "base_results": base_results,
+            "nested_results": nested_results,
+        }
+
