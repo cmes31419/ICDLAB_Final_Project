@@ -50,6 +50,25 @@ class GF:
         res_coeffs.reverse()
         return [int(c) for c in res_coeffs]
 
+    def eval_poly_at_alpha(self, poly_bin, power):
+        """
+        Evaluate a binary polynomial at alpha^power.
+
+        poly_bin: ascending-degree binary list
+                  poly_bin[i] is the coefficient of x^i
+        power: evaluate at x = alpha^power
+        """
+        result = self.field(0)
+        alpha_pow = self.alpha ** power
+        curr_x = self.field(1)
+
+        for coeff in poly_bin:
+            if coeff:
+                result += curr_x
+            curr_x *= alpha_pow
+
+        return result    
+
     def print_binary_poly(self, name, poly):
         """Helper to print the polynomial in standard mathematical notation."""
         terms = []
@@ -64,7 +83,8 @@ class GF:
         if not terms:
             terms.append("0")
         print(f"{name} = " + " + ".join(terms))
-    
+
+
     # --- GII-BCH Matrix Operations ---
 
     def get_pi_vector(self, m_interleaves, v_layers, i_layer):
