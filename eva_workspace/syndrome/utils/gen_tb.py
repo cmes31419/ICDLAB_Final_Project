@@ -5,6 +5,8 @@ q = int(sys.argv[2])
 n = int(sys.argv[3])
 t_min = int(sys.argv[4])
 
+input_cycles = (n + 1) // 8
+
 S_concat = "{" + ", ".join([f"S[{i}]" for i in range(2*t_min-1, -1, -1)]) + "}"
 
 tb = f"""`timescale 1ns/1ps
@@ -28,6 +30,7 @@ reg [{2*t_min*q-1}:0]  testdata_ans[0:NTEST-1];
 reg         rst;
 reg [7:0]   idata;
 reg         ivalid;
+reg [{q-4}:0]   cnt;
 reg [{n}:0]  codeword;
 reg [{2*t_min*q-1}:0]  syndromes_ans;
 
@@ -56,6 +59,7 @@ syndrome U0(
     .rst(rst),
     .idata(idata),
     .ivalid(ivalid),
+    .cnt(cnt),
     .S(S),
     .done(done)
 );
@@ -84,10 +88,11 @@ always @(negedge clk) begin
     codeword = testdata[i1];
     syndromes_ans = testdata_ans[i1];
 
-    for (i2=0;i2<8;i2=i2+1) begin
+    for (i2=0;i2<{input_cycles};i2=i2+1) begin
         #(CYCLE) begin
-            idata = codeword[63-8*i2 -: 8];
+            idata = codeword[{n}-8*i2 -: 8];
             ivalid = 1;
+            cnt = i2;
         end
         #(CYCLE) ivalid = 0;
     end

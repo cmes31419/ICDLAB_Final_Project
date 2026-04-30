@@ -20,7 +20,7 @@ echo "=============================="
 
 python utils/gen_syndrome_rotate_add.py $q $t_min $prim_poly
 python utils/gen_syndrome_pow.py $q $t_min $prim_poly
-python utils/gen_syndrome.py $q $t_min
+python utils/gen_syndrome.py $q $n $t_min
 python utils/gen_rtl.py
 python utils/gen_tb.py $ntest $q $n $t_min
 python utils/gen_testdata.py $seed $ntest $q $n $t_min $prim_poly

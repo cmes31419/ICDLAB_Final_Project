@@ -3,11 +3,11 @@ module syndrome(
     input               rst,
     input [7:0]         idata,
     input               ivalid,
+    input [2:0]         cnt,
     output reg [5:0]    S[3:0],
     output reg          done
 );
 
-    reg [2:0]   cnt, cnt_next;
     reg [5:0]   syn[1:0], syn_next[1:0];
     reg         done_next;
 
@@ -48,21 +48,14 @@ module syndrome(
         else done_next = 0;
     end
 
-    always @(*) begin
-        if (ivalid) cnt_next = cnt + 1;
-        else cnt_next = cnt;
-    end
-
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            cnt     <= 0;
             done    <= 0;
             for (i=0;i<2;i=i+1) begin
                 syn[i]  <= 0;
             end
         end
         else begin
-            cnt     <= cnt_next;
             done    <= done_next;
             for (i=0;i<2;i=i+1) begin
                 syn[i]  <= syn_next[i];

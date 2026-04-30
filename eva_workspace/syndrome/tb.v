@@ -19,6 +19,7 @@ reg [23:0]  testdata_ans[0:NTEST-1];
 reg         rst;
 reg [7:0]   idata;
 reg         ivalid;
+reg [2:0]   cnt;
 reg [63:0]  codeword;
 reg [23:0]  syndromes_ans;
 
@@ -47,6 +48,7 @@ syndrome U0(
     .rst(rst),
     .idata(idata),
     .ivalid(ivalid),
+    .cnt(cnt),
     .S(S),
     .done(done)
 );
@@ -79,6 +81,7 @@ always @(negedge clk) begin
         #(CYCLE) begin
             idata = codeword[63-8*i2 -: 8];
             ivalid = 1;
+            cnt = i2;
         end
         #(CYCLE) ivalid = 0;
     end

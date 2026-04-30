@@ -1,18 +1,21 @@
 import sys
 
 q = int(sys.argv[1])
-t_min = int(sys.argv[2])
+n = int(sys.argv[2])
+t_min = int(sys.argv[3])
+
+input_cycles = (n + 1) // 8
 
 content = f"""module syndrome(
     input               clk,
     input               rst,
     input [7:0]         idata,
     input               ivalid,
+    input [{q-4}:0]         cnt,
     output reg [{q-1}:0]    S[{2*t_min-1}:0],
     output reg          done
 );
 
-    reg [2:0]   cnt, cnt_next;
     reg [{q-1}:0]   syn[{t_min-1}:0], syn_next[{t_min-1}:0];
     reg         done_next;
 
@@ -49,25 +52,18 @@ content = f"""module syndrome(
     end
 
     always @(*) begin
-        if (ivalid & cnt == 7) done_next = 1;
+        if (ivalid & cnt == {input_cycles-1}) done_next = 1;
         else done_next = 0;
-    end
-
-    always @(*) begin
-        if (ivalid) cnt_next = cnt + 1;
-        else cnt_next = cnt;
     end
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            cnt     <= 0;
             done    <= 0;
             for (i=0;i<{t_min};i=i+1) begin
                 syn[i]  <= 0;
             end
         end
         else begin
-            cnt     <= cnt_next;
             done    <= done_next;
             for (i=0;i<{t_min};i=i+1) begin
                 syn[i]  <= syn_next[i];
