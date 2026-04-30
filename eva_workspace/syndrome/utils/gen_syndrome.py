@@ -1,15 +1,17 @@
 import sys
+import math
 
 q = int(sys.argv[1])
 n = int(sys.argv[2])
 t_min = int(sys.argv[3])
 
-input_cycles = (n + 1) // 8
+input_cycles = math.ceil(n / 8)
+io_addr_bits = (input_cycles - 1).bit_length()
 
 content = f"""module syndrome(
     input               clk,
     input               rst,
-    input [{q-4}:0]         cnt,
+    input [{io_addr_bits-1}:0]         cnt,
     input [7:0]         idata,
     input               ivalid,
     output reg [{q-1}:0]    S[{2*t_min-1}:0],
