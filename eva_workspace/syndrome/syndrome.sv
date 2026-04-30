@@ -5,11 +5,11 @@ module syndrome(
     input [7:0]         idata,
     input               ivalid,
     output reg [5:0]    S[3:0],
-    output reg          done
+    output reg          sdone
 );
 
     reg [5:0]   syn[1:0], syn_next[1:0];
-    reg         done_next;
+    reg         sdone_next;
 
     wire [5:0]  syn_now[1:0], syn_rot[1:0];
     wire [7:0]  data;
@@ -44,19 +44,19 @@ module syndrome(
     end
 
     always @(*) begin
-        if (ivalid & cnt == 7) done_next = 1;
-        else done_next = 0;
+        if (ivalid & cnt == 7) sdone_next = 1;
+        else sdone_next = 0;
     end
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            done    <= 0;
+            sdone   <= 0;
             for (i=0;i<2;i=i+1) begin
                 syn[i]  <= 0;
             end
         end
         else begin
-            done    <= done_next;
+            sdone   <= sdone_next;
             for (i=0;i<2;i=i+1) begin
                 syn[i]  <= syn_next[i];
             end

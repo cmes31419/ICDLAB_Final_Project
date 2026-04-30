@@ -24,7 +24,7 @@ reg [63:0]  codeword;
 reg [23:0]  syndromes_ans;
 
 wire [5:0]  S[3:0];
-wire        done;
+wire        sdone;
 
 integer i1, i2;
 integer errcnt, correctcnt;
@@ -50,7 +50,7 @@ syndrome U0(
     .idata(idata),
     .ivalid(ivalid),
     .S(S),
-    .done(done)
+    .sdone(sdone)
 );
 
 // --------------------------
@@ -90,7 +90,7 @@ always @(negedge clk) begin
 end
 
 // check output
-always @(posedge done) begin
+always @(posedge sdone) begin
     # (CYCLE*0.5);
     if ({S[3], S[2], S[1], S[0]} !== syndromes_ans) begin
         $write("Test %0d: syndromes = %6b, expected = %6b. Error\n", i1, {S[3], S[2], S[1], S[0]}, syndromes_ans);

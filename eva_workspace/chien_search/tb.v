@@ -21,7 +21,7 @@ reg [5:0]	sigma[6:0];
 reg [62:0]  cdata_ans;
 
 wire [62:0]  cdata;
-wire done;
+wire cdone;
 
 integer i1, i2;
 integer errcnt, correctcnt;
@@ -46,7 +46,7 @@ chien_search U0(
     .ready(ready),
     .sigma(sigma),
     .cdata(cdata),
-    .done(done)
+    .cdone(cdone)
 );
 
 // --------------------------
@@ -79,7 +79,7 @@ always @(negedge clk) begin
         ready = 1;
         #(CYCLE) ready = 0;
 
-        @(posedge done) begin
+        @(posedge cdone) begin
             #(CYCLE*0.5);
 
             if (cdata !== cdata_ans) begin

@@ -4,13 +4,13 @@ module chien_search(
     input               ready,
     input [5:0]         sigma[6:0],
     output reg [62:0]   cdata,
-    output reg          done
+    output reg          cdone
 );
 
     reg         cnt, cnt_next;
     reg [5:0]   sigma_rec[6:0], sigma_rec_next[6:0];
     reg [62:0]  cdata_next;
-    reg         done_next;
+    reg         cdone_next;
     reg [31:0]  zeros;
 
     wire [5:0]  sigma_now1[6:0], sigma_now2[6:0];
@@ -58,8 +58,8 @@ module chien_search(
     end
 
     always @(*) begin
-        if (cnt == 1) done_next = 1;
-        else done_next = 0;
+        if (cnt == 1) cdone_next = 1;
+        else cdone_next = 0;
     end
 
     always @(*) begin
@@ -71,7 +71,7 @@ module chien_search(
         if (rst) begin
             cnt     <= 0;
             cdata   <= 0;
-            done    <= 0;
+            cdone    <= 0;
             for (i=0;i<=6;i=i+1) begin
                 sigma_rec[i]    <= 0;
             end
@@ -79,7 +79,7 @@ module chien_search(
         else begin
             cnt     <= cnt_next;
             cdata   <= cdata_next;
-            done    <= done_next;
+            cdone    <= cdone_next;
             for (i=0;i<=6;i=i+1) begin
                 sigma_rec[i]    <= sigma_rec_next[i];
             end

@@ -19,13 +19,13 @@ if cycle_num > 1:
     input               ready,
     input [{q-1}:0]         sigma[{t_max}:0],
     output reg [{n-1}:0]   cdata,
-    output reg          done
+    output reg          cdone
 );
 
     reg {f"[{cnt_bits-1}:0]" if cnt_bits > 1 else "     "}   cnt, cnt_next;
     reg [{q-1}:0]   sigma_rec[{t_max}:0], sigma_rec_next[{t_max}:0];
     reg [{n-1}:0]  cdata_next;
-    reg         done_next;
+    reg         cdone_next;
     reg [{parallel_num-1}:0]  zeros;
 
     wire [{q-1}:0]  sigma_now1[{t_max}:0], sigma_now2[{t_max}:0];
@@ -84,8 +84,8 @@ if cycle_num > 1:
     end
 
     always @(*) begin
-        if (cnt == {cycle_num-1}) done_next = 1;
-        else done_next = 0;
+        if (cnt == {cycle_num-1}) cdone_next = 1;
+        else cdone_next = 0;
     end
 
     always @(*) begin
@@ -97,7 +97,7 @@ if cycle_num > 1:
         if (rst) begin
             cnt     <= 0;
             cdata   <= 0;
-            done    <= 0;
+            cdone    <= 0;
             for (i=0;i<={t_max};i=i+1) begin
                 sigma_rec[i]    <= 0;
             end
@@ -105,7 +105,7 @@ if cycle_num > 1:
         else begin
             cnt     <= cnt_next;
             cdata   <= cdata_next;
-            done    <= done_next;
+            cdone    <= cdone_next;
             for (i=0;i<={t_max};i=i+1) begin
                 sigma_rec[i]    <= sigma_rec_next[i];
             end
@@ -121,11 +121,11 @@ else:   # cycle_num == 1
     input               ready,
     input [{q-1}:0]         sigma[{t_max}:0],
     output reg [{n-1}:0]   cdata,
-    output reg          done
+    output reg          cdone
 );
 
     reg [{n-1}:0]  cdata_next;
-    reg         done_next;
+    reg         cdone_next;
     reg [{parallel_num-1}:0]  zeros;
     
     wire [{q-1}:0]  sigma_now[{t_max}:0];
@@ -157,18 +157,18 @@ else:   # cycle_num == 1
     end
 
     always @(*) begin
-        if (ready) done_next = 1;
-        else done_next = 0;
+        if (ready) cdone_next = 1;
+        else cdone_next = 0;
     end
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             cdata   <= 0;
-            done    <= 0;
+            cdone   <= 0;
         end
         else begin
             cdata   <= cdata_next;
-            done    <= done_next;
+            cdone   <= cdone_next;
         end
     end
 

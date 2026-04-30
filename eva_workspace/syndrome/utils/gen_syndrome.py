@@ -15,11 +15,11 @@ content = f"""module syndrome(
     input [7:0]         idata,
     input               ivalid,
     output reg [{q-1}:0]    S[{2*t_min-1}:0],
-    output reg          done
+    output reg          sdone
 );
 
     reg [{q-1}:0]   syn[{t_min-1}:0], syn_next[{t_min-1}:0];
-    reg         done_next;
+    reg         sdone_next;
 
     wire [{q-1}:0]  syn_now[{t_min-1}:0], syn_rot[{t_min-1}:0];
     wire [7:0]  data;
@@ -54,19 +54,19 @@ content = f"""module syndrome(
     end
 
     always @(*) begin
-        if (ivalid & cnt == {input_cycles-1}) done_next = 1;
-        else done_next = 0;
+        if (ivalid & cnt == {input_cycles-1}) sdone_next = 1;
+        else sdone_next = 0;
     end
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            done    <= 0;
+            sdone   <= 0;
             for (i=0;i<{t_min};i=i+1) begin
                 syn[i]  <= 0;
             end
         end
         else begin
-            done    <= done_next;
+            sdone   <= sdone_next;
             for (i=0;i<{t_min};i=i+1) begin
                 syn[i]  <= syn_next[i];
             end
