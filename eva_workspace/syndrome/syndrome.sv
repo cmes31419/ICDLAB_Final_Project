@@ -1,9 +1,9 @@
 module syndrome(
     input               clk,
     input               rst,
+    input [2:0]         cnt,
     input [7:0]         idata,
     input               ivalid,
-    input [2:0]         cnt,
     output reg [5:0]    S[3:0],
     output reg          done
 );

@@ -9,9 +9,9 @@ input_cycles = (n + 1) // 8
 content = f"""module syndrome(
     input               clk,
     input               rst,
+    input [{q-4}:0]         cnt,
     input [7:0]         idata,
     input               ivalid,
-    input [{q-4}:0]         cnt,
     output reg [{q-1}:0]    S[{2*t_min-1}:0],
     output reg          done
 );

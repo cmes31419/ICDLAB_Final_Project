@@ -28,9 +28,9 @@ reg [{n}:0]	testdata[0:NTEST-1];
 reg [{2*t_min*q-1}:0]  testdata_ans[0:NTEST-1];
 
 reg         rst;
+reg [{q-4}:0]   cnt;
 reg [7:0]   idata;
 reg         ivalid;
-reg [{q-4}:0]   cnt;
 reg [{n}:0]  codeword;
 reg [{2*t_min*q-1}:0]  syndromes_ans;
 
@@ -57,9 +57,9 @@ end
 syndrome U0(
     .clk(clk),
     .rst(rst),
+    .cnt(cnt),
     .idata(idata),
     .ivalid(ivalid),
-    .cnt(cnt),
     .S(S),
     .done(done)
 );
