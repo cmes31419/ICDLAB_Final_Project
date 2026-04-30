@@ -3,7 +3,6 @@
 seed=42
 ntest=100
 parallel_num=32
-m=4
 q=6
 n=63                    # n = 2^q - 1
 t_max=6
@@ -15,7 +14,6 @@ echo "=============================="
 echo "seed         = $seed"
 echo "ntest        = $ntest"
 echo "parallel_num = $parallel_num"
-echo "m            = $m"
 echo "q            = $q"
 echo "n            = $n"
 echo "t_max        = $t_max"
