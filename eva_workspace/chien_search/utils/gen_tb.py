@@ -1,10 +1,10 @@
 import sys
 
 ntest = int(sys.argv[1])
-parallel_num = int(sys.argv[2])
-q = int(sys.argv[3])
-n = int(sys.argv[4])
-t_max = int(sys.argv[5]) 
+q = int(sys.argv[2])
+n = int(sys.argv[3])
+t_max = int(sys.argv[4])
+parallel_num = int(sys.argv[5])
 
 tb = f"""`timescale 1ns/1ps
 
@@ -82,21 +82,26 @@ always @(negedge clk) begin
         sigma[i2] = testdata[i1][{q}*i2+:{q}];
         cdata_ans = testdata_ans[i1];
     end
-    ready = 1;
-    #(CYCLE) ready = 0;
 
-    @(posedge done) begin
-        if (cdata !== cdata_ans) begin
-            $write("Test %0d: cdata = %6b, expected = %6b. Error\\n", i1, cdata, cdata_ans);
-            errcnt = errcnt + 1;
-        end
-        else begin
-            // $write("Test %0d: cdata = %6b, expected = %6b. Correct\\n", i1, cdata, cdata_ans);
-            correctcnt = correctcnt + 1;
-        end
-    end
+    fork
+        ready = 1;
+        #(CYCLE) ready = 0;
 
-    #(CYCLE) i1 = i1 + 1;
+        @(posedge done) begin
+            #(CYCLE*0.5);
+
+            if (cdata !== cdata_ans) begin
+                $write("Test %0d: cdata = %6b, expected = %6b. Error\\n", i1, cdata, cdata_ans);
+                errcnt = errcnt + 1;
+            end
+            else begin
+                // $write("Test %0d: cdata = %6b, expected = %6b. Correct\\n", i1, cdata, cdata_ans);
+                correctcnt = correctcnt + 1;
+            end
+
+            #(CYCLE*0.5) i1 = i1 + 1;
+        end
+    join
 end
 
 initial begin

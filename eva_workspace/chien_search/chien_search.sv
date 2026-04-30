@@ -4,42 +4,46 @@ module chien_search(
     input               ready,
     input [5:0]         sigma[6:0],
     output reg [62:0]   cdata,
-    output              done
+    output reg          done
 );
 
-    localparam S_IDLE = 2'd0;
-    localparam S_PROC = 2'd1;
-    localparam S_DONE = 2'd2;
-
-    reg [1:0]   state, state_next;
-    reg         cnt, cnt_next;
-    reg [62:0]  cdata_next;
-    reg [31:0]  zeros;
+    reg    cnt, cnt_next;
     reg [5:0]   sigma_rec[6:0], sigma_rec_next[6:0];
+    reg [62:0]  cdata_next;
+    reg         done_next;
+    reg [31:0]  zeros;
 
+    wire [5:0]  sigma_now1[6:0], sigma_now2[6:0];
     wire [5:0]  sigma_rot[6:0];
     wire [5:0]  sigma_V[31:0];
 
     integer i;
 
-    assign done = (state == S_DONE) ? 1 : 0;
+    genvar gi;
 
-    chien_rotate cr0(
-        .sigma(sigma_rec),
-        .sigma_rot(sigma_rot)
-    );
+    generate
+        for (gi=0;gi<=6;gi=gi+1) begin
+            assign sigma_now1[gi] = (cnt == 0) ? (ready ? sigma[gi] : 0) : sigma_rec[gi];
+            assign sigma_now2[gi] = (cnt == 1) ? 0 : sigma_now1[gi];
+        end
+    endgenerate
     
     sigmaV sv0(
-        .sigma(sigma_rec),
+        .sigma(sigma_now1),
         .y(sigma_V)
+    );
+
+    chien_rotate cr0(
+        .sigma(sigma_now2),
+        .sigma_rot(sigma_rot)
     );
 
     always @(*) begin
         for (i=0;i<32;i=i+1) begin
-            zeros[i] = (state == S_PROC) ? ~(|sigma_V[31-i]) : 0;
+            zeros[i] = (cnt != 0 || ready) ? ~(|sigma_V[31-i]) : 0;
         end
 
-        if (state == S_PROC) begin
+        if (cnt != 0 || ready) begin
             cdata_next[32+:31] = (cnt == 0) ? zeros[0+:31] : cdata[32+:31];
             cdata_next[0+:32] = (cnt == 1) ? zeros : cdata[0+:32];
         end
@@ -48,39 +52,34 @@ module chien_search(
 
     always @(*) begin
         for (i=0;i<=6;i=i+1) begin
-            if (state == S_IDLE && ready) sigma_rec_next[i] = sigma[i];
-            else if (state == S_PROC) sigma_rec_next[i] = sigma_rot[i];
+            if (cnt == 0) sigma_rec_next[i] = ready ? sigma_rot[i] : 0;
             else sigma_rec_next[i] = 0;
         end
     end
 
     always @(*) begin
-        if (state == S_PROC) cnt_next = cnt + 1;
-        else cnt_next = 0;
+        if (cnt == 1) done_next = 1;
+        else done_next = 0;
     end
 
     always @(*) begin
-        case (state)
-            S_IDLE:     state_next = ready ? S_PROC : S_IDLE;
-            S_PROC:     state_next = (cnt == 1) ? S_DONE : S_PROC;
-            S_DONE:     state_next = S_IDLE;
-            default:    state_next = S_IDLE;
-        endcase
+        if (cnt != 0 || ready) cnt_next = cnt + 1;
+        else cnt_next = 0;
     end
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            state   <= S_IDLE;
             cnt     <= 0;
             cdata   <= 0;
+            done    <= 0;
             for (i=0;i<=6;i=i+1) begin
                 sigma_rec[i]    <= 0;
             end
         end
         else begin
-            state   <= state_next;
             cnt     <= cnt_next;
             cdata   <= cdata_next;
+            done    <= done_next;
             for (i=0;i<=6;i=i+1) begin
                 sigma_rec[i]    <= sigma_rec_next[i];
             end

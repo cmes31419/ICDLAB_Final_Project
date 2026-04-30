@@ -73,28 +73,30 @@ def gen_case_branch(q: int, t: int, prim_poly: int, P: int):
 
 
 if __name__ == "__main__":
-    parallel_num = int(sys.argv[1])
-    q = int(sys.argv[2])
+    q = int(sys.argv[1])
+    n = int(sys.argv[2])
     t_max = int(sys.argv[3])
     prim_poly = int(sys.argv[4], 0)
+    parallel_num = int(sys.argv[5])
+    
+    if parallel_num < n:
+        out_fname = f"chien_rotate.sv"
+        f = open(out_fname, "w")
 
-    out_fname = f"chien_rotate.sv"
-    f = open(out_fname, "w")
+        # module header
+        f.write(f"module chien_rotate(\n")
+        f.write(f"    input  [{q-1}:0]        sigma[{t_max}:0],\n")
+        f.write(f"    output reg [{q-1}:0]    sigma_rot[{t_max}:0]\n")
+        f.write(");\n\n")
 
-    # module header
-    f.write(f"module chien_rotate(\n")
-    f.write(f"    input  [{q-1}:0]        sigma[{t_max}:0],\n")
-    f.write(f"    output reg [{q-1}:0]    sigma_rot[{t_max}:0]\n")
-    f.write(");\n\n")
+        f.write("    always @(*) begin\n")
 
-    f.write("    always @(*) begin\n")
+        for ln in gen_case_branch(q, t_max, prim_poly, parallel_num):
+            f.write(ln + "\n")
 
-    for ln in gen_case_branch(q, t_max, prim_poly, parallel_num):
-        f.write(ln + "\n")
+        f.write("    end\n\n")
+        f.write("endmodule")
 
-    f.write("    end\n\n")
-    f.write("endmodule")
+        f.close()
 
-    f.close()
-
-    print(f"Generated {out_fname}")
+        print(f"Generated {out_fname}")
