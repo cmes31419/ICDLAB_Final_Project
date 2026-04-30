@@ -264,81 +264,134 @@ class GIIDecoder(GII_code):
 
         return nested_results
 
-    def stage2_decode_restart(self, received_words, target_layer=1):
+    def decode_multi_round_restart(self, received_words):
         """
-        Stage 2 decoding by restarting BM from scratch using recovered higher-order syndromes.
+        Full GII decoding with multiple nested rounds.
+        This version restarts BM from scratch at each round.
 
-        target_layer = 1  -> use t1
-        target_layer = 2  -> use t2
+        Round 0: stage-1 BCH decode with t0
+        Round 1: recover to t1
+        Round 2: recover to t2
+        ...
+        Round v: last round
+
+        Returns:
+            {
+                "success": bool,
+                "final_words": [...],
+                "stage1_results": [...],
+                "round_logs": [...],
+                "remaining_failed": [...],
+            }
         """
-        if target_layer < 1 or target_layer > self.v:
-            raise ValueError(f"target_layer must be between 1 and {self.v}")
-
-        # 1. stage 1
+        # ----------------------------------
+        # Round 0: stage 1
+        # ----------------------------------
         corrected_words, stage1_results, failed_indices = self.stage1_decode(received_words)
+
+        round_logs = []
 
         if len(failed_indices) == 0:
             return {
-                "failed_indices": [],
-                "high_syn_dict": {},
-                "full_syn_dict": {},
-                "nested_results": {},
+                "success": True,
+                "final_words": corrected_words,
+                "stage1_results": stage1_results,
+                "round_logs": [],
+                "remaining_failed": [],
             }
 
         if len(failed_indices) > self.v:
-            raise ValueError(
-                f"Need at most {self.v} failed sub-codewords, "
-                f"but got {len(failed_indices)}"
+            return {
+                "success": False,
+                "final_words": corrected_words,
+                "stage1_results": stage1_results,
+                "round_logs": [],
+                "remaining_failed": failed_indices,
+            }
+
+        current_words = [list(w) for w in corrected_words]
+        current_failed = list(failed_indices)
+
+        # ----------------------------------
+        # Nested rounds: 1 .. v
+        # ----------------------------------
+        for target_layer in range(1, self.v + 1):
+            if len(current_failed) == 0:
+                break
+
+            # build words_for_nested:
+            # failed rows use original/current received version
+            # successful rows use corrected version already in current_words
+            words_for_nested = [list(w) for w in current_words]
+
+            alpha_power_start = 2 * self.t_list[0] + 1
+            alpha_power_end = 2 * self.t_list[target_layer]
+
+            high_syn_dict = self.recover_high_order_syndromes(
+                words_for_nested=words_for_nested,
+                failed_indices=current_failed,
+                alpha_power_start=alpha_power_start,
+                alpha_power_end=alpha_power_end
             )
 
-        # 2. build words_for_nested
-        words_for_nested = []
-        for i in range(len(received_words)):
-            if i in failed_indices:
-                words_for_nested.append(received_words[i])
-            else:
-                words_for_nested.append(corrected_words[i])
+            full_syn_dict = self.build_full_syndrome_dict(
+                stage1_results=stage1_results,
+                high_syn_dict=high_syn_dict,
+                target_layer=target_layer
+            )
 
-        # 3. recover higher-order syndromes
-        alpha_power_start = 2 * self.t_list[0] + 1
-        alpha_power_end = 2 * self.t_list[target_layer]
+            nested_results = self.decode_failed_with_full_syndromes(
+                received_words=current_words,
+                full_syn_dict=full_syn_dict,
+                target_layer=target_layer
+            )
 
-        high_syn_dict = self.recover_high_order_syndromes(
-            words_for_nested=words_for_nested,
-            failed_indices=failed_indices,
-            alpha_power_start=alpha_power_start,
-            alpha_power_end=alpha_power_end
-        )
+            newly_corrected = []
+            still_failed = []
 
-        # 4. build full syndromes
-        full_syn_dict = self.build_full_syndrome_dict(
-            stage1_results=stage1_results,
-            high_syn_dict=high_syn_dict,
-            target_layer=target_layer
-        )
+            for idx in current_failed:
+                if nested_results[idx]["success"]:
+                    current_words[idx] = list(nested_results[idx]["corrected"])
+                    newly_corrected.append(idx)
+                else:
+                    still_failed.append(idx)
 
-        # 5. restart BM + Chien search with t_target
-        nested_results = self.decode_failed_with_full_syndromes(
-            received_words=received_words,
-            full_syn_dict=full_syn_dict,
-            target_layer=target_layer
-        )
+            round_logs.append({
+                "target_layer": target_layer,
+                "input_failed": list(current_failed),
+                "high_syn_dict": high_syn_dict,
+                "full_syn_dict": full_syn_dict,
+                "nested_results": nested_results,
+                "newly_corrected": newly_corrected,
+                "remaining_failed": still_failed,
+            })
+
+            # no progress => fail
+            if len(newly_corrected) == 0:
+                return {
+                    "success": False,
+                    "final_words": current_words,
+                    "stage1_results": stage1_results,
+                    "round_logs": round_logs,
+                    "remaining_failed": still_failed,
+                }
+
+            current_failed = still_failed
 
         return {
-            "failed_indices": failed_indices,
-            "high_syn_dict": high_syn_dict,
-            "full_syn_dict": full_syn_dict,
-            "nested_results": nested_results,
+            "success": len(current_failed) == 0,
+            "final_words": current_words,
+            "stage1_results": stage1_results,
+            "round_logs": round_logs,
+            "remaining_failed": current_failed,
         }
-
-
 
 # ===== test code ========
 def read_codeword_lines(filename):
     with open(filename, "r") as f:
         return [line.strip() for line in f if line.strip()]
 
-filename = "../00_TB/testdata/pattern/p2.txt"
+filename = "../00_TB/testdata/pattern/p3.txt"
 
 gii_dec = GIIDecoder(
     q=6,
@@ -351,18 +404,19 @@ gii_dec = GIIDecoder(
 received_str = read_codeword_lines(filename)
 received_words = [gii_dec.bits_str_to_poly_list(s) for s in received_str]
 
-result = gii_dec.stage2_decode_restart(received_words, target_layer=1)
+result = gii_dec.decode_multi_round_restart(received_words)
 
-print("failed_indices =", result["failed_indices"])
+print("overall success =", result["success"])
+print("remaining_failed =", result["remaining_failed"])
 
-# for idx, syn in result["full_syn_dict"].items():
-#     print(f"sub-codeword {idx} full syndromes:")
-#     for j, s in enumerate(syn, start=1):
-#         print(f"  S{j} = {int(s)}")
+for round_idx, log in enumerate(result["round_logs"], start=1):
+    print(f"\nRound {round_idx}: target_layer = {log['target_layer']}")
+    print("  input_failed    =", log["input_failed"])
+    print("  newly_corrected =", log["newly_corrected"])
+    print("  remaining_failed=", log["remaining_failed"])
 
-for idx, res in result["nested_results"].items():
-    print(f"sub-codeword {idx} stage2 result:")
-    print("  success =", res["success"])
-    print("  error_positions =", res["error_positions"])
-    print("  num_errors =", res["num_errors"])
-
+    for idx, res in log["nested_results"].items():
+        print(f"    sub-codeword {idx}:")
+        print(f"      success = {res['success']}")
+        print(f"      error_positions = {res['error_positions']}")
+        print(f"      num_errors = {res['num_errors']}")
