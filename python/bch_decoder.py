@@ -347,34 +347,34 @@ def read_codeword_lines(filename, n):
 
     return lines
 
-q=6
-t=2
-n=2**q - 1
-bch_dec = BCHDecoder(q, t, p_str="x^6 + x + 1")
-filename = "../00_TB/testdata/pattern/p1.txt"
+# q=6
+# t=2
+# n=2**q - 1
+# bch_dec = BCHDecoder(q, t, p_str="x^6 + x + 1")
+# filename = "../00_TB/testdata/pattern/p1.txt"
 
-codewords = read_codeword_lines(filename, n)
+# codewords = read_codeword_lines(filename, n)
 
-print(f"Input file: {filename}")
-print(f"q = {q}, n = {n}, t = {t}")
-print(f"Total codewords = {len(codewords)}")
-print()
+# print(f"Input file: {filename}")
+# print(f"q = {q}, n = {n}, t = {t}")
+# print(f"Total codewords = {len(codewords)}")
+# print()
 
-for idx, code in enumerate(codewords):
-    print(f"sub-codeword {idx}:")
-    print(f"  received codeword = {code}")
-    r = bch_dec.bits_str_to_poly_list(code)
+# for idx, code in enumerate(codewords):
+#     print(f"sub-codeword {idx}:")
+#     print(f"  received codeword = {code}")
+#     r = bch_dec.bits_str_to_poly_list(code)
     
-    result = bch_dec.decode(r)
+#     result = bch_dec.decode(r)
 
-    syn_power = []
-    for s in result["syndromes"]:
-        if s == 0:
-            syn_power.append(-1)
-        else:
-            syn_power.append(bch_dec.gf.field(s).log())
-    print(syn_power)
-    print(result["error_positions"])
-    print(result["bm_state"])
-    print(result["success"])
-    print()
+#     syn_power = []
+#     for s in result["syndromes"]:
+#         if s == 0:
+#             syn_power.append(-1)
+#         else:
+#             syn_power.append(bch_dec.gf.field(s).log())
+#     print(syn_power)
+#     print(result["error_positions"])
+#     print(result["bm_state"])
+#     print(result["success"])
+#     print()
