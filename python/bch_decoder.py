@@ -287,21 +287,15 @@ class BCHDecoder:
         locator, B, b, L = self.berlekamp_massey(syndromes)
         error_positions = self.chien_search(locator)
 
-        if not self.validate_locator(locator, error_positions):
-            return {
-                "success": False,
-                "syndromes": syndromes,
-                "locator": locator,
-                "error_positions": error_positions,
-                "corrected": list(received),
-                "num_errors": 0,
-                "bm_state": (locator, B, b, L),
-            }
+        # decoding succeeds iff degree(locator) == number of distinct roots
+        success = self.validate_locator(locator, error_positions)
 
-        corrected = self.flip_positions(received, error_positions)
-        check_syndromes = self.compute_syndromes(corrected, self.t)
-
-        success = self.syndromes_are_zero(check_syndromes)
+        if success:
+            corrected = self.flip_positions(received, error_positions)
+            num_errors = len(error_positions)
+        else:
+            corrected = list(received)
+            num_errors = 0
 
         return {
             "success": success,
@@ -309,9 +303,9 @@ class BCHDecoder:
             "locator": locator,
             "error_positions": error_positions,
             "corrected": corrected,
-            "num_errors": len(error_positions) if success else 0,
+            "num_errors": num_errors,
             "bm_state": (locator, B, b, L),
-        }
+        }        
 
     # -------------------------------------------------
     # Optional format helpers for file/string interface
@@ -382,3 +376,5 @@ for idx, code in enumerate(codewords):
     print(syn_power)
     print(result["error_positions"])
     print(result["bm_state"])
+    print(result["success"])
+    print()
