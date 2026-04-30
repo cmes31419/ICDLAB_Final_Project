@@ -12,8 +12,12 @@ class GIIDecoder(GII_code):
         self.field = self.gf.field
         self.alpha = self.gf.alpha
 
+        self.bch_decoders = [
+            BCHDecoder(q, t, p_str) for t in t_list
+        ]
+
         # Stage-1 BCH decoder uses t0
-        self.bch_stage1 = BCHDecoder(q, t_list[0], p_str)
+        self.bch_stage1 = self.bch_decoders[0]
 
     # -------------------------------------------------
     # Basic format helpers
@@ -78,20 +82,30 @@ class GIIDecoder(GII_code):
         """
         return self.gf.eval_poly_at_alpha(word, alpha_power)
 
-    def compute_nested_syndrome(self, words, nested_level, alpha_power):
+    def eval_bin_poly_at_alpha(self, poly_bin, alpha_power):
         """
-        Compute one nested syndrome:
-            \tilde S^{(nested_level)} for a fixed alpha_power
+        Evaluate a binary polynomial poly_bin at x = alpha^alpha_power.
+        poly_bin is ascending-degree binary list.
+        """
+        return self.gf.eval_poly_at_alpha(poly_bin, alpha_power)
 
-        words: list of sub-codewords (ascending-degree binary lists)
-        nested_level: l in \tilde y_l
-        alpha_power: j in S_j = y(alpha^j), using 1-based convention
+    def get_nested_coeff_poly(self, nested_level, sub_idx):
         """
+        Return the binary polynomial coefficient used by the encoder relation
+        for nested level `nested_level` and sub-codeword `sub_idx`.
+        """
+        # simplest consistent form if your model is alpha(x^(l*i))
+        elem = self.gf.alpha ** (nested_level * sub_idx)
+        return self.gf_elem_to_binary_poly(elem)
+
+    def compute_nested_syndrome(self, words, nested_level, alpha_power):
         total = self.field(0)
 
         for i, word in enumerate(words):
             s_i = self.compute_word_syndrome(word, alpha_power)
-            total += (self.alpha ** (i * nested_level)) * s_i
+            coeff_poly = self.get_nested_coeff_poly(nested_level, i)
+            coeff_eval = self.eval_bin_poly_at_alpha(coeff_poly, alpha_power)
+            total += coeff_eval * s_i
 
         return total
 
@@ -108,48 +122,29 @@ class GIIDecoder(GII_code):
         ]
         return self.field(vec)
 
-    def build_A_matrix(self, failed_indices):
+    def build_A_matrix(self, failed_indices, alpha_power):
         """
-        Build the matrix A in Eq. (3).
+        Build the relation matrix in syndrome domain.
 
-        IMPORTANT:
-        From the nesting definition:
-            \tilde c_l = sum_i alpha^{i l} c_i
-        the natural matrix entry is:
-            A[p, q] = alpha^(p * failed_indices[q])
-
-        So row p corresponds to nested level p,
-        column q corresponds to failed sub-codeword index failed_indices[q].
+        A[p, q] = coeff_{p, failed_indices[q]}(alpha^alpha_power)
+        where coeff_{p, i}(x) is the SAME binary polynomial coefficient
+        used in the nested relation at codeword level.
         """
         b = len(failed_indices)
-        A = [[self.alpha ** (p * failed_indices[q]) for q in range(b)] for p in range(b)]
-        return self.field(A)
+        A = []
+
+        for p in range(b):
+            row = []
+            for q in range(b):
+                sub_idx = failed_indices[q]
+                coeff_poly = self.get_nested_coeff_poly(p, sub_idx)
+                coeff_eval = self.eval_bin_poly_at_alpha(coeff_poly, alpha_power)
+                row.append(coeff_eval)
+            A.append(row)
+
+        return self.field(A) 
 
     def recover_high_order_syndromes(self, words_for_nested, failed_indices, alpha_power_start, alpha_power_end):
-        """
-        Recover higher-order syndromes for failed sub-codewords 
-
-        words_for_nested:
-            list of words used to form nested syndromes.
-            For stage 2 this should usually be:
-                - corrected words for successful sub-codewords
-                - original received words for failed sub-codewords
-
-        failed_indices:
-            list of failed sub-codeword indices, e.g. [0], [1, 3], ...
-
-        alpha_power_start, alpha_power_end:
-            inclusive range of BCH syndrome powers
-            e.g. for t0=2, t1=4, recover S5..S8  -> alpha_power_start=5, alpha_power_end=8
-
-        Returns:
-            high_syn_dict:
-                {
-                    failed_idx_0: [S_{start}, ..., S_{end}],
-                    failed_idx_1: [S_{start}, ..., S_{end}],
-                    ...
-                }
-        """
         b = len(failed_indices)
 
         if b == 0:
@@ -160,12 +155,12 @@ class GIIDecoder(GII_code):
                 f"Number of failed sub-codewords = {b}, but v = {self.v}"
             )
 
-        A = self.build_A_matrix(failed_indices)
-        A_inv = np.linalg.inv(A)
-
         high_syn_dict = {idx: [] for idx in failed_indices}
 
         for alpha_power in range(alpha_power_start, alpha_power_end + 1):
+            A = self.build_A_matrix(failed_indices, alpha_power)
+            A_inv = np.linalg.inv(A)
+
             nested_vec = self.build_nested_syndrome_vector(
                 words=words_for_nested,
                 num_failed=b,
@@ -179,53 +174,195 @@ class GIIDecoder(GII_code):
 
         return high_syn_dict
 
+    # -------------------------------------------------
+    # Nested KES helpers 
+    # -------------------------------------------------
+    def build_full_syndrome_dict(self, stage1_results, high_syn_dict, target_layer):
+        """
+        Build full syndrome list for each failed sub-codeword.
+
+        target_layer:
+            1 means use t1 and build S1..S_{2t1}
+            2 means use t2 and build S1..S_{2t2}
+            ...
+
+        Returns:
+            full_syn_dict = {
+                failed_idx: [S1, S2, ..., S_{2 t_target}]
+            }
+        """
+        t_target = self.t_list[target_layer]
+        full_syn_dict = {}
+
+        for idx, high_syn_list in high_syn_dict.items():
+            base_syn = list(stage1_results[idx]["syndromes"])   # S1..S_{2t0}
+            expected_total = 2 * t_target
+
+            full_syn = base_syn + list(high_syn_list)
+
+            if len(full_syn) != expected_total:
+                raise ValueError(
+                    f"sub-codeword {idx}: syndrome length = {len(full_syn)}, "
+                    f"expected {expected_total}"
+                )
+
+            full_syn_dict[idx] = full_syn
+
+        return full_syn_dict
+
+    def decode_failed_with_full_syndromes(self, received_words, full_syn_dict, target_layer):
+        """
+        Restart BCH decoding from scratch using full syndrome list S1..S_{2t_target}.
+
+        received_words:
+            original received words (ascending-degree binary lists)
+
+        full_syn_dict:
+            {
+                failed_idx: [S1, ..., S_{2t_target}]
+            }
+
+        target_layer:
+            which layer decoder to use, e.g. 1 for t1
+
+        Returns:
+            nested_results = {
+                failed_idx: {
+                    "success": bool,
+                    "syndromes": [...],
+                    "locator": [...],
+                    "error_positions": [...],
+                    "corrected": [...],
+                    "num_errors": int,
+                }
+            }
+        """
+        bch_dec = self.bch_decoders[target_layer]
+        nested_results = {}
+
+        for idx, syndromes_full in full_syn_dict.items():
+            locator, B, b, L = bch_dec.berlekamp_massey(syndromes_full)
+            error_positions = bch_dec.chien_search(locator)
+            success = bch_dec.validate_locator(locator, error_positions)
+
+            if success:
+                corrected = bch_dec.flip_positions(received_words[idx], error_positions)
+                num_errors = len(error_positions)
+            else:
+                corrected = list(received_words[idx])
+                num_errors = 0
+
+            nested_results[idx] = {
+                "success": success,
+                "syndromes": syndromes_full,
+                "locator": locator,
+                "error_positions": error_positions,
+                "corrected": corrected,
+                "num_errors": num_errors,
+                "bm_state": (locator, B, b, L),
+            }
+
+        return nested_results
+
+    def stage2_decode_restart(self, received_words, target_layer=1):
+        """
+        Stage 2 decoding by restarting BM from scratch using recovered higher-order syndromes.
+
+        target_layer = 1  -> use t1
+        target_layer = 2  -> use t2
+        """
+        if target_layer < 1 or target_layer > self.v:
+            raise ValueError(f"target_layer must be between 1 and {self.v}")
+
+        # 1. stage 1
+        corrected_words, stage1_results, failed_indices = self.stage1_decode(received_words)
+
+        if len(failed_indices) == 0:
+            return {
+                "failed_indices": [],
+                "high_syn_dict": {},
+                "full_syn_dict": {},
+                "nested_results": {},
+            }
+
+        if len(failed_indices) > self.v:
+            raise ValueError(
+                f"Need at most {self.v} failed sub-codewords, "
+                f"but got {len(failed_indices)}"
+            )
+
+        # 2. build words_for_nested
+        words_for_nested = []
+        for i in range(len(received_words)):
+            if i in failed_indices:
+                words_for_nested.append(received_words[i])
+            else:
+                words_for_nested.append(corrected_words[i])
+
+        # 3. recover higher-order syndromes
+        alpha_power_start = 2 * self.t_list[0] + 1
+        alpha_power_end = 2 * self.t_list[target_layer]
+
+        high_syn_dict = self.recover_high_order_syndromes(
+            words_for_nested=words_for_nested,
+            failed_indices=failed_indices,
+            alpha_power_start=alpha_power_start,
+            alpha_power_end=alpha_power_end
+        )
+
+        # 4. build full syndromes
+        full_syn_dict = self.build_full_syndrome_dict(
+            stage1_results=stage1_results,
+            high_syn_dict=high_syn_dict,
+            target_layer=target_layer
+        )
+
+        # 5. restart BM + Chien search with t_target
+        nested_results = self.decode_failed_with_full_syndromes(
+            received_words=received_words,
+            full_syn_dict=full_syn_dict,
+            target_layer=target_layer
+        )
+
+        return {
+            "failed_indices": failed_indices,
+            "high_syn_dict": high_syn_dict,
+            "full_syn_dict": full_syn_dict,
+            "nested_results": nested_results,
+        }
+
 
 
 # ===== test code ========
-# def read_codeword_lines(filename):
-#     with open(filename, "r") as f:
-#         return [line.strip() for line in f if line.strip()]
+def read_codeword_lines(filename):
+    with open(filename, "r") as f:
+        return [line.strip() for line in f if line.strip()]
 
-# filename = "../00_TB/testdata/pattern/p2.txt"
+filename = "../00_TB/testdata/pattern/p2.txt"
 
-# gii_dec = GIIDecoder(
-#     q=6,
-#     m=4,
-#     v=2,
-#     t_list=[2, 4, 6],
-#     p_str="x^6 + x + 1"
-# )
+gii_dec = GIIDecoder(
+    q=6,
+    m=4,
+    v=2,
+    t_list=[2, 4, 6],
+    p_str="x^6 + x + 1"
+)
+# 1. read received words and convert to internal format
+received_str = read_codeword_lines(filename)
+received_words = [gii_dec.bits_str_to_poly_list(s) for s in received_str]
 
-# # 1. read received words and convert to internal format
-# received_str = read_codeword_lines(filename)
-# received_words = [gii_dec.bits_str_to_poly_list(s) for s in received_str]
+result = gii_dec.stage2_decode_restart(received_words, target_layer=1)
 
-# # 2. stage-1 decode
-# corrected_words, stage1_results, failed_indices = gii_dec.stage1_decode(received_words)
+print("failed_indices =", result["failed_indices"])
 
-# print("failed_indices =", failed_indices)
+# for idx, syn in result["full_syn_dict"].items():
+#     print(f"sub-codeword {idx} full syndromes:")
+#     for j, s in enumerate(syn, start=1):
+#         print(f"  S{j} = {int(s)}")
 
-# # 3. build words_for_nested
-# #    success -> corrected
-# #    failure -> original received
-# words_for_nested = []
-# for i in range(len(received_words)):
-#     if i in failed_indices:
-#         words_for_nested.append(received_words[i])
-#     else:
-#         words_for_nested.append(corrected_words[i])
+for idx, res in result["nested_results"].items():
+    print(f"sub-codeword {idx} stage2 result:")
+    print("  success =", res["success"])
+    print("  error_positions =", res["error_positions"])
+    print("  num_errors =", res["num_errors"])
 
-# # 4. recover higher-order syndromes
-# # for example: from S5 to S8
-# high_syn = gii_dec.recover_high_order_syndromes(
-#     words_for_nested=words_for_nested,
-#     failed_indices=failed_indices,
-#     alpha_power_start=5,
-#     alpha_power_end=8
-# )
-
-# # 5. print result
-# for idx in failed_indices:
-#     print(f"sub-codeword {idx} higher-order syndromes:")
-#     for j, s in enumerate(high_syn[idx], start=5):
-#         print(f"  S{j} = {s}")

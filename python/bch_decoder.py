@@ -68,70 +68,56 @@ class BCHDecoder:
 
     def berlekamp_massey(self, syndromes):
         """
-        Standard Berlekamp-Massey over GF(2^q).
-
-        Input:
-            syndromes = [S1, S2, ..., S_{2t}] as field elements
-
-        Returns:
-            locator polynomial Lambda(x) in ascending-degree form:
-                Lambda = [1, lambda1, lambda2, ...]
-            plus BM state for continuation:
-                (Lambda, B, b, L)
+        Generic BM over GF(2^q).
+        syndromes = [S1, S2, ..., SN]
         """
         F = self.field
+        N = len(syndromes)
 
-        Lambda = [F(1)]
-        B = [F(1)]
+        C = [F(0) for _ in range(N + 1)]
+        B = [F(0) for _ in range(N + 1)]
+        C[0] = F(1)
+        B[0] = F(1)
+
         L = 0
+        m = 1
         b = F(1)
 
-        for r in range(len(syndromes)):
-            d = F(0)
-            for j in range(min(L + 1, len(Lambda))):
-                if 0 <= r - j < len(syndromes):
-                    d += Lambda[j] * syndromes[r - j]
+        for n in range(N):
+            # discrepancy
+            d = syndromes[n]
+            for i in range(1, L + 1):
+                d = d + C[i] * syndromes[n - i]
 
             if d == 0:
-                B = [F(0)] + B
+                m += 1
+                continue
 
-            elif 2 * L <= r:
-                T = Lambda[:]
-                db = d / b
-                xB = [F(0)] + B
+            T = C[:]
+            coef = d / b
 
-                size = max(len(Lambda), len(xB))
-                new_Lambda = [F(0)] * size
+            for i in range(m, N + 1):
+                C[i] = C[i] + coef * B[i - m]
 
-                for i, v in enumerate(Lambda):
-                    new_Lambda[i] += v
-                for i, v in enumerate(xB):
-                    new_Lambda[i] += db * v
-
-                Lambda = new_Lambda
-                L = r + 1 - L
+            if 2 * L <= n:
+                L_new = n + 1 - L
                 B = T
+                L = L_new
                 b = d
-
+                m = 1
             else:
-                db = d / b
-                xB = [F(0)] + B
+                m += 1
 
-                size = max(len(Lambda), len(xB))
-                new_Lambda = [F(0)] * size
+        locator = C[:L + 1]
+        while len(locator) > 1 and locator[-1] == 0:
+            locator.pop()
 
-                for i, v in enumerate(Lambda):
-                    new_Lambda[i] += v
-                for i, v in enumerate(xB):
-                    new_Lambda[i] += db * v
+        # keep the same return interface as before
+        B_poly = B[:]
+        while len(B_poly) > 1 and B_poly[-1] == 0:
+            B_poly.pop()
 
-                Lambda = new_Lambda
-                B = [F(0)] + B
-
-        Lambda = self.strip_trailing_zeros(Lambda)
-        B = self.strip_trailing_zeros(B)
-
-        return Lambda, B, b, L
+        return locator, B_poly, b, L
 
     def berlekamp_massey_continue(self, Lambda, B, b, L, syndromes_full, r_start, r_end):
         """
@@ -347,11 +333,12 @@ def read_codeword_lines(filename, n):
 
     return lines
 
+# if __name__ == "main":
 # q=6
 # t=2
 # n=2**q - 1
 # bch_dec = BCHDecoder(q, t, p_str="x^6 + x + 1")
-# filename = "../00_TB/testdata/pattern/p1.txt"
+# filename = "../00_TB/testdata/pattern/p2.txt"
 
 # codewords = read_codeword_lines(filename, n)
 
@@ -367,13 +354,14 @@ def read_codeword_lines(filename, n):
     
 #     result = bch_dec.decode(r)
 
-#     syn_power = []
-#     for s in result["syndromes"]:
-#         if s == 0:
-#             syn_power.append(-1)
-#         else:
-#             syn_power.append(bch_dec.gf.field(s).log())
-#     print(syn_power)
+#     # syn_power = []
+#     # for s in result["syndromes"]:
+#     #     if s == 0:
+#     #         syn_power.append(-1)
+#     #     else:
+#     #         syn_power.append(bch_dec.gf.field(s).log())
+#     # print(syn_power)
+#     print(result["syndromes"])
 #     print(result["error_positions"])
 #     print(result["bm_state"])
 #     print(result["success"])
