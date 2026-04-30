@@ -22,7 +22,7 @@ if cycle_num > 1:
     output reg          done
 );
 
-    reg {f"[{cnt_bits-1}:0]" if cnt_bits > 1 else ""}   cnt, cnt_next;
+    reg {f"[{cnt_bits-1}:0]" if cnt_bits > 1 else "     "}   cnt, cnt_next;
     reg [{q-1}:0]   sigma_rec[{t_max}:0], sigma_rec_next[{t_max}:0];
     reg [{n-1}:0]  cdata_next;
     reg         done_next;

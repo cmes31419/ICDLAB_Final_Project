@@ -7,7 +7,7 @@ module chien_search(
     output reg          done
 );
 
-    reg    cnt, cnt_next;
+    reg         cnt, cnt_next;
     reg [5:0]   sigma_rec[6:0], sigma_rec_next[6:0];
     reg [62:0]  cdata_next;
     reg         done_next;
