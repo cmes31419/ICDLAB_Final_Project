@@ -16,7 +16,8 @@ wire branch, first_iter;
 
 // ============ Control ===============
 BM_control bm_ctrl( .clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .discrepancy(discrepancy),
-    .first_iter(first_iter), .branch(branch), sigma_done(sigma_done)
+    .gamma(gamma),
+    .first_iter(first_iter), .branch(branch), .sigma_done(sigma_done)
 );
 
 
@@ -31,7 +32,7 @@ BM_PE0 u_PE00(.clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .gamma(gamma), 
 
 BM_PE0 u_PE01(.clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
     .sigma_init(6'b0),
-    .b_poly_in(b_poly0),
+    .b_poly_in(first_iter? 6'b1 : 6'b0),
 
     .b_poly_out(),
     .sigma_poly_out(sigma[1])
@@ -39,7 +40,7 @@ BM_PE0 u_PE01(.clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .gamma(gamma), 
 
 BM_PE0 u_PE02(.clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
     .sigma_init(6'b0),
-    .b_poly_in(first_iter? 6'b1 : 6'b0),
+    .b_poly_in(b_poly0),
 
     .b_poly_out(),
     .sigma_poly_out(sigma[2])
@@ -67,15 +68,15 @@ BM_PE1 u_PE11(.clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .gamma(gamma), 
 BM_PE1 u_PE12(.clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
     .delta_init(LO_syndrome[2]),
     .theta_init(LO_syndrome[3]),
-    .delta_poly_in(0),
+    .delta_poly_in(6'b0),
 
     .delta_poly_out(delta_poly2)
 );
 
 BM_PE1 u_PE13(.clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
     .delta_init(LO_syndrome[3]),
-    .theta_init(0),
-    .delta_poly_in(0),
+    .theta_init(6'b0),
+    .delta_poly_in(6'b0),
 
     .delta_poly_out(delta_poly3)
 );
@@ -88,6 +89,7 @@ module BM_control(
     input syndrome_rdy,
     input [5:0] discrepancy,
 
+    output reg [5:0] gamma,
     output first_iter,
     output branch,
     output sigma_done
@@ -100,17 +102,30 @@ localparam S_DONE = 2'd3;
 
 reg [1:0] state, state_next;
 reg [1:0] k, k_next;
+reg [5:0] gamma_next;
 
 assign branch = |discrepancy && (k != 2'd0);
 assign first_iter = (state == S_ITER0);
 assign sigma_done = (state == S_DONE);
 
 always @(*) begin
-    case(k) // synopsys parallel_case
-    2'd1: k_next = (branch)? k : 2'd2;
-    2'd2: k_next = (branch)? 2'd0 : 2'd3;
-    default: k_next = k;
-    endcase
+    if (syndrome_rdy) begin
+        k_next = 2'd1;
+    end
+    else begin
+        case(k) // synopsys parallel_case
+        2'd1: k_next = (branch)? k : 2'd2;
+        2'd2: k_next = (branch)? 2'd0 : 2'd3;
+        default: k_next = k;
+        endcase
+    end
+
+    if (syndrome_rdy) begin
+        gamma_next = 6'b1;
+    end
+    else begin
+        gamma_next = (branch)? discrepancy : gamma;
+    end
 end
 
 always @(*) begin
@@ -126,10 +141,12 @@ always @(posedge clk or posedge rst) begin
     if (rst) begin
         state   <= S_IDLE;
         k       <= 2'd1;
+        gamma   <= 6'b0;
     end
     else begin
         state   <= state_next;
         k       <= k_next;
+        gamma   <= gamma_next;
     end
 end
 

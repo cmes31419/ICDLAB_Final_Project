@@ -22,8 +22,8 @@ wire [5:0] gfmul0_out, gfmul1_out;
 assign sigma_poly_out = sigma_poly;
 assign b_poly_out = b_poly;
 
-gf_mul u_gfmul0(.in1(gamma), in2(sigma_poly), .prod(gfmul0_out));
-gf_mul u_gfmul1(.in1(b_poly_in), in2(discrepancy), .prod(gfmul1_out));
+gf_mul u_gfmul0(.in1(gamma), .in2(sigma_poly), .prod(gfmul0_out));
+gf_mul u_gfmul1(.in1(b_poly_in), .in2(discrepancy), .prod(gfmul1_out));
 
 
 always @(*) begin

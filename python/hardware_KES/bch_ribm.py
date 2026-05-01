@@ -188,8 +188,6 @@ class BCHRiBMSkip:
         # -------------------------------------------------
         lambda_term_1 = self._poly_scale(lambda_reg, gamma_reg)
         lambda_term_2 = self._poly_scale(self._x2_times_b(b_reg), delta0)
-        print(f"lambdat1: {lambda_term_1}")
-        print(f"lambdat2: {lambda_term_2}")
         lambda_next = self._poly_add(lambda_term_1, lambda_term_2)
 
         delta_term_1 = self._poly_scale(self._poly_div_x2(delta_reg), gamma_reg)
