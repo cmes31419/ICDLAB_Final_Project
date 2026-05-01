@@ -21,6 +21,7 @@ echo "parallel_num = $parallel_num"
 echo "=============================="
 
 python utils/gen_chien_search.py $q $n $t_max $parallel_num
+python utils/gen_chien_checker.py $n $t_max $parallel_num
 python utils/gen_chien_rotate.py $q $n $t_max $prim_poly $parallel_num
 python utils/gen_sigmaV.py $q $n $t_max $prim_poly $parallel_num
 python utils/gen_rtl.py $n $parallel_num

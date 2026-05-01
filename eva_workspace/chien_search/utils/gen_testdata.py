@@ -74,19 +74,29 @@ if __name__ == "__main__":
     f_ans = open("testdata_ans.txt", "w")
 
     for i in range(ntest):
+        degree = random.randint(0, t_max)
+        # print(degree)
+
         # random generate Lambda of (t_max+1) elements:
         # Lambda(x) = Lambda[0] + Lambda[1]x + ... + Lambda[(t_max+1)]x^(t_max+1)
         Lambda = []
-        for _ in range(t_max + 1):
+        for _ in range(degree + 1):
             Lambda.append(random.randint(0, (1 << q) - 1))
 
+        for _ in range(degree + 1, t_max + 1):
+            Lambda.append(0)
+
         zeros = chien_search(q, prim_poly, Lambda)
+
+        fail = "0"
+        if degree != zeros.count("1"):
+            fail = "1"
 
         # write test case to file
         lambda_bits = "".join(format(c, f"0{q}b") for c in Lambda[::-1])
 
         f.write(lambda_bits + "\n")
-        f_ans.write(zeros + "\n")
+        f_ans.write(fail + zeros + "\n")
 
     f.close()
     f_ans.close()

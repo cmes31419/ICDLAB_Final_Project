@@ -8,7 +8,8 @@ tb.v
 
 // Design
 chien_search.sv
-sigmaV.sv"""
+sigmaV.sv
+chien_checker.sv"""
 
 if parallel_num < n:
     text +="\nchien_rotate.sv"

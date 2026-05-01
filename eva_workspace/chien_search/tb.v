@@ -16,14 +16,18 @@ reg clk;
 reg [41:0]	testdata[0:NTEST-1];
 reg [63:0]  testdata_ans[0:NTEST-1];
 
-reg         rst, ready;
+reg         rst;
+reg         sigma_valid;
 reg [5:0]	sigma[6:0];
 reg [62:0]  cdata_ans;
+reg         cfail_ans;
 
 wire [62:0]  cdata;
-wire cdone;
+wire        cfail;
+wire        cdone;
 
-integer i1, i2;
+integer i1, i2, i3;
+integer iw;
 integer errcnt, correctcnt;
 
 // --------------------------
@@ -43,11 +47,14 @@ end
 chien_search U0(
     .clk(clk),
     .rst(rst),
-    .ready(ready),
     .sigma(sigma),
+    .sigma_valid(sigma_valid),
+    .ready(ready),
     .cdata(cdata),
-    .cdone(cdone)
+    .cdone(cdone),
+    .cfail(cfail)
 );
+
 
 // --------------------------
 // clock
@@ -58,46 +65,56 @@ always #(CYCLE/2.0) clk = ~clk;
 // test
 initial begin
 	rst = 0;
-    ready = 0;
+    sigma_valid = 0;
     i1 = 0;
+    i2 = 0;
+    iw = 1;
     errcnt = 0;
     correctcnt = 0;
     #(CYCLE*0.5) rst = 1;
     #(CYCLE) rst = 0;
+    iw = 0;
 end
 
-// feed input & check output
+// feed input
 always @(negedge clk) begin
-    #(CYCLE*2);
-
-    for (i2=0;i2<=6;i2=i2+1) begin
-        sigma[i2] = testdata[i1][6*i2+:6];
-        cdata_ans = testdata_ans[i1];
-    end
-
-    fork
-        ready = 1;
-        #(CYCLE) ready = 0;
-
-        @(posedge cdone) begin
-            #(CYCLE*0.5);
-
-            if (cdata !== cdata_ans) begin
-                $write("Test %0d: cdata = %6b, expected = %6b. Error\n", i1, cdata, cdata_ans);
-                errcnt = errcnt + 1;
-            end
-            else begin
-                // $write("Test %0d: cdata = %6b, expected = %6b. Correct\n", i1, cdata, cdata_ans);
-                correctcnt = correctcnt + 1;
-            end
-
-            #(CYCLE*0.5) i1 = i1 + 1;
+    if (iw == 0 && ready) begin
+        for (i3=0;i3<=6;i3=i3+1) begin
+            sigma[i3] = testdata[i1][6*i3+:6];
         end
-    join
+
+        sigma_valid = 1;
+        #(CYCLE) sigma_valid = 0;
+
+        i1 = i1 + 1;
+    end
+end
+
+// check output
+always @(negedge clk) begin
+    if (cdone) begin
+        {cfail_ans, cdata_ans} = testdata_ans[i2];
+
+        if (cfail !== cfail_ans || cdata !== cdata_ans) begin
+            $write("[ERROR] Test %0d\n", i2);
+            $write("        cfail = %1b, expected = %1b\n", cfail, cfail_ans);
+            $write("        cdata = %063b\n", cdata);
+            $write("        expect= %063b\n", cdata_ans);
+            errcnt = errcnt + 1;
+        end
+        else begin
+            // $write("[PASS ] Test %0d\n", i2);
+            // $write("        cfail = %1b\n", cfail);
+            // $write("        cdata = %063b\n", cdata);
+            correctcnt = correctcnt + 1;
+        end
+
+        i2 = i2 + 1;
+    end
 end
 
 initial begin
-	wait(i1 == NTEST);
+	wait(i2 == NTEST);
 	$write("Correct count = %0d\n", correctcnt);
 	$write("Error count = %0d\n", errcnt);
 	$write("Time = %0d\n", $time - CYCLE * 5);
