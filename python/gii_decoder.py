@@ -6,8 +6,12 @@ from bch_decoder import BCHDecoder
 class GIIDecoder(GII_code):
     def __init__(self, q, m, v, t_list, p_str: str):
         super().__init__(q, m, v, t_list, p_str)
-
         self.q = q
+        self.m = m
+        self.v = v
+        self.t_list = t_list
+        self.p_str = p_str
+
         self.n = self.gf.power_max
         self.field = self.gf.field
         self.alpha = self.gf.alpha
@@ -16,7 +20,6 @@ class GIIDecoder(GII_code):
             BCHDecoder(q, t, p_str) for t in t_list
         ]
 
-        # Stage-1 BCH decoder uses t0
         self.bch_stage1 = self.bch_decoders[0]
 
     # -------------------------------------------------
@@ -59,7 +62,10 @@ class GIIDecoder(GII_code):
         for idx, word in enumerate(received_words):
             result = self.bch_stage1.decode(word)
             stage1_results.append(result)
-
+            # print(f"codeword{idx}")
+            # print(f"    syndromes: {result["syndromes"]}")
+            # print(f"    ELP:       {result["locator"]}")
+            # print(f"    error pos: {result["error_positions"]}")
             if result["success"]:
                 corrected_words.append(result["corrected"])
             else:
@@ -386,12 +392,67 @@ class GIIDecoder(GII_code):
             "remaining_failed": current_failed,
         }
 
+    # === tb
+    def _pack_basis_list_to_hex(self, values, bits_per_symbol=6):
+        """
+        values: iterable of GF elements or ints, interpreted in basis form
+        Return:
+            concatenated bitstring packed into a hex string
+
+        Example:
+            [13, 10, 4, 1] with 6 bits each
+            -> 24-bit packed value
+            -> 6 hex digits
+        """
+        total_bits = len(values) * bits_per_symbol
+        acc = 0
+
+        for v in values:
+            x = int(v) & ((1 << bits_per_symbol) - 1)
+            acc = (acc << bits_per_symbol) | x
+
+        hex_width = (total_bits + 3) // 4
+        return f"{acc:0{hex_width}X}"
+
+    def _pad_coeffs(self, coeffs, target_len):
+        coeffs = list(coeffs)
+        if len(coeffs) < target_len:
+            coeffs += [self.field(0)] * (target_len - len(coeffs))
+        return coeffs[:target_len]
+
+    def export_stage1_ribm_patterns(self, received_words, syn_outfile, sigma_outfile):
+        from hardware_KES.bch_ribm import BCHRiBMSkip
+
+        corrected_words, stage1_results, failed_indices = self.stage1_decode(received_words)
+
+        ribm = BCHRiBMSkip(
+            q=self.q,
+            t=self.t_list[0],
+            p_str=self.p_str
+        )
+
+        with open(syn_outfile, "w") as fsyn, open(sigma_outfile, "w") as fsig:
+            for res in stage1_results:
+                syn = list(res["syndromes"])
+                syn = self._pad_coeffs(syn, 2 * self.t_list[0])
+
+                syn_hex = self._pack_basis_list_to_hex(syn, bits_per_symbol=self.q)
+                fsyn.write(syn_hex + "\n")
+
+                ribm_result = ribm.run(syn)
+                sigma = list(ribm_result["locator"])
+                print(f"locator {ribm_result["locator"]}")
+                sigma = self._pad_coeffs(sigma, self.t_list[0] + 1)
+
+                sigma_hex = self._pack_basis_list_to_hex(sigma, bits_per_symbol=self.q)
+                fsig.write(sigma_hex + "\n")
+
 # ===== test code ========
 def read_codeword_lines(filename):
     with open(filename, "r") as f:
         return [line.strip() for line in f if line.strip()]
 
-filename = "../00_TB/testdata/pattern/p3.txt"
+filename = "../00_TB/testdata/pattern/p2.txt"
 
 gii_dec = GIIDecoder(
     q=6,
@@ -420,3 +481,9 @@ for round_idx, log in enumerate(result["round_logs"], start=1):
         print(f"      success = {res['success']}")
         print(f"      error_positions = {res['error_positions']}")
         print(f"      num_errors = {res['num_errors']}")
+
+gii_dec.export_stage1_ribm_patterns(
+    received_words,
+    syn_outfile="./testdata.txt",
+    sigma_outfile="./testdata_ans.txt"
+)
