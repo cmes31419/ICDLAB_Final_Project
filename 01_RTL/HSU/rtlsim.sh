@@ -1,0 +1,2 @@
+vcs -f rtl.f -full64 -R -debug_access+all +v2k +notimingcheck -sverilog | tee sim.log
+# -P /usr/cad/synopsys/verdi/cur/share/PLI/VCS/LINUX64/novas.tab /usr/cad/synopsys/verdi/cur/share/PLI/VCS/LINUX64/pli.a
