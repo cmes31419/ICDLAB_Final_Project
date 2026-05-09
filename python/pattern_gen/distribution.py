@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import os
 import random
 import sys
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from collections import Counter
 from pathlib import Path
 import logging
@@ -51,7 +53,7 @@ def classify_stage(round_logs):
     return min(len(round_logs), 2)
 
 
-def simulate(trials, seed, min_err, max_err, q, m, v, t_list, p_str):
+def simulate(trials, seed, min_err, max_err, q, m, v, t_list, p_str, enable_progress=True):
     random.seed(seed)
 
     decoder = GIIDecoder(q=q, m=m, v=v, t_list=t_list, p_str=p_str)
@@ -62,11 +64,9 @@ def simulate(trials, seed, min_err, max_err, q, m, v, t_list, p_str):
 
     log_interval = max(1, trials // 10)
     for i in range(trials):
-        if (i + 1) % log_interval == 0 or trials <= 20:
+        if enable_progress and ((i + 1) % log_interval == 0 or trials <= 20):
             logger.info(f"Simulation progress: {i+1}/{trials} trials")
 
-        # keep local index name for logging
-        _ = i
         codewords = decoder.encode_random_data(n)
         error_pos = gen_random_error_pos(
             n=n,
@@ -87,6 +87,54 @@ def simulate(trials, seed, min_err, max_err, q, m, v, t_list, p_str):
     return stage_counts, success_counts
 
 
+def split_trials(total_trials, workers):
+    base = total_trials // workers
+    rem = total_trials % workers
+    return [base + (1 if i < rem else 0) for i in range(workers)]
+
+
+def simulate_parallel(trials, seed, min_err, max_err, q, m, v, t_list, p_str, workers):
+    stage_counts = Counter()
+    success_counts = Counter()
+
+    batches = split_trials(trials, workers)
+    futures = []
+
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        for i, batch in enumerate(batches):
+            if batch == 0:
+                continue
+
+            worker_seed = seed + i + 1
+            futures.append(
+                executor.submit(
+                    simulate,
+                    batch,
+                    worker_seed,
+                    min_err,
+                    max_err,
+                    q,
+                    m,
+                    v,
+                    t_list,
+                    p_str,
+                    False,
+                )
+            )
+
+        completed = 0
+        total_jobs = len(futures)
+        for future in as_completed(futures):
+            sc, suc = future.result()
+            stage_counts.update(sc)
+            success_counts.update(suc)
+
+            completed += 1
+            logger.info(f"Parallel progress: {completed}/{total_jobs} worker jobs completed")
+
+    return stage_counts, success_counts
+
+
 def format_probability(count, total):
     return count / total if total else 0.0
 
@@ -103,6 +151,13 @@ def main(argv=None):
     parser.add_argument("--m", type=int, default=DEFAULT_M)
     parser.add_argument("--v", type=int, default=DEFAULT_V)
     parser.add_argument(
+        "--workers",
+        type=int,
+        default=0,
+        help="Number of worker processes. Use 0 to auto-detect CPU cores (default: 1)",
+    )
+
+    parser.add_argument(
         "--t-list",
         type=int,
         nargs="+",
@@ -118,17 +173,47 @@ def main(argv=None):
     if any(args.t_list[i] > args.t_list[i + 1] for i in range(len(args.t_list) - 1)):
         raise SystemExit("--t-list must be non-decreasing")
 
-    stage_counts, success_counts = simulate(
-        trials=args.trials,
-        seed=args.seed,
-        min_err=args.min_err,
-        max_err=args.max_err,
-        q=args.q,
-        m=args.m,
-        v=args.v,
-        t_list=args.t_list,
-        p_str=args.p_str,
-    )
+    cpu_count = os.cpu_count() or 1
+    workers = cpu_count if args.workers == 0 else args.workers
+
+    if workers < 1:
+        raise SystemExit("--workers must be >= 0")
+
+    if args.workers == 0:
+        logger.info(f"Auto worker mode enabled: using {workers} CPU cores")
+
+    if workers > args.trials:
+        logger.info("workers > trials; some workers will be idle")
+
+    if workers > cpu_count:
+        logger.warning("workers exceeds available CPU count; performance may degrade")
+
+    if workers == 1:
+        stage_counts, success_counts = simulate(
+            trials=args.trials,
+            seed=args.seed,
+            min_err=args.min_err,
+            max_err=args.max_err,
+            q=args.q,
+            m=args.m,
+            v=args.v,
+            t_list=args.t_list,
+            p_str=args.p_str,
+        )
+    else:
+        logger.info(f"Running parallel simulation with {workers} workers")
+        stage_counts, success_counts = simulate_parallel(
+            trials=args.trials,
+            seed=args.seed,
+            min_err=args.min_err,
+            max_err=args.max_err,
+            q=args.q,
+            m=args.m,
+            v=args.v,
+            t_list=args.t_list,
+            p_str=args.p_str,
+            workers=workers,
+        )
 
     total = args.trials
     print("stage distribution")
