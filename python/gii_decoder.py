@@ -441,49 +441,51 @@ class GIIDecoder(GII_code):
 
                 ribm_result = ribm.run(syn)
                 sigma = list(ribm_result["locator"])
-                print(f"locator {ribm_result["locator"]}")
+                print(f"locator {ribm_result['locator']}")
                 sigma = self._pad_coeffs(sigma, self.t_list[0] + 1)
 
                 sigma_hex = self._pack_basis_list_to_hex(sigma, bits_per_symbol=self.q)
                 fsig.write(sigma_hex + "\n")
 
-# ===== test code ========
-def read_codeword_lines(filename):
-    with open(filename, "r") as f:
-        return [line.strip() for line in f if line.strip()]
+if __name__ == "__main__":
 
-filename = "../00_TB/testdata/pattern/p2.txt"
+    # ===== test code ========
+    def read_codeword_lines(filename):
+        with open(filename, "r") as f:
+            return [line.strip() for line in f if line.strip()]
 
-gii_dec = GIIDecoder(
-    q=6,
-    m=4,
-    v=2,
-    t_list=[2, 4, 6],
-    p_str="x^6 + x + 1"
-)
-# 1. read received words and convert to internal format
-received_str = read_codeword_lines(filename)
-received_words = [gii_dec.bits_str_to_poly_list(s) for s in received_str]
+    filename = "../00_TB/testdata/pattern/p2.txt"
 
-result = gii_dec.decode_multi_round_restart(received_words)
+    gii_dec = GIIDecoder(
+        q=6,
+        m=4,
+        v=2,
+        t_list=[2, 4, 6],
+        p_str="x^6 + x + 1"
+    )
+    # 1. read received words and convert to internal format
+    received_str = read_codeword_lines(filename)
+    received_words = [gii_dec.bits_str_to_poly_list(s) for s in received_str]
 
-print("overall success =", result["success"])
-print("remaining_failed =", result["remaining_failed"])
+    result = gii_dec.decode_multi_round_restart(received_words)
 
-for round_idx, log in enumerate(result["round_logs"], start=1):
-    print(f"\nRound {round_idx}: target_layer = {log['target_layer']}")
-    print("  input_failed    =", log["input_failed"])
-    print("  newly_corrected =", log["newly_corrected"])
-    print("  remaining_failed=", log["remaining_failed"])
+    print("overall success =", result["success"])
+    print("remaining_failed =", result["remaining_failed"])
 
-    for idx, res in log["nested_results"].items():
-        print(f"    sub-codeword {idx}:")
-        print(f"      success = {res['success']}")
-        print(f"      error_positions = {res['error_positions']}")
-        print(f"      num_errors = {res['num_errors']}")
+    for round_idx, log in enumerate(result["round_logs"], start=1):
+        print(f"\nRound {round_idx}: target_layer = {log['target_layer']}")
+        print("  input_failed    =", log["input_failed"])
+        print("  newly_corrected =", log["newly_corrected"])
+        print("  remaining_failed=", log["remaining_failed"])
 
-gii_dec.export_stage1_ribm_patterns(
-    received_words,
-    syn_outfile="./testdata.txt",
-    sigma_outfile="./testdata_ans.txt"
-)
+        for idx, res in log["nested_results"].items():
+            print(f"    sub-codeword {idx}:")
+            print(f"      success = {res['success']}")
+            print(f"      error_positions = {res['error_positions']}")
+            print(f"      num_errors = {res['num_errors']}")
+
+    gii_dec.export_stage1_ribm_patterns(
+        received_words,
+        syn_outfile="./testdata.txt",
+        sigma_outfile="./testdata_ans.txt"
+    )

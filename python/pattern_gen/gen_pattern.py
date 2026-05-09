@@ -136,5 +136,5 @@ def main(case):
     write_codewords_to_file(received, received_file)
     write_error_pos_to_file(error_pos, error_pos_file)
 
-
-main(3)
+if __name__ == "__main__":
+    main(3)
