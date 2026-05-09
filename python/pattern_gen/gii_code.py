@@ -1,5 +1,5 @@
 import random
-from ..galois_field import GF
+from galois_field import GF
 
 class GII_code:
 
@@ -21,7 +21,7 @@ class GII_code:
         assert all(self.t_list[i] <= self.t_list[i+1] for i in range(len(self.t_list)-1)), "t_list must be non-decreasing."
 
         self.g_polys = self._build_generators()
-        self.w = [len(g) - 1 for g in self.g_polys] # degree of generator y
+        self.w = [len(g) - 1 for g in self.g_polys] # degree of generator pol        要我現在幫你把 repository 中所有與相對/絕對匯入相關的檔案統一整理（改成在直接執行時都可用的形式）嗎？y
 
     def _build_generators(self):
         """Builds the generator polynomial g_i(x) for each layer."""
