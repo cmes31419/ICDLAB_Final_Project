@@ -1,5 +1,5 @@
 import random
-from galois_field import GF
+from ..galois_field import GF
 
 class GII_code:
 
@@ -21,7 +21,7 @@ class GII_code:
         assert all(self.t_list[i] <= self.t_list[i+1] for i in range(len(self.t_list)-1)), "t_list must be non-decreasing."
 
         self.g_polys = self._build_generators()
-        self.w = [len(g) - 1 for g in self.g_polys] # degree of generator poly
+        self.w = [len(g) - 1 for g in self.g_polys] # degree of generator y
 
     def _build_generators(self):
         """Builds the generator polynomial g_i(x) for each layer."""

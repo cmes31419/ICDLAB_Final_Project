@@ -1,5 +1,10 @@
+import os
 import random
-from pattern_gen.gii_code import GII_code
+import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+from gii_code import GII_code
 from bch_decoder import BCHDecoder
 
 # Field: GF(2^6), Interleaves: 4, Nested Layers: 2, Error Caps: [2, 4, 6]
@@ -128,9 +133,9 @@ def main(case):
             print("received =", received)
             break
 
-    codeword_file = f"../00_TB/testdata/codeword/p{case}a.txt"
-    received_file = f"../00_TB/testdata/pattern/p{case}.txt"
-    error_pos_file = f"../00_TB/testdata/error_pos/p{case}e.txt"
+    codeword_file = f"../../00_TB/testdata/codeword/p{case}a.txt"
+    received_file = f"../../00_TB/testdata/pattern/p{case}.txt"
+    error_pos_file = f"../../00_TB/testdata/error_pos/p{case}e.txt"
 
     write_codewords_to_file(codewords, codeword_file)
     write_codewords_to_file(received, received_file)
