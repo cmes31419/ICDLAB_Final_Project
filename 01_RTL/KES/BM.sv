@@ -3,10 +3,10 @@ module BM(
     input rst,
     input syndrome_rdy,
 
-    input [5:0] LO_syndrome[0:3],
+    input [5:0] LO_syndrome[3:0],
 
     output sigma_done,
-    output [5:0] sigma[0:2]
+    output [5:0] sigma[2:0]
 );
 
 

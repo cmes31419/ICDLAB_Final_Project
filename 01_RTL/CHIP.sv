@@ -12,6 +12,7 @@ module CHIP(
 
     wire [62:0] cdata;
     wire        cdone, sdone;
+    wire [5:0] LO_syn[3:0];
 
     memory mem0(
         .clk(clk),
@@ -32,8 +33,17 @@ module CHIP(
         .cnt(iaddr[2:0]),
         .idata(idata),
         .iwen(ivalid),
-        .S(),
+        .S(LO_syn),
         .sdone(sdone)
+    );
+
+    BM bm0(
+        .clk(clk),
+        .rst(rst),
+        .syndrome_rdy(sdone),
+        .LO_syndrome(LO_syn),
+        .sigma_done(),
+        .sigma()
     );
 
     chien_search cs0(
