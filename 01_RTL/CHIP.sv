@@ -39,10 +39,12 @@ module CHIP(
     chien_search cs0(
         .clk(clk),
         .rst(rst),
-        .ready(),
         .sigma(),
+        .sigma_valid(),
+        .ready(),
         .cdata(cdata),
-        .cdone(cdone)
+        .cdone(cdone),
+        .cfail(cfail)
     );
 
     always @(*) begin
