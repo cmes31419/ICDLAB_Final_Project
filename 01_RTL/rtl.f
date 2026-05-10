@@ -6,7 +6,26 @@
 // Design
 CHIP.sv
 
+// MEM
+./MEM/memory.sv
+
+// LSU
+./LSU/syndrome.sv
+./LSU/syndrome_rotate_add.sv
+./LSU/syndrome_pow.sv
+
+// NSU
+
+// HSU
+
+// KES
 ./KES/BM.sv
 ./KES/BM_PE0.sv
 ./KES/BM_PE1.sv
 ./KES/gf_mul.sv
+
+// CS
+./CS/chien_search.sv
+./CS/chien_checker.sv
+./CS/chien_rotate.sv
+./CS/sigmaV.sv
