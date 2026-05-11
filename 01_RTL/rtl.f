@@ -6,6 +6,9 @@
 // Design
 CHIP.sv
 
+// CTRL
+./CTRL/controller.sv
+
 // MEM
 ./MEM/memory.sv
 

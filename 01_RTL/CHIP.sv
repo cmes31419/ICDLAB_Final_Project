@@ -8,16 +8,12 @@ module CHIP(
     output          ovalid
 );
 
-    reg [5:0]   icnt, icnt_next;    // input byte counter with wrap bit
-    reg [5:0]   ocnt, ocnt_next;    // output byte counter with wrap bit
-    reg [1:0]   ccnt, ccnt_next;    // correction codeword counter
-
     wire [4:0]  iaddr;
     wire [4:0]  oaddr;
     wire [1:0]  caddr;
-    wire        cwen;
     wire [62:0] cdata;
     wire        cdone, cfail;
+    wire [2:0]  scnt;
     wire        sdone;
     wire [5:0]  LO_syn[3:0];
     wire        LKES_done;
@@ -35,15 +31,18 @@ module CHIP(
         end
     endgenerate
 
-    // Address mapping: input/output bytes are stored and read in reverse byte order
-    assign iaddr = {icnt[4:3], 3'h7 - icnt[2:0]};
-    assign oaddr = {ocnt[4:3], 3'h7 - ocnt[2:0]};
-
-    assign caddr = ccnt;
-    assign cwen = cdone & ~cfail;
-
-    // FIFO-style full check
-    assign iready = (icnt[5] != ocnt[5] && icnt[4:0] == ocnt[4:0]) ? 0 : 1;
+    controller ctrl0(
+        .clk(clk),
+        .rst(rst),
+        .ivalid(ivalid),
+        .ovalid(ovalid),
+        .cdone(cdone),
+        .iready(iready),
+        .iaddr(iaddr),
+        .oaddr(oaddr),
+        .caddr(caddr),
+        .scnt(scnt)
+    );
 
     memory mem0(
         .clk(clk),
@@ -53,7 +52,7 @@ module CHIP(
         .iwen(ivalid),
         .caddr(caddr),
         .cdata(cdata),
-        .cwen(cwen),
+        .cwen(cdone & ~cfail),
         .ckill(cdone),  // TODO: replace with final nested-decoding done signal
         .oaddr(oaddr),
         .odata(odata),
@@ -63,7 +62,7 @@ module CHIP(
     syndrome syn0(
         .clk(clk),
         .rst(rst),
-        .cnt(icnt[2:0]),
+        .cnt(scnt),
         .idata(idata),
         .ivalid(ivalid),
         .S(LO_syn),
@@ -89,27 +88,5 @@ module CHIP(
         .cdone(cdone),
         .cfail(cfail)
     );
-
-    always @(*) begin
-        if (ivalid) icnt_next = icnt + 1;
-        else icnt_next = icnt;
-        if (ovalid) ocnt_next = ocnt + 1;
-        else ocnt_next = ocnt;
-        if (cdone) ccnt_next = ccnt + 1;
-        else ccnt_next = ccnt;
-    end
-
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            icnt    <= 0;
-            ocnt    <= 0;
-            ccnt    <= 0;
-        end
-        else begin
-            icnt    <= icnt_next;
-            ocnt    <= ocnt_next;
-            ccnt    <= ccnt_next;
-        end
-    end
 
 endmodule
