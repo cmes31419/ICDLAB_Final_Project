@@ -120,16 +120,16 @@ end
 initial begin
 	@(negedge rst);
 	@(posedge clk);
-	while (ibyte_cnt < TESTBYTE) begin
+	while (i1 < NTEST) begin
 		@(negedge clk);
 		if (iready === 1) begin
 	        ivalid = 1;
+			idata = testdata[i1][(63-ibyte_cnt*8)-:8];
+	        ibyte_cnt = ibyte_cnt + 1;
 	        if (ibyte_cnt >= 8) begin
 	            i1 = i1 + 1;
 	            ibyte_cnt = 0;
 	        end
-			idata = testdata[i1][(63-ibyte_cnt*8)-:8];
-	        ibyte_cnt = ibyte_cnt + 1;
 		end
 	    else begin
 	        ivalid = 0;
@@ -141,32 +141,33 @@ initial begin
 end
 
 // check output
-always @(negedge clk) begin
-	if (ovalid === 1 && $time >= CYCLE * 10) begin
-        if (obyte_cnt >= 8) begin
-            i2 = i2 + 1;
-            obyte_cnt = 0;
-        end
-        if (odata !== testa[i2][(63-obyte_cnt*8)-:8]) begin          
-			errcnt = errcnt + 1;
-			$write("design output = %8b, golden output = %8b. Byte Error\n", odata, testa[i2][(63-obyte_cnt*8)-:8]);
-        end
-        else begin
-			correctcnt = correctcnt + 1;
-            $write("design output = %8b, golden output = %8b. Byte Correct\n", odata, testa[i2][(63-obyte_cnt*8)-:8]);
-        end
-
-        obyte_cnt = obyte_cnt + 1; 
-	end
-end
 initial begin
-	wait(i2 == NTEST);
+	while(i2 < NTEST) begin
+		@(negedge clk);
+		if (ovalid === 1) begin
+			if (odata !== testa[i2][(63-obyte_cnt*8)-:8]) begin          
+				errcnt = errcnt + 1;
+				$write("design output = %8b, golden output = %8b. Byte Error\n", odata, testa[i2][(63-obyte_cnt*8)-:8]);
+			end
+			else begin
+				correctcnt = correctcnt + 1;
+				$write("design output = %8b, golden output = %8b. Byte Correct\n", odata, testa[i2][(63-obyte_cnt*8)-:8]);
+			end
+			obyte_cnt = obyte_cnt + 1; 
+        	if (obyte_cnt >= 8) begin
+        	    i2 = i2 + 1;
+        	    obyte_cnt = 0;
+        	end
+		end
+	end
+
 	$write("Correct count = %0d\n", correctcnt);
 	$write("Error count = %0d\n", errcnt);
 	$write("Time = %0d\n", $time - CYCLE * 5);
 	#(CYCLE*5);
 	$finish;
 end
+
 initial begin
 	#(CYCLE*100000);
 	$write("Simulation Timeout!!!\n");
