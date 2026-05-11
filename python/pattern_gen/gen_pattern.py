@@ -86,9 +86,14 @@ def is_good_pattern(received, error_pos, bch_dec, t0=2, max_failed_for_stage2=No
             return False
     return True
 
-def write_codewords_to_file(codewords, filename):
+def write_codewords_to_file(codewords, filename, pad_msb=True, pad_char="1", expected_len=63):
     with open(filename, "w") as file:
         for code in codewords:
+            code = code.strip()
+            if len(code) != expected_len:
+                raise ValueError(f"Expected {expected_len} bits, got {len(code)}: {code}")
+            if pad_msb:
+                code = pad_char + code
             file.write(code + "\n")
 def write_error_pos_to_file(error_pos, filename):
     with open(filename, "w") as file:
@@ -133,13 +138,13 @@ def main(case):
             print("received =", received)
             break
 
-    codeword_file = f"../../00_TB/testdata/codeword/p{case}a.txt"
-    received_file = f"../../00_TB/testdata/pattern/p{case}.txt"
-    error_pos_file = f"../../00_TB/testdata/error_pos/p{case}e.txt"
+    codeword_file = f"../00_TB/testdata/codeword/p{case}a.txt"
+    received_file = f"../00_TB/testdata/pattern/p{case}.txt"
+    error_pos_file = f"../00_TB/testdata/error_pos/p{case}e.txt"
 
     write_codewords_to_file(codewords, codeword_file)
     write_codewords_to_file(received, received_file)
     write_error_pos_to_file(error_pos, error_pos_file)
 
 if __name__ == "__main__":
-    main(3)
+    main(0)
