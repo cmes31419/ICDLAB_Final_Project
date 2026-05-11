@@ -143,17 +143,17 @@ end
 // check output
 always @(negedge clk) begin
 	if (ovalid === 1 && $time >= CYCLE * 10) begin
-        if (obyte_cnt >= 4) begin
+        if (obyte_cnt >= 8) begin
             i2 = i2 + 1;
             obyte_cnt = 0;
         end
-        if (odata !== testa[i2][(63-obyte_cnt**8)-:8]) begin          
+        if (odata !== testa[i2][(63-obyte_cnt*8)-:8]) begin          
 			errcnt = errcnt + 1;
-			$write("design output = %8b, golden output = %8b. Byte Error\n", odata, testa[i2][(63-obyte_cnt**8)-:8]);
+			$write("design output = %8b, golden output = %8b. Byte Error\n", odata, testa[i2][(63-obyte_cnt*8)-:8]);
         end
         else begin
 			correctcnt = correctcnt + 1;
-            $write("design output = %8b, golden output = %8b. Byte Correct\n", odata, testa[i2][(63-obyte_cnt**8)-:8]);
+            $write("design output = %8b, golden output = %8b. Byte Correct\n", odata, testa[i2][(63-obyte_cnt*8)-:8]);
         end
 
         obyte_cnt = obyte_cnt + 1; 
