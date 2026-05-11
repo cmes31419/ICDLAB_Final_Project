@@ -22,11 +22,11 @@ module memory(
         for (i=0;i<4;i=i+1) begin
             for (j=0;j<7;j=j+1) begin
                 if (iwen && iaddr[3+:2] == i && iaddr[0+:3] == j) data_next[i][j*8+:8] = idata;
-                else if (icen && caddr == i) data_next[i][j*8+:8] = data[i][j*8+:8] ^ cdata[j*8+:8];
+                else if (iwen && caddr == i) data_next[i][j*8+:8] = data[i][j*8+:8] ^ cdata[j*8+:8];
                 else data_next[i][j*8+:8] = data[i][j*8+:8];
             end
             if (iwen && iaddr[3+:2] == i && iaddr[0+:3] == 7) data_next[i][56+:7] = idata[0+:7];
-            else if (icen && caddr == i) data_next[i][56+:7] = data[i][56+:7] ^ cdata[56+:7];
+            else if (iwen && caddr == i) data_next[i][56+:7] = data[i][56+:7] ^ cdata[56+:7];
             else data_next[i][56+:7] = data[i][56+:7];
         end
     end

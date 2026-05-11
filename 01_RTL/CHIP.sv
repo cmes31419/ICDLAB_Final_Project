@@ -13,6 +13,21 @@ module CHIP(
     wire [62:0] cdata;
     wire        cdone, sdone;
     wire [5:0] LO_syn[3:0];
+    wire LKES_done;
+    wire [5:0] cs_sigma_in [6:0], LKES_sigma_out[2:0];
+    
+
+    // temporaily set to only LKES
+    genvar gi;
+    generate
+        for (gi=0; gi<3;gi=gi+1) begin
+            assign cs_sigma_in[gi] = LKES_sigma_out[gi];
+        end
+        for (gi=3; gi<7;gi=gi+1) begin
+            assign cs_sigma_in[gi] = 0;
+        end
+    endgenerate
+    assign iready = 1;
 
     memory mem0(
         .clk(clk),
@@ -32,7 +47,7 @@ module CHIP(
         .rst(rst),
         .cnt(iaddr[2:0]),
         .idata(idata),
-        .iwen(ivalid),
+        .ivalid(ivalid),
         .S(LO_syn),
         .sdone(sdone)
     );
@@ -42,15 +57,15 @@ module CHIP(
         .rst(rst),
         .syndrome_rdy(sdone),
         .LO_syndrome(LO_syn),
-        .sigma_done(),
-        .sigma()
+        .sigma_done(LKES_done),
+        .sigma(LKES_sigma_out)
     );
 
     chien_search cs0(
         .clk(clk),
         .rst(rst),
-        .sigma(),
-        .sigma_valid(),
+        .sigma(cs_sigma_in),
+        .sigma_valid(LKES_done),
         .ready(),
         .cdata(cdata),
         .cdone(cdone),
@@ -64,10 +79,10 @@ module CHIP(
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            cnt <= 0;
+            iaddr <= 0;
         end
         else begin
-            cnt <= cnt_next;
+            iaddr <= iaddr_next;
         end
     end
     

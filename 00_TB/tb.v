@@ -8,6 +8,7 @@ parameter CYCLE = 10;
 parameter PATTERN = 1;
 integer CODEWORD_CNT = 1;
 integer NTEST = CODEWORD_CNT*4;
+integer TESTBYTE = NTEST * 8;
 // --------------------------
 // signals
 reg clk, rst;
@@ -29,7 +30,7 @@ integer errcnt, correctcnt;
 // read files and dump files
 initial begin
 	if (PATTERN == 0) begin
-		CODEWORD_CNT = 2;
+		CODEWORD_CNT = 1;
 		$readmemb("../00_TB/testdata/pattern/p0.txt", testdata);
 		$readmemb("../00_TB/testdata/codeword/p0a.txt", testa);
 	end
@@ -115,20 +116,28 @@ initial begin
 	// 	#(CYCLE*10);
 	// end
 end
-// feed input 
-always @(negedge clk) begin
-	if (iready === 1) begin
-        ivalid = 1;
-        if (ibyte_cnt >= 4) begin
-            i1 = i1 + 1;
-            ibyte_cnt = 0;
-        end
-		idata = testdata[i1][(63-ibyte_cnt*8)-:8];
-        ibyte_cnt = ibyte_cnt + 1;
+// feed input
+initial begin
+	@(negedge rst);
+	@(posedge clk);
+	while (ibyte_cnt < TESTBYTE) begin
+		@(negedge clk);
+		if (iready === 1) begin
+	        ivalid = 1;
+	        if (ibyte_cnt >= 8) begin
+	            i1 = i1 + 1;
+	            ibyte_cnt = 0;
+	        end
+			idata = testdata[i1][(63-ibyte_cnt*8)-:8];
+	        ibyte_cnt = ibyte_cnt + 1;
+		end
+	    else begin
+	        ivalid = 0;
+	    end
+
 	end
-    else begin
-        ivalid = 0;
-    end
+
+
 end
 
 // check output
@@ -138,13 +147,13 @@ always @(negedge clk) begin
             i2 = i2 + 1;
             obyte_cnt = 0;
         end
-        if (odata !== testa[i2][(63-ibyte_cnt**8)-:8]) begin          
+        if (odata !== testa[i2][(63-obyte_cnt**8)-:8]) begin          
 			errcnt = errcnt + 1;
-			$write("design output = %8b, golden output = %8b. Byte Error\n", odata, testa[i2][(63-ibyte_cnt**8)-:8]);
+			$write("design output = %8b, golden output = %8b. Byte Error\n", odata, testa[i2][(63-obyte_cnt**8)-:8]);
         end
         else begin
 			correctcnt = correctcnt + 1;
-            $write("design output = %8b, golden output = %8b. Byte Correct\n", odata, testa[i2][(63-ibyte_cnt**8)-:8]);
+            $write("design output = %8b, golden output = %8b. Byte Correct\n", odata, testa[i2][(63-obyte_cnt**8)-:8]);
         end
 
         obyte_cnt = obyte_cnt + 1; 
@@ -159,7 +168,7 @@ initial begin
 	$finish;
 end
 initial begin
-	#(CYCLE*1000000);
+	#(CYCLE*100000);
 	$write("Simulation Timeout!!!\n");
 	$finish;
 end
