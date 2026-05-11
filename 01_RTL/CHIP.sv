@@ -8,28 +8,39 @@ module CHIP(
     output          ovalid
 );
 
-    reg [4:0]   icnt, icnt_next;
+    reg [4:0]   icnt, icnt_next;    // input byte counter
+    reg [4:0]   ocnt, ocnt_next;    // output byte counter
+    reg [1:0]   ccnt, ccnt_next;    // correction codeword counter
 
     wire [4:0]  iaddr;
+    wire [4:0]  oaddr;
+    wire [1:0]  caddr;
+    wire        cwen;
     wire [62:0] cdata;
-    wire        cdone, sdone;
+    wire        cdone, cfail;
+    wire        sdone;
     wire [5:0]  LO_syn[3:0];
     wire        LKES_done;
     wire [5:0]  cs_sigma_in [6:0], LKES_sigma_out[2:0];
-    
+
     // temporaily set to only LKES
     genvar gi;
 
     generate
-        for (gi=0; gi<3;gi=gi+1) begin
+        for (gi=0;gi<3;gi=gi+1) begin
             assign cs_sigma_in[gi] = LKES_sigma_out[gi];
         end
-        for (gi=3; gi<7;gi=gi+1) begin
+        for (gi=3;gi<7;gi=gi+1) begin
             assign cs_sigma_in[gi] = 0;
         end
     endgenerate
 
+    // Address mapping: input/output bytes are stored and read in reverse byte order
     assign iaddr = {icnt[4:3], 3'h7 - icnt[2:0]};
+    assign oaddr = {ocnt[4:3], 3'h7 - ocnt[2:0]};
+
+    assign caddr = ccnt;
+    assign cwen = cdone & ~cfail;
 
     assign iready = 1;
 
@@ -39,11 +50,13 @@ module CHIP(
         .iaddr(iaddr),
         .idata(idata),
         .iwen(ivalid),
-        .caddr(),
+        .caddr(caddr),
         .cdata(cdata),
-        .cwen(),
-        .oaddr(),
-        .odata()
+        .cwen(cwen),
+        .ckill(cdone),  // TODO: replace with final nested-decoding done signal
+        .oaddr(oaddr),
+        .odata(odata),
+        .ovalid(ovalid)
     );
 
     syndrome syn0(
@@ -79,15 +92,23 @@ module CHIP(
     always @(*) begin
         if (ivalid) icnt_next = icnt + 1;
         else icnt_next = icnt;
+        if (ovalid) ocnt_next = ocnt + 1;
+        else ocnt_next = ocnt;
+        if (cdone) ccnt_next = ccnt + 1;
+        else ccnt_next = ccnt;
     end
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             icnt    <= 0;
+            ocnt    <= 0;
+            ccnt    <= 0;
         end
         else begin
             icnt    <= icnt_next;
+            ocnt    <= ocnt_next;
+            ccnt    <= ccnt_next;
         end
     end
-    
+
 endmodule
