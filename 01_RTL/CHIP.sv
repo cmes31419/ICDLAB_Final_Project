@@ -8,8 +8,8 @@ module CHIP(
     output          ovalid
 );
 
-    reg [4:0]   icnt, icnt_next;    // input byte counter
-    reg [4:0]   ocnt, ocnt_next;    // output byte counter
+    reg [5:0]   icnt, icnt_next;    // input byte counter with wrap bit
+    reg [5:0]   ocnt, ocnt_next;    // output byte counter with wrap bit
     reg [1:0]   ccnt, ccnt_next;    // correction codeword counter
 
     wire [4:0]  iaddr;
@@ -42,7 +42,8 @@ module CHIP(
     assign caddr = ccnt;
     assign cwen = cdone & ~cfail;
 
-    assign iready = 1;
+    // FIFO-style full check
+    assign iready = (icnt[5] != ocnt[5] && icnt[4:0] == ocnt[4:0]) ? 0 : 1;
 
     memory mem0(
         .clk(clk),
