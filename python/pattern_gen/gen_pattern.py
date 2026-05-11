@@ -86,7 +86,7 @@ def is_good_pattern(received, error_pos, bch_dec, t0=2, max_failed_for_stage2=No
             return False
     return True
 
-def write_codewords_to_file(codewords, filename, pad_msb=True, pad_char="1", expected_len=63):
+def write_codewords_to_file(codewords, filename, pad_msb=True, pad_char="0", expected_len=63):
     with open(filename, "w") as file:
         for code in codewords:
             code = code.strip()
@@ -147,4 +147,4 @@ def main(case):
     write_error_pos_to_file(error_pos, error_pos_file)
 
 if __name__ == "__main__":
-    main(0)
+    main(1)
