@@ -1,208 +1,220 @@
-//=====================================================================
+//=========================================================================
 // nsu_top.v
 //
-// Top-level Nested Syndrome Unit for GII-BCH decoder
+// Nested Syndrome Unit (NSU) for GII-BCH decoder.
 //
 // Spec:
-//   m=4 interleaves, v=2 nested codes
-//   GF(2^6), psi(x) = x^6 + x + 1
-//   t0=2, t1=4, t2=6
+//   - GF(2^6), psi(x) = x^6 + x + 1
+//   - m=4 interleaves, v=2 nested codes
+//   - Evaluates at alpha^5, alpha^7 (stage 0 done) or alpha^9, alpha^11 (stage 1 done)
 //
-// This module instantiates 4 nsu_unit instances (one per j value):
-//   - j=2 (evaluate at alpha^5):   produces Shat for S_5
-//   - j=3 (evaluate at alpha^7):   produces Shat for S_7
-//   - j=4 (evaluate at alpha^9):   produces Shat for S_9
-//   - j=5 (evaluate at alpha^11):  produces Shat for S_11
+// Inputs:
+//   - r0..r3   : 4 corrected binary BCH codewords (63 bit each, parallel)
+//   - b        : 0 -> 1 interleave undecoded (only Ŝ_0 needed)
+//                1 -> 2 interleaves undecoded (need both Ŝ_0 and Ŝ_1)
+//   - stage_flag: 0 -> stage 0 done (use L=5,7)
+//                 1 -> stage 1 done (use L=9,11)
+//   - start    : 1-cycle pulse to begin
 //
-// Inputs are organized as 4 sets (one per j). The parent of this module
-// (system controller) decides which j set is valid based on stage.
-//   - Stage 0 finished:  use j=2 and j=3 outputs
-//   - Stage 1 finished:  use j=4 and j=5 outputs
+// Outputs:
+//   - S_out_0..3: 4 nested syndromes (6 bit each)
+//        stage_flag=0: S_out_{0..3} = Ŝ_0@L=5, Ŝ_0@L=7, Ŝ_1@L=5, Ŝ_1@L=7
+//        stage_flag=1: S_out_{0..3} = Ŝ_0@L=9, Ŝ_0@L=11, Ŝ_1@L=9, Ŝ_1@L=11
+//        S_out_2, S_out_3 are forced to 0 if b==0.
+//   - b_out    : latched copy of b
+//   - valid    : pulses high when outputs are ready
 //
-// The HOSU outputs S_(2j)^(i) for the requested j must be aligned with
-// the corresponding R_i input.
+// Combinational pre-processing layer:
+//   r_xor   = r0 ^ r1 ^ r2 ^ r3                          (for Ŝ_0 path)
+//   r_shift = r0 ^ rot(r1,1) ^ rot(r2,2) ^ rot(r3,3)     (for Ŝ_1 path)
+//     - rot(r, k): cyclic left rotate by k bits
+//     - cyclic is exactly equivalent to logical shift here because alpha^63 = 1
 //
-// Latency: 1 cycle from enable to output valid.
-//=====================================================================
+// 8 Horner instances; only the needed ones are enabled (others frozen).
+//=========================================================================
 
 module nsu_top (
     input  wire        clk,
-    input  wire        rst,
-    input  wire        enable,            // 1-cycle pulse to compute all j
+    input  wire        rst_n,
+    input  wire        start,
 
-    //------------------------------------------------------------------
-    // R inputs: r_i(alpha^(2j+1)) for each interleave i and each j
-    //   R_jX_iY = r_Y(alpha^(2X+1))
-    //------------------------------------------------------------------
-    input  wire [5:0]  R_j2_i0, R_j2_i1, R_j2_i2, R_j2_i3,  // for j=2 (alpha^5)
-    input  wire [5:0]  R_j3_i0, R_j3_i1, R_j3_i2, R_j3_i3,  // for j=3 (alpha^7)
-    input  wire [5:0]  R_j4_i0, R_j4_i1, R_j4_i2, R_j4_i3,  // for j=4 (alpha^9)
-    input  wire [5:0]  R_j5_i0, R_j5_i1, R_j5_i2, R_j5_i3,  // for j=5 (alpha^11)
+    input  wire [62:0] r0,
+    input  wire [62:0] r1,
+    input  wire [62:0] r2,
+    input  wire [62:0] r3,
 
-    //------------------------------------------------------------------
-    // S inputs: S_(2j)^(i) from HOSU for each j and each i
-    //------------------------------------------------------------------
-    input  wire [5:0]  S_j2_i0, S_j2_i1, S_j2_i2, S_j2_i3,
-    input  wire [5:0]  S_j3_i0, S_j3_i1, S_j3_i2, S_j3_i3,
-    input  wire [5:0]  S_j4_i0, S_j4_i1, S_j4_i2, S_j4_i3,
-    input  wire [5:0]  S_j5_i0, S_j5_i1, S_j5_i2, S_j5_i3,
+    input  wire        b,
+    input  wire        stage_flag,
 
-    //------------------------------------------------------------------
-    // Decoded flags (shared across all j)
-    //------------------------------------------------------------------
-    input  wire        f0, f1, f2, f3,
-
-    //------------------------------------------------------------------
-    // Outputs: 2 nested syndromes per j (4 j's = 8 outputs)
-    //------------------------------------------------------------------
-    output wire [5:0]  Shat0_j2, Shat1_j2,
-    output wire [5:0]  Shat0_j3, Shat1_j3,
-    output wire [5:0]  Shat0_j4, Shat1_j4,
-    output wire [5:0]  Shat0_j5, Shat1_j5,
-
+    output wire [5:0]  S_out_0,
+    output wire [5:0]  S_out_1,
+    output wire [5:0]  S_out_2,
+    output wire [5:0]  S_out_3,
+    output reg         b_out,
     output wire        valid
 );
 
-    //=================================================================
-    // Constant multipliers:
-    // For each j, we need to multiply by alpha^((2j+1)*i) for i=1,2,3
+    //----------------------------------------------------------------
+    // Combinational pre-processing (pure wiring)
+    //----------------------------------------------------------------
+    wire [62:0] r_xor;
+    assign r_xor = r0 ^ r1 ^ r2 ^ r3;
+
+    // Cyclic left rotate:
+    //   rot(r, k)[i] = r[(i - k) mod 63]
+    //   So rotated[k..62] = r[0..62-k], rotated[0..k-1] = r[63-k..62]
+    //   In Verilog concat: {r[62-k:0], r[62:63-k]}
+    wire [62:0] r1_rot, r2_rot, r3_rot;
+    assign r1_rot = {r1[61:0], r1[62]};      // rotate left by 1
+    assign r2_rot = {r2[60:0], r2[62:61]};   // rotate left by 2
+    assign r3_rot = {r3[59:0], r3[62:60]};   // rotate left by 3
+
+    wire [62:0] r_shift;
+    assign r_shift = r0 ^ r1_rot ^ r2_rot ^ r3_rot;
+
+    //----------------------------------------------------------------
+    // Cycle counter + state latching
+    //----------------------------------------------------------------
+    reg       running;
+    reg [1:0] cyc_cnt;        // 0 = idle, 1 = mid-evaluation
+    reg       latched_stage;
+    reg       latched_b;
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            running       <= 1'b0;
+            cyc_cnt       <= 2'd0;
+            latched_stage <= 1'b0;
+            latched_b     <= 1'b0;
+            b_out         <= 1'b0;
+        end else if (start) begin
+            running       <= 1'b1;
+            cyc_cnt       <= 2'd1;
+            latched_stage <= stage_flag;
+            latched_b     <= b;
+            b_out         <= b;
+        end else if (running) begin
+            if (cyc_cnt == 2'd1) begin
+                cyc_cnt <= 2'd2;
+            end else begin
+                running <= 1'b0;
+                cyc_cnt <= 2'd0;
+            end
+        end
+    end
+
+    //----------------------------------------------------------------
+    // Data feed to each Horner: 63 bits split into 2 chunks of 32 bits.
+    // Horner expects MSB-first; pad 1 bit zero in MSB of cycle 1.
     //
-    //   j=2 (2j+1=5):   alpha^5,  alpha^10, alpha^15
-    //   j=3 (2j+1=7):   alpha^7,  alpha^14, alpha^21
-    //   j=4 (2j+1=9):   alpha^9,  alpha^18, alpha^27
-    //   j=5 (2j+1=11):  alpha^11, alpha^22, alpha^33
-    //
-    // For each (j, i) we need TWO multipliers: one for R, one for S.
-    // The S inputs are flag-gated BEFORE multiplication (so that for
-    // undecoded interleaves, the gated input is 0 and the mul output
-    // is 0, contributing nothing to the sum).
-    //=================================================================
+    //   Cycle 1 (during start): data = { 1'b0, r[62:32] }    (1 pad + 31 high)
+    //   Cycle 2 (next cycle)  : data = r[31:0]               (32 low)
+    //----------------------------------------------------------------
+    wire [31:0] data_xor;
+    wire [31:0] data_shift;
 
-    //--- Flag-gated S inputs (for k=1 path; the k=0 path gates inside nsu_unit)
-    wire [5:0] S_j2_i1_g, S_j2_i2_g, S_j2_i3_g;
-    wire [5:0] S_j3_i1_g, S_j3_i2_g, S_j3_i3_g;
-    wire [5:0] S_j4_i1_g, S_j4_i2_g, S_j4_i3_g;
-    wire [5:0] S_j5_i1_g, S_j5_i2_g, S_j5_i3_g;
+    // At 'start' cycle, send high chunk; otherwise (running, cyc_cnt=1), send low.
+    assign data_xor   = start ? {1'b0, r_xor[62:32]}   : r_xor[31:0];
+    assign data_shift = start ? {1'b0, r_shift[62:32]} : r_shift[31:0];
 
-    assign S_j2_i1_g = f1 ? S_j2_i1 : 6'b0;
-    assign S_j2_i2_g = f2 ? S_j2_i2 : 6'b0;
-    assign S_j2_i3_g = f3 ? S_j2_i3 : 6'b0;
+    //----------------------------------------------------------------
+    // Enable signals: only enable Horners we need
+    //----------------------------------------------------------------
+    // During 'start' cycle, gate by the incoming stage_flag/b.
+    // While running, gate by latched_stage/latched_b.
+    wire stage_now = start ? stage_flag : latched_stage;
+    wire b_now     = start ? b          : latched_b;
 
-    assign S_j3_i1_g = f1 ? S_j3_i1 : 6'b0;
-    assign S_j3_i2_g = f2 ? S_j3_i2 : 6'b0;
-    assign S_j3_i3_g = f3 ? S_j3_i3 : 6'b0;
+    wire run_active = start | running;
 
-    assign S_j4_i1_g = f1 ? S_j4_i1 : 6'b0;
-    assign S_j4_i2_g = f2 ? S_j4_i2 : 6'b0;
-    assign S_j4_i3_g = f3 ? S_j4_i3 : 6'b0;
+    wire en_a5_k0  = run_active & (stage_now == 1'b0);
+    wire en_a7_k0  = run_active & (stage_now == 1'b0);
+    wire en_a9_k0  = run_active & (stage_now == 1'b1);
+    wire en_a11_k0 = run_active & (stage_now == 1'b1);
 
-    assign S_j5_i1_g = f1 ? S_j5_i1 : 6'b0;
-    assign S_j5_i2_g = f2 ? S_j5_i2 : 6'b0;
-    assign S_j5_i3_g = f3 ? S_j5_i3 : 6'b0;
+    wire en_a5_k1  = run_active & (stage_now == 1'b0) & b_now;
+    wire en_a7_k1  = run_active & (stage_now == 1'b0) & b_now;
+    wire en_a9_k1  = run_active & (stage_now == 1'b1) & b_now;
+    wire en_a11_k1 = run_active & (stage_now == 1'b1) & b_now;
 
-    //=================================================================
-    // GF constant multipliers for j=2 (2j+1 = 5)
-    //=================================================================
-    wire [5:0] R_j2_i1_mul, R_j2_i2_mul, R_j2_i3_mul;
-    wire [5:0] S_j2_i1_mul, S_j2_i2_mul, S_j2_i3_mul;
+    // Start pulse to each Horner (only the ones being used this run)
+    wire start_a5_k0  = start & (stage_flag == 1'b0);
+    wire start_a7_k0  = start & (stage_flag == 1'b0);
+    wire start_a9_k0  = start & (stage_flag == 1'b1);
+    wire start_a11_k0 = start & (stage_flag == 1'b1);
 
-    mul_a05 m_R_j2_i1 (.x(R_j2_i1),    .y(R_j2_i1_mul));
-    mul_a10 m_R_j2_i2 (.x(R_j2_i2),    .y(R_j2_i2_mul));
-    mul_a15 m_R_j2_i3 (.x(R_j2_i3),    .y(R_j2_i3_mul));
-    mul_a05 m_S_j2_i1 (.x(S_j2_i1_g),  .y(S_j2_i1_mul));
-    mul_a10 m_S_j2_i2 (.x(S_j2_i2_g),  .y(S_j2_i2_mul));
-    mul_a15 m_S_j2_i3 (.x(S_j2_i3_g),  .y(S_j2_i3_mul));
+    wire start_a5_k1  = start & (stage_flag == 1'b0) & b;
+    wire start_a7_k1  = start & (stage_flag == 1'b0) & b;
+    wire start_a9_k1  = start & (stage_flag == 1'b1) & b;
+    wire start_a11_k1 = start & (stage_flag == 1'b1) & b;
 
-    //=================================================================
-    // GF constant multipliers for j=3 (2j+1 = 7)
-    //=================================================================
-    wire [5:0] R_j3_i1_mul, R_j3_i2_mul, R_j3_i3_mul;
-    wire [5:0] S_j3_i1_mul, S_j3_i2_mul, S_j3_i3_mul;
+    //----------------------------------------------------------------
+    // 8 Horner instances
+    //----------------------------------------------------------------
+    wire [5:0] S_5_k0,  S_7_k0,  S_9_k0,  S_11_k0;
+    wire [5:0] S_5_k1,  S_7_k1,  S_9_k1,  S_11_k1;
+    wire       d_5_k0,  d_7_k0,  d_9_k0,  d_11_k0;
+    wire       d_5_k1,  d_7_k1,  d_9_k1,  d_11_k1;
 
-    mul_a07 m_R_j3_i1 (.x(R_j3_i1),    .y(R_j3_i1_mul));
-    mul_a14 m_R_j3_i2 (.x(R_j3_i2),    .y(R_j3_i2_mul));
-    mul_a21 m_R_j3_i3 (.x(R_j3_i3),    .y(R_j3_i3_mul));
-    mul_a07 m_S_j3_i1 (.x(S_j3_i1_g),  .y(S_j3_i1_mul));
-    mul_a14 m_S_j3_i2 (.x(S_j3_i2_g),  .y(S_j3_i2_mul));
-    mul_a21 m_S_j3_i3 (.x(S_j3_i3_g),  .y(S_j3_i3_mul));
-
-    //=================================================================
-    // GF constant multipliers for j=4 (2j+1 = 9)
-    //=================================================================
-    wire [5:0] R_j4_i1_mul, R_j4_i2_mul, R_j4_i3_mul;
-    wire [5:0] S_j4_i1_mul, S_j4_i2_mul, S_j4_i3_mul;
-
-    mul_a09 m_R_j4_i1 (.x(R_j4_i1),    .y(R_j4_i1_mul));
-    mul_a18 m_R_j4_i2 (.x(R_j4_i2),    .y(R_j4_i2_mul));
-    mul_a27 m_R_j4_i3 (.x(R_j4_i3),    .y(R_j4_i3_mul));
-    mul_a09 m_S_j4_i1 (.x(S_j4_i1_g),  .y(S_j4_i1_mul));
-    mul_a18 m_S_j4_i2 (.x(S_j4_i2_g),  .y(S_j4_i2_mul));
-    mul_a27 m_S_j4_i3 (.x(S_j4_i3_g),  .y(S_j4_i3_mul));
-
-    //=================================================================
-    // GF constant multipliers for j=5 (2j+1 = 11)
-    //=================================================================
-    wire [5:0] R_j5_i1_mul, R_j5_i2_mul, R_j5_i3_mul;
-    wire [5:0] S_j5_i1_mul, S_j5_i2_mul, S_j5_i3_mul;
-
-    mul_a11 m_R_j5_i1 (.x(R_j5_i1),    .y(R_j5_i1_mul));
-    mul_a22 m_R_j5_i2 (.x(R_j5_i2),    .y(R_j5_i2_mul));
-    mul_a33 m_R_j5_i3 (.x(R_j5_i3),    .y(R_j5_i3_mul));
-    mul_a11 m_S_j5_i1 (.x(S_j5_i1_g),  .y(S_j5_i1_mul));
-    mul_a22 m_S_j5_i2 (.x(S_j5_i2_g),  .y(S_j5_i2_mul));
-    mul_a33 m_S_j5_i3 (.x(S_j5_i3_g),  .y(S_j5_i3_mul));
-
-    //=================================================================
-    // 4 nsu_unit instances (one per j)
-    //
-    // Note: only one valid signal is exposed (they all fire together).
-    //=================================================================
-    wire valid_j2, valid_j3, valid_j4, valid_j5;
-
-    nsu_unit u_nsu_j2 (
-        .clk(clk), .rst(rst), .enable(enable),
-        .R0(R_j2_i0),     .R1(R_j2_i1),     .R2(R_j2_i2),     .R3(R_j2_i3),
-        .S0(S_j2_i0),     .S1(S_j2_i1),     .S2(S_j2_i2),     .S3(S_j2_i3),
-        .f0(f0), .f1(f1), .f2(f2), .f3(f3),
-        .R1_mul(R_j2_i1_mul), .R2_mul(R_j2_i2_mul), .R3_mul(R_j2_i3_mul),
-        .S1_mul(S_j2_i1_mul), .S2_mul(S_j2_i2_mul), .S3_mul(S_j2_i3_mul),
-        .Shat0(Shat0_j2), .Shat1(Shat1_j2),
-        .valid(valid_j2)
+    // Stage 0 done: alpha^5
+    horner_a5 u_a5_k0 (
+        .clk(clk), .rst_n(rst_n),
+        .enable(en_a5_k0), .start(start_a5_k0),
+        .data(data_xor),   .state(S_5_k0),  .done(d_5_k0)
+    );
+    horner_a5 u_a5_k1 (
+        .clk(clk), .rst_n(rst_n),
+        .enable(en_a5_k1), .start(start_a5_k1),
+        .data(data_shift), .state(S_5_k1),  .done(d_5_k1)
     );
 
-    nsu_unit u_nsu_j3 (
-        .clk(clk), .rst(rst), .enable(enable),
-        .R0(R_j3_i0),     .R1(R_j3_i1),     .R2(R_j3_i2),     .R3(R_j3_i3),
-        .S0(S_j3_i0),     .S1(S_j3_i1),     .S2(S_j3_i2),     .S3(S_j3_i3),
-        .f0(f0), .f1(f1), .f2(f2), .f3(f3),
-        .R1_mul(R_j3_i1_mul), .R2_mul(R_j3_i2_mul), .R3_mul(R_j3_i3_mul),
-        .S1_mul(S_j3_i1_mul), .S2_mul(S_j3_i2_mul), .S3_mul(S_j3_i3_mul),
-        .Shat0(Shat0_j3), .Shat1(Shat1_j3),
-        .valid(valid_j3)
+    // Stage 0 done: alpha^7
+    horner_a7 u_a7_k0 (
+        .clk(clk), .rst_n(rst_n),
+        .enable(en_a7_k0), .start(start_a7_k0),
+        .data(data_xor),   .state(S_7_k0),  .done(d_7_k0)
+    );
+    horner_a7 u_a7_k1 (
+        .clk(clk), .rst_n(rst_n),
+        .enable(en_a7_k1), .start(start_a7_k1),
+        .data(data_shift), .state(S_7_k1),  .done(d_7_k1)
     );
 
-    nsu_unit u_nsu_j4 (
-        .clk(clk), .rst(rst), .enable(enable),
-        .R0(R_j4_i0),     .R1(R_j4_i1),     .R2(R_j4_i2),     .R3(R_j4_i3),
-        .S0(S_j4_i0),     .S1(S_j4_i1),     .S2(S_j4_i2),     .S3(S_j4_i3),
-        .f0(f0), .f1(f1), .f2(f2), .f3(f3),
-        .R1_mul(R_j4_i1_mul), .R2_mul(R_j4_i2_mul), .R3_mul(R_j4_i3_mul),
-        .S1_mul(S_j4_i1_mul), .S2_mul(S_j4_i2_mul), .S3_mul(S_j4_i3_mul),
-        .Shat0(Shat0_j4), .Shat1(Shat1_j4),
-        .valid(valid_j4)
+    // Stage 1 done: alpha^9
+    horner_a9 u_a9_k0 (
+        .clk(clk), .rst_n(rst_n),
+        .enable(en_a9_k0), .start(start_a9_k0),
+        .data(data_xor),   .state(S_9_k0),  .done(d_9_k0)
+    );
+    horner_a9 u_a9_k1 (
+        .clk(clk), .rst_n(rst_n),
+        .enable(en_a9_k1), .start(start_a9_k1),
+        .data(data_shift), .state(S_9_k1),  .done(d_9_k1)
     );
 
-    nsu_unit u_nsu_j5 (
-        .clk(clk), .rst(rst), .enable(enable),
-        .R0(R_j5_i0),     .R1(R_j5_i1),     .R2(R_j5_i2),     .R3(R_j5_i3),
-        .S0(S_j5_i0),     .S1(S_j5_i1),     .S2(S_j5_i2),     .S3(S_j5_i3),
-        .f0(f0), .f1(f1), .f2(f2), .f3(f3),
-        .R1_mul(R_j5_i1_mul), .R2_mul(R_j5_i2_mul), .R3_mul(R_j5_i3_mul),
-        .S1_mul(S_j5_i1_mul), .S2_mul(S_j5_i2_mul), .S3_mul(S_j5_i3_mul),
-        .Shat0(Shat0_j5), .Shat1(Shat1_j5),
-        .valid(valid_j5)
+    // Stage 1 done: alpha^11
+    horner_a11 u_a11_k0 (
+        .clk(clk), .rst_n(rst_n),
+        .enable(en_a11_k0), .start(start_a11_k0),
+        .data(data_xor),    .state(S_11_k0), .done(d_11_k0)
+    );
+    horner_a11 u_a11_k1 (
+        .clk(clk), .rst_n(rst_n),
+        .enable(en_a11_k1), .start(start_a11_k1),
+        .data(data_shift),  .state(S_11_k1), .done(d_11_k1)
     );
 
-    assign valid = valid_j2;  // All 4 fire together; just expose one
+    //----------------------------------------------------------------
+    // Output mux (based on latched_stage / latched_b)
+    //----------------------------------------------------------------
+    assign S_out_0 = (latched_stage == 1'b0) ? S_5_k0 : S_9_k0;
+    assign S_out_1 = (latched_stage == 1'b0) ? S_7_k0 : S_11_k0;
+    assign S_out_2 = (latched_b == 1'b0) ? 6'b0 :
+                     ((latched_stage == 1'b0) ? S_5_k1 : S_9_k1);
+    assign S_out_3 = (latched_b == 1'b0) ? 6'b0 :
+                     ((latched_stage == 1'b0) ? S_7_k1 : S_11_k1);
+
+    // valid: pulse when the k=0 path's done goes high
+    assign valid = (latched_stage == 1'b0) ? d_5_k0 : d_9_k0;
 
 endmodule
