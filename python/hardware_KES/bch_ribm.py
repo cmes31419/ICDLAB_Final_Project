@@ -1,4 +1,9 @@
 from __future__ import annotations
+import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
 
 from dataclasses import dataclass
 from typing import Any, Dict, List
@@ -336,21 +341,24 @@ if __name__ == "__main__":
     # Minimal smoke-test scaffold.
     # Replace these syndromes with a real BCH syndrome sequence when testing.
     q = 6
-    t = 2
+    t = 6
     p_str = "x^6 + x + 1"
 
     kes = BCHRiBMSkip(q=q, t=t, p_str=p_str)
     F = kes.field
 
     # Example placeholder: 2t syndromes [S0, S1, ..., S_{2t-1}]
-    syndromes = [F(24), F(15), F(47), F(2)]
+    # syndromes = [F(36), F(32), F(54), F(48)]
+    # syndromes = [F(43), F(54), F(41), F(40)]
+    # syndromes = [F(43), F(54), F(41), F(40), F(27), F(50), F(23), F(51)]
+    # syndromes = [GF(9, order=2^6), GF(2, order=2^6), GF(42, order=2^6), GF(4, order=2^6), GF(45, order=2^6), GF(55, order=2^6), GF(41, order=2^6), GF(16, order=2^6), GF(15, order=2^6), GF(34, order=2^6), GF(60, order=2^6), GF(41, order=2^6)]
+    syndromes = [F(9), F(2), F(42), F(4), F(45), F(55), F(41), F(16), F(15), F(34), F(60), F(41)]
 
+    # syndromes = [F(9), F(2), F(42), F(4), F(45), F(55), F(41), F(16)]
     result = kes.run(syndromes)
 
     print("locator =", kes.coeffs_to_int(result["locator"]))
     print("error pos=", kes.check_root(result["locator"]))
     kes.print_trace_pe_style(result["trace"])
 
-# [GF(9, order=2^6), GF(2, order=2^6), GF(42, order=2^6), GF(4, order=2^6)]
-# [GF(24, order=2^6), GF(15, order=2^6), GF(47, order=2^6), GF(22, order=2^6)]
-# 12, 41
+    
