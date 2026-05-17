@@ -1,7 +1,8 @@
 module BM_PE0(
     input clk,
     input rst,
-    input syndrome_rdy,
+    input start,
+    input hold,
     
     input [5:0] gamma,
     input [5:0] discrepancy,
@@ -27,9 +28,13 @@ gf_mul u_gfmul1(.in1(b_poly_in), .in2(discrepancy), .prod(gfmul1_out));
 
 
 always @(*) begin
-    if (syndrome_rdy) begin
+    if (start) begin
         sigma_poly_next = sigma_init;
         b_poly_next = 0;
+    end
+    else if (hold) begin
+        sigma_poly_next = sigma_poly;
+        b_poly_next = b_poly;
     end
     else begin
         sigma_poly_next = gfmul0_out ^ gfmul1_out;
