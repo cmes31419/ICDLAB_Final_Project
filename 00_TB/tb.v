@@ -136,8 +136,6 @@ initial begin
 	    end
 
 	end
-
-
 end
 
 // check output

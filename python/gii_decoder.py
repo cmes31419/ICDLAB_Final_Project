@@ -345,6 +345,8 @@ class GIIDecoder(GII_code):
                 high_syn_dict=high_syn_dict,
                 target_layer=target_layer
             )
+            # print(f"[DEBUG] Round {target_layer}:")
+            # print("  high_syn_dict =", full_syn_dict)
 
             nested_results = self.decode_failed_with_full_syndromes(
                 received_words=current_words,
@@ -454,7 +456,7 @@ if __name__ == "__main__":
         with open(filename, "r") as f:
             return [line.strip() for line in f if line.strip()]
 
-    filename = "../00_TB/testdata/pattern/p2.txt"
+    filename = "../00_TB/testdata/pattern/p3.txt"
 
     gii_dec = GIIDecoder(
         q=6,
