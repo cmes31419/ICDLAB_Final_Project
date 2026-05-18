@@ -18,6 +18,11 @@ CHIP.sv
 ./LSU/syndrome_pow.sv
 
 // NSU
+./NSU/nsu_top.v
+./NSU/horner_a5.v
+./NSU/horner_a7.v
+./NSU/horner_a9.v
+./NSU/horner_a11.v
 
 // HSU
 

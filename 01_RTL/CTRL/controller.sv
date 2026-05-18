@@ -19,7 +19,8 @@ module controller(
     output          ssel,
     output [2:0]    syn_cnt,
     output          nsu_start,
-    output          nsu_b
+    output          nsu_b,
+    output          nsu_stage_flag
 );
 
     localparam S_IDLE   = 3'd0;
@@ -58,6 +59,7 @@ module controller(
 
     assign nsu_start = (nstate == S_START1 || nstate == S_START2) ? 1 : 0;
     assign nsu_b = (npending == 3'd2) ? 1 : 0;
+    assign nsu_stage_flag = (nstate == S_START2 || nstate == S_STAGE2) ? 1 : 0;
 
     // FIFO-style full check
     assign iready = (icnt[5] != ccnt[2] || icnt[4:3] >= ccnt[1:0]) ? 1 : 0;
