@@ -8,16 +8,25 @@ module CHIP(
     output          ovalid
 );
 
-    wire [4:0]  iaddr;
-    wire [4:0]  oaddr;
-    wire [1:0]  caddr;
+    wire [5:0]  iaddr;
+    wire [5:0]  oaddr;
+
+    wire [2:0]  caddr;
     wire [62:0] cdata;
     wire        cdone, cfail;
+
+    wire        naddr;
+    wire [62:0] ndata[3:0];
+    wire [3:0]  nflag;
+
     wire [2:0]  scnt;
     wire        sdone;
+
     wire [5:0]  LO_syn[3:0];
     wire        LKES_done;
     wire [5:0]  cs_sigma_in [6:0], LKES_sigma_out[2:0];
+
+    wire        nsu_start, nsu_b;
 
     // temporaily set to only LKES
     genvar gi;
@@ -37,11 +46,17 @@ module CHIP(
         .ivalid(ivalid),
         .ovalid(ovalid),
         .cdone(cdone),
+        .nflag(nflag),
+        .nested_cdone(),
+        .nested_cfail(),
         .iready(iready),
         .iaddr(iaddr),
         .oaddr(oaddr),
         .caddr(caddr),
-        .scnt(scnt)
+        .naddr(naddr),
+        .scnt(scnt),
+        .nsu_start(nsu_start),
+        .nsu_b(nsu_b)
     );
 
     memory mem0(
@@ -54,6 +69,9 @@ module CHIP(
         .cdata(cdata),
         .cwen(cdone & ~cfail),
         .ckill(cdone),  // TODO: replace with final nested-decoding done signal
+        .naddr(naddr),
+        .nflag(nflag),
+        .ndata(ndata),
         .oaddr(oaddr),
         .odata(odata),
         .ovalid(ovalid)
@@ -88,5 +106,23 @@ module CHIP(
         .cdone(cdone),
         .cfail(cfail)
     );
+
+    // nsu_top nsu0(
+    //     .clk(clk),
+    //     .rst(rst),
+    //     .start(nsu_start),
+    //     .r0(ndata[0]),
+    //     .r1(ndata[1]),
+    //     .r2(ndata[2]),
+    //     .r3(ndata[3]),
+    //     .b(nsu_b),
+    //     .stage_flag(),
+    //     .S_out_0(),
+    //     .S_out_1(),
+    //     .S_out_2(),
+    //     .S_out_3(),
+    //     .b_out(),
+    //     .valid()
+    // );
 
 endmodule

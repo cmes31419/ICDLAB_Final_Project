@@ -4,25 +4,49 @@ module controller(
     input           ivalid,
     input           ovalid,
     input           cdone,
+    input [3:0]     nflag,
+    input           nested_cdone,
+    input           nested_cfail,
     output          iready,
-    output [4:0]    iaddr,
-    output [4:0]    oaddr,
-    output [1:0]    caddr,
-    output [2:0]    scnt
+    output [5:0]    iaddr,
+    output [5:0]    oaddr,
+    output [2:0]    caddr,
+    output          naddr,
+    output [2:0]    scnt,
+    output          nsu_start,
+    output          nsu_b
 );
+
+    localparam S_IDLE   = 3'd0;
+    localparam S_START1 = 3'd1;
+    localparam S_STAGE1 = 3'd2;
+    localparam S_START2 = 3'd3;
+    localparam S_STAGE2 = 3'd4;
+    localparam S_DONE   = 3'd5;
 
     reg [5:0]   icnt, icnt_next;    // input byte counter with wrap bit
     reg [5:0]   ocnt, ocnt_next;    // output byte counter with wrap bit
-    reg [1:0]   ccnt, ccnt_next;    // correction codeword counter
+    reg [2:0]   ccnt, ccnt_next;    // correction codeword counter
+    reg         ncnt, ncnt_next;
+
+    reg [2:0]   nstate, nstate_next;
+
+    wire [2:0]  npending;
+
+    assign npending = nflag[0] + nflag[1] + nflag[2] + nflag[3];
 
     // Address mapping: input/output bytes are stored and read in reverse byte order
-    assign iaddr = {icnt[4:3], 3'h7 - icnt[2:0]};
-    assign oaddr = {ocnt[4:3], 3'h7 - ocnt[2:0]};
+    assign iaddr = {icnt[5:3], 3'h7 - icnt[2:0]};
+    assign oaddr = {ocnt[5:3], 3'h7 - ocnt[2:0]};
     assign caddr = ccnt;
+    assign naddr = ncnt;
     assign scnt = icnt[2:0];
+    assign nsu_start = (nstate == S_START1 || nstate == S_START2) ? 1 : 0;
+    assign nsu_b = (npending == 3'd2) ? 1 : 0;
 
     // FIFO-style full check
-    assign iready = (icnt[4:3] >= ccnt) ? 1 : 0;
+    assign iready = (icnt[5] != ccnt[2] || icnt[4:3] >= ccnt[1:0]) ? 1 : 0;
+    // assign iready = (icnt[4:3] >= ccnt[1:0]) ? 1 : 0;
 
     always @(*) begin
         if (ivalid) icnt_next = icnt + 1;
@@ -31,6 +55,19 @@ module controller(
         else ocnt_next = ocnt;
         if (cdone) ccnt_next = ccnt + 1;
         else ccnt_next = ccnt;
+        if (ncnt != ccnt[2] && npending == 3'd0) ncnt_next = ncnt + 1;
+        else ncnt_next = ncnt;
+    end
+
+    always @(*) begin
+        case (nstate)
+        S_IDLE:     nstate_next = (ncnt != ccnt[2] && (npending == 3'd1 || npending == 3'd2)) ? S_START1 : S_IDLE;
+        S_START1:   nstate_next = S_STAGE1;
+        S_STAGE1:   nstate_next = nested_cdone ? S_IDLE : S_STAGE1;
+        // S_START2:   nstate_next = S_STAGE2;
+        // S_STAGE2:   nstate_next = nested_cdone ? S_IDLE : S_STAGE2;
+        default:    nstate_next = S_IDLE;
+        endcase
     end
 
     always @(posedge clk or posedge rst) begin
@@ -38,11 +75,15 @@ module controller(
             icnt    <= 0;
             ocnt    <= 0;
             ccnt    <= 0;
+            ncnt    <= 0;
+            nstate  <= S_IDLE;
         end
         else begin
             icnt    <= icnt_next;
             ocnt    <= ocnt_next;
             ccnt    <= ccnt_next;
+            ncnt    <= ncnt_next;
+            nstate  <= nstate_next;
         end
     end
 
