@@ -6,7 +6,9 @@ module chien_search(
     output          ready,
     output [62:0]   cdata,
     output          cdone,
-    output          cfail
+    output          cfail,
+    output          nested_cdone,
+    output          nested_cfail
 );
 
     reg         cnt, cnt_next;
@@ -22,6 +24,10 @@ module chien_search(
     integer i;
 
     genvar gi;
+
+    // TODO: fix
+    assign nested_cdone = 1;
+    assign nested_cfail = 1;
 
     assign ready = (cnt == 0) ? 1 : 0;
     assign start = (cnt == 1) ? 1 : 0;

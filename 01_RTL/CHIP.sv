@@ -14,14 +14,17 @@ module CHIP(
     wire [2:0]  caddr;
     wire [62:0] cdata;
     wire        cdone, cfail;
+    wire        nested_cdone, nested_cfail;
 
     wire        naddr;
     wire [62:0] ndata[3:0];
     wire [3:0]  nflag;
+    wire        nkill;
 
-    wire [2:0]  scnt;
     wire        sdone;
+    wire        swen, ssel;
 
+    wire [2:0]  syn_cnt;
     wire [5:0]  LO_syn[3:0];
     wire        LKES_done;
     wire [5:0]  cs_sigma_in [6:0], LKES_sigma_out[2:0];
@@ -45,16 +48,21 @@ module CHIP(
         .rst(rst),
         .ivalid(ivalid),
         .ovalid(ovalid),
+        .sdone(sdone),
         .cdone(cdone),
+        .cfail(cfail),
         .nflag(nflag),
-        .nested_cdone(),
-        .nested_cfail(),
+        .nested_cdone(nested_cdone),
+        .nested_cfail(nested_cfail),
         .iready(iready),
         .iaddr(iaddr),
         .oaddr(oaddr),
         .caddr(caddr),
         .naddr(naddr),
-        .scnt(scnt),
+        .nkill(nkill),
+        .swen(swen),
+        .ssel(ssel),
+        .syn_cnt(syn_cnt),
         .nsu_start(nsu_start),
         .nsu_b(nsu_b)
     );
@@ -65,13 +73,16 @@ module CHIP(
         .iaddr(iaddr),
         .idata(idata),
         .iwen(ivalid),
+        .sdata({LO_syn[3], LO_syn[2]}),
+        .swen(swen),
+        .ssel(ssel),
         .caddr(caddr),
         .cdata(cdata),
         .cwen(cdone & ~cfail),
-        .ckill(cdone),  // TODO: replace with final nested-decoding done signal
         .naddr(naddr),
         .nflag(nflag),
         .ndata(ndata),
+        .nkill(nkill),  // TODO: replace with final nested-decoding done signal
         .oaddr(oaddr),
         .odata(odata),
         .ovalid(ovalid)
@@ -80,7 +91,7 @@ module CHIP(
     syndrome syn0(
         .clk(clk),
         .rst(rst),
-        .cnt(scnt),
+        .cnt(syn_cnt),
         .idata(idata),
         .ivalid(ivalid),
         .S(LO_syn),
@@ -104,7 +115,9 @@ module CHIP(
         .ready(),
         .cdata(cdata),
         .cdone(cdone),
-        .cfail(cfail)
+        .cfail(cfail),
+        .nested_cdone(nested_cdone),
+        .nested_cfail(nested_cfail)
     );
 
     // nsu_top nsu0(
