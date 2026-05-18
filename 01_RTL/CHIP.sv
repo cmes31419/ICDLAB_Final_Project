@@ -29,7 +29,7 @@ module CHIP(
     wire        LKES_done;
     wire [5:0]  cs_sigma_in [6:0], LKES_sigma_out[2:0];
 
-    wire        nsu_start, nsu_b;
+    wire        nsu_start, nsu_b, nsu_stage_flag;
 
     // temporaily set to only LKES
     genvar gi;
@@ -64,7 +64,8 @@ module CHIP(
         .ssel(ssel),
         .syn_cnt(syn_cnt),
         .nsu_start(nsu_start),
-        .nsu_b(nsu_b)
+        .nsu_b(nsu_b),
+        .nsu_stage_flag(nsu_stage_flag)
     );
 
     memory mem0(
@@ -120,22 +121,22 @@ module CHIP(
         .nested_cfail(nested_cfail)
     );
 
-    // nsu_top nsu0(
-    //     .clk(clk),
-    //     .rst(rst),
-    //     .start(nsu_start),
-    //     .r0(ndata[0]),
-    //     .r1(ndata[1]),
-    //     .r2(ndata[2]),
-    //     .r3(ndata[3]),
-    //     .b(nsu_b),
-    //     .stage_flag(),
-    //     .S_out_0(),
-    //     .S_out_1(),
-    //     .S_out_2(),
-    //     .S_out_3(),
-    //     .b_out(),
-    //     .valid()
-    // );
+    nsu_top nsu0(
+        .clk(clk),
+        .rst(rst),
+        .start(nsu_start),
+        .r0(ndata[0]),
+        .r1(ndata[1]),
+        .r2(ndata[2]),
+        .r3(ndata[3]),
+        .b(nsu_b),
+        .stage_flag(nsu_stage_flag),
+        .S_out_0(),
+        .S_out_1(),
+        .S_out_2(),
+        .S_out_3(),
+        .b_out(),
+        .valid()
+    );
 
 endmodule
