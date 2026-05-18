@@ -7,7 +7,7 @@
 
 module horner_a9 (
     input  wire              clk,
-    input  wire              rst_n,
+    input  wire              rst,
     input  wire              enable,
     input  wire              start,
     input  wire [31:0]         data,
@@ -29,8 +29,8 @@ module horner_a9 (
     reg [0:0] cyc_cnt;
     reg              running;
 
-    always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
             state    <= 6'b0;
             cyc_cnt  <= 1'b0;
             running  <= 1'b0;

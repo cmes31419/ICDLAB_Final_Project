@@ -8,7 +8,7 @@
 
 module nsu_tb;
     reg         clk;
-    reg         rst_n;
+    reg         rst;
     reg         start;
     reg  [62:0] r0, r1, r2, r3;
     reg         b;
@@ -22,7 +22,7 @@ module nsu_tb;
     integer     fail_count = 0;
     
     nsu_top dut (
-        .clk(clk), .rst_n(rst_n), .start(start),
+        .clk(clk), .rst(rst), .start(start),
         .r0(r0), .r1(r1), .r2(r2), .r3(r3),
         .b(b), .stage_flag(stage_flag),
         .S_out_0(S_out_0), .S_out_1(S_out_1),
@@ -79,9 +79,9 @@ module nsu_tb;
     endtask
     
     initial begin
-        rst_n = 0; start = 0;
+        rst = 1; start = 0;
         r0 = 0; r1 = 0; r2 = 0; r3 = 0; b = 0; stage_flag = 0;
-        #20 rst_n = 1;
+        #20 rst = 0;
         @(posedge clk); #1;
         
         // T1: stage 0, b=0

@@ -35,7 +35,7 @@
 
 module nsu_top (
     input  wire        clk,
-    input  wire        rst_n,
+    input  wire        rst,
     input  wire        start,
 
     input  wire [62:0] r0,
@@ -80,8 +80,8 @@ module nsu_top (
     reg       latched_stage;
     reg       latched_b;
 
-    always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
             running       <= 1'b0;
             cyc_cnt       <= 2'd0;
             latched_stage <= 1'b0;
@@ -158,48 +158,48 @@ module nsu_top (
 
     // Stage 0 done: alpha^5
     horner_a5 u_a5_k0 (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .rst(rst),
         .enable(en_a5_k0), .start(start_a5_k0),
         .data(data_xor),   .state(S_5_k0),  .done(d_5_k0)
     );
     horner_a5 u_a5_k1 (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .rst(rst),
         .enable(en_a5_k1), .start(start_a5_k1),
         .data(data_shift), .state(S_5_k1),  .done(d_5_k1)
     );
 
     // Stage 0 done: alpha^7
     horner_a7 u_a7_k0 (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .rst(rst),
         .enable(en_a7_k0), .start(start_a7_k0),
         .data(data_xor),   .state(S_7_k0),  .done(d_7_k0)
     );
     horner_a7 u_a7_k1 (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .rst(rst),
         .enable(en_a7_k1), .start(start_a7_k1),
         .data(data_shift), .state(S_7_k1),  .done(d_7_k1)
     );
 
     // Stage 1 done: alpha^9
     horner_a9 u_a9_k0 (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .rst(rst),
         .enable(en_a9_k0), .start(start_a9_k0),
         .data(data_xor),   .state(S_9_k0),  .done(d_9_k0)
     );
     horner_a9 u_a9_k1 (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .rst(rst),
         .enable(en_a9_k1), .start(start_a9_k1),
         .data(data_shift), .state(S_9_k1),  .done(d_9_k1)
     );
 
     // Stage 1 done: alpha^11
     horner_a11 u_a11_k0 (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .rst(rst),
         .enable(en_a11_k0), .start(start_a11_k0),
         .data(data_xor),    .state(S_11_k0), .done(d_11_k0)
     );
     horner_a11 u_a11_k1 (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .rst(rst),
         .enable(en_a11_k1), .start(start_a11_k1),
         .data(data_shift),  .state(S_11_k1), .done(d_11_k1)
     );
