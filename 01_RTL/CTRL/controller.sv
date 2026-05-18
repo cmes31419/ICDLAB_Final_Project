@@ -22,7 +22,7 @@ module controller(
     assign scnt = icnt[2:0];
 
     // FIFO-style full check
-    assign iready = (icnt[5] != ocnt[5] && icnt[4:0] == ocnt[4:0]) ? 0 : 1;
+    assign iready = (icnt[4:3] >= ccnt) ? 1 : 0;
 
     always @(*) begin
         if (ivalid) icnt_next = icnt + 1;
