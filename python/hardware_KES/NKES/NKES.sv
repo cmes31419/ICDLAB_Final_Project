@@ -18,7 +18,37 @@ module NKES(
     output sigma_done,
     output [5:0] sigma[6:0]
 );
-wire write_en, write_idx;
+wire write_en, write_idx, read_idx;
+wire [5:0] Lsigma_out [2:0], Lb_out [2:0], Ldelta_even_out [1:0], Ltheta_even_out [1:0], Lgamma_out;
+wire [1:0] Lk_out;
+
+wire [5:0] delta_even_in[2:0], theta_even_in[2:0], sigma_even_in[2:0], b_even_in[2:0];
+wire [5:0] delta_init_out[2:0], theta_init_out[2:0];
+// ignore second round nested decoding for now 
+genvar gi;
+generate
+    for (gi = 0; gi < 2; gi = gi + 1) begin
+        assign delta_even_in[gi] = Ldelta_even_out[gi];
+        assign theta_even_in[gi] = Ltheta_even_out[gi];
+        assign sigma_even_in[gi] = Lsigma_out[gi*2];
+        assign b_even_in[gi] = Lb_out[gi*2]; 
+    end
+        assign delta_even_in[2] = 6'd0;
+        assign theta_even_in[2] = 6'd0;
+        assign sigma_even_in[2] = 6'd0;
+        assign b_even_in[2] = 6'd0;
+endgenerate
+
+precompute_unit u_PU(
+    .delta_even_in(delta_even_in),
+    .theta_even_in(theta_even_in),
+    .sigma_even_in(sigma_even_in),
+    .b_even_in(b_even_in),
+    .Su(HO_syn[0]),
+
+    .delta_init_out(delta_init_out),
+    .theta_init_out(theta_init_out)
+);
 
 NKES_ctrl u_ctrl(
     .clk(clk),
@@ -29,14 +59,15 @@ NKES_ctrl u_ctrl(
     .cfail(cfail),
 
     .write_en(write_en),
-    .write_idx(write_idx)
+    .write_idx(write_idx),
+    .read_idx(read_idx)
 );
 
 state_buff u_state_buff(
     .clk(clk),
     .rst(rst),
 
-    .read_idx(),
+    .read_idx(read_idx),
     .write_idx(write_idx),
     .write_en(write_en),
 
@@ -47,12 +78,12 @@ state_buff u_state_buff(
     .Lgamma_in(Lgamma),
     .Lk_in(Lk),
 
-    .Lsigma_out(),
-    .Lb_out(),
-    .Ldelta_even_out(),
-    .Ltheta_even_out(),
-    .Lgamma_out(),
-    .Lk_out()
+    .Lsigma_out(Lsigma_out),
+    .Lb_out(Lb_out),
+    .Ldelta_even_out(Ldelta_even_out),
+    .Ltheta_even_out(Ltheta_even_out),
+    .Lgamma_out(Lgamma_out),
+    .Lk_out(Lk_out)
 );
 
 
@@ -76,7 +107,8 @@ module NKES_ctrl(
 
     input Lstate_rdy,
     input cdone, cfail,
-    
+
+    output read_idx, 
     output write_en,
     output write_idx
 );
@@ -86,12 +118,18 @@ module NKES_ctrl(
     parameter S_CHECK0  = 4'd2;
     parameter S_CHECK1  = 4'd3;
     parameter S_FULL    = 4'd4;
-    parameter S_INIT1   = 4'd5;
+    parameter S_INIT0   = 4'd5;
+    parameter S_INIT1   = 4'd6; 
+    parameter S_CYC00   = 4'd7;
+    parameter S_CYC01   = 4'd8;
+    parameter S_CYC10   = 4'd9;
+    parameter S_CYC11   = 4'd10;
 
     reg [3:0] state, state_next;
 
     assign write_en = (state == S_STORE0 || state == S_STORE1) && Lstate_rdy;
     assign write_idx = (state== S_STORE0)? 1'b0 : 1'b1;
+    assign read_idx = (state == S_INIT0)? 1'b0 : 1'b1;
 
     always @(*) begin
         case(state) 
@@ -103,12 +141,21 @@ module NKES_ctrl(
             else state_next = state;
         end
         S_STORE1: begin 
-            state_next = (Lstate_rdy)? S_CHECK1 : state;
+            if (syn_rdy) state_next = S_INIT0;
+            else state_next = (Lstate_rdy)? S_CHECK1 : state;
         end
         S_CHECK1: begin
             if (cdone) state_next = (cfail)? S_FULL : S_STORE1;
             else state_next = state;
         end
+        S_FULL: begin
+            state_next = (syn_rdy)? S_INIT0 : state; 
+        end
+        S_INIT0: state_next = S_INIT1;            
+        S_INIT1: state_next = S_CYC00;
+        S_CYC00: state_next = S_CYC01;
+        S_CYC01: state_next = S_CYC10;
+        S_CYC10: state_next = S_CYC11;
         default: state_next = state;
         endcase 
     end
@@ -121,4 +168,30 @@ module NKES_ctrl(
             state <= state_next;
         end
     end
+endmodule
+
+module precompute_unit(
+    input [5:0] delta_even_in [2:0],
+    input [5:0] theta_even_in [2:0],
+    input [5:0] sigma_even_in [2:0],
+    input [5:0] b_even_in [2:0],
+    input [5:0] Su,
+
+    output [5:0] delta_init_out[2:0],
+    output [5:0] theta_init_out[2:0]
+);
+
+wire [5:0] syn_sigma_prod[2:0];
+wire [5:0] syn_b_prod[2:0];
+genvar gi;
+generate
+    for (gi = 0; gi < 3; gi = gi + 1) begin
+        gf_mul u_gf_mul_sigma(.in1(Su), .in2(sigma_even_in[gi]), .prod(syn_sigma_prod[gi]));
+        gf_mul u_gf_mul_b(.in1(Su), .in2(b_even_in[gi]), .prod(syn_b_prod[gi]));
+
+        assign delta_init_out[gi] = syn_sigma_prod[gi] ^ delta_even_in[gi];
+        assign theta_init_out[gi] = syn_b_prod[gi] ^ theta_even_in[gi];
+    end 
+endgenerate
+
 endmodule
