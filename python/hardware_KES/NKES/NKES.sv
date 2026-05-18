@@ -19,6 +19,9 @@ module NKES(
     output [5:0] sigma[6:0]
 );
 wire write_en, write_idx, read_idx;
+wire write_syn_en, write_syn_idx, read_syn_idx;
+wire [5:0] syn_buff_out;
+
 wire [5:0] Lsigma_out [2:0], Lb_out [2:0], Ldelta_even_out [1:0], Ltheta_even_out [1:0], Lgamma_out;
 wire [1:0] Lk_out;
 
@@ -60,7 +63,11 @@ NKES_ctrl u_ctrl(
 
     .write_en(write_en),
     .write_idx(write_idx),
-    .read_idx(read_idx)
+    .read_idx(read_idx),
+
+    .write_syn_en(write_syn_en),
+    .write_syn_idx(write_syn_idx),
+    .read_syn_idx(read_syn_idx)
 );
 
 state_buff u_state_buff(
@@ -86,6 +93,16 @@ state_buff u_state_buff(
     .Lk_out(Lk_out)
 );
 
+syndrome_buff u_syn_buff(
+    .clk(clk),
+    .rst(rst),
+    .write_en(write_syn_en),
+    .write_idx(write_syn_idx),
+    .syn_in(HO_syn[0]),
+
+    .read_idx(read_syn_idx),
+    .syn_out(syn_buff_out)
+);
 
 // NKES_PE1 u_PE10(.clk(clk), .rst(rst), .start(), .hold(), .gamma(), .discrepancy(), .branch(),
 //     .delta_init(),
@@ -111,6 +128,10 @@ module NKES_ctrl(
     output read_idx, 
     output write_en,
     output write_idx
+
+    output write_syn_en,
+    output write_syn_idx,
+    output read_syn_idx
 );
 
     parameter S_STORE0  = 4'd0;
@@ -118,6 +139,7 @@ module NKES_ctrl(
     parameter S_CHECK0  = 4'd2;
     parameter S_CHECK1  = 4'd3;
     parameter S_FULL    = 4'd4;
+
     parameter S_INIT0   = 4'd5;
     parameter S_INIT1   = 4'd6; 
     parameter S_CYC00   = 4'd7;
@@ -130,6 +152,10 @@ module NKES_ctrl(
     assign write_en = (state == S_STORE0 || state == S_STORE1) && Lstate_rdy;
     assign write_idx = (state== S_STORE0)? 1'b0 : 1'b1;
     assign read_idx = (state == S_INIT0)? 1'b0 : 1'b1;
+
+    assign write_syn_en = (state == S_INIT0 || state == S_INIT1 || state == S_CYC00 || state == S_CYC01);
+    assign write_syn_idx = (~state[0]);
+    assign read_syn_idx = ~state[0];
 
     always @(*) begin
         case(state) 
@@ -193,5 +219,45 @@ generate
         assign theta_init_out[gi] = syn_b_prod[gi] ^ theta_even_in[gi];
     end 
 endgenerate
+
+endmodule
+
+module syndrome_buff(
+    input clk,
+    input rst,
+
+    input write_en,
+    input write_idx,
+    input [5:0] syn_in,
+
+    input read_idx,
+    output [5:0] syn_out
+);
+
+reg [5:0] syn_buff[1:0], syn_buff_next[1:0];
+
+assign syn_out = syn_buff[read_idx];
+
+always @(*) begin
+    if (write_en) begin
+        syn_buff_next[0] = (write_idx == 1'b0)? syn_in : syn_buff[0];
+        syn_buff_next[1] = (write_idx == 1'b1)? syn_in : syn_buff[1];
+    end
+    else begin
+        syn_buff_next[0] = syn_buff[0];
+        syn_buff_next[1] = syn_buff[1];
+    end
+end
+
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        syn_buff[0] <= 6'b0;
+        syn_buff[1] <= 6'b0;
+    end
+    else begin
+        syn_buff[0] <= syn_buff_next[0];
+        syn_buff[1] <= syn_buff_next[1];
+    end
+end
 
 endmodule
