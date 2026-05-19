@@ -152,22 +152,34 @@ module CHIP(
         .nested_cfail(nested_cfail)
     );
 
-    nsu_top nsu0(
+    // 可刪 
+    wire syn_rdy;
+    wire [5:0] S_out_ch1, S_out_ch2;
+
+    HSU_top(
         .clk(clk),
         .rst(rst),
-        .start(nsu_start),
+        .start(clk),
         .r0(ndata[0]),
         .r1(ndata[1]),
         .r2(ndata[2]),
         .r3(ndata[3]),
-        .b(nsu_b),
-        .stage_flag(nsu_stage_flag),
-        .S_out_0(),
-        .S_out_1(),
-        .S_out_2(),
-        .S_out_3(),
-        .b_out(),
-        .valid()
+        .flag0(clk), 
+        .flag1(clk), 
+        .flag2(clk), 
+        .flag3(clk),
+        .stage_flag(clk),
+        .Syndrome_3_i0(iaddr), 
+        .Syndrome_4_i0(iaddr), 
+        .Syndrome_3_i1(iaddr), 
+        .Syndrome_4_i1(iaddr),   
+        .valid_S3_S4(rst),
+
+        .syn_rdy(syn_rdy),
+        .S_out_ch1(S_out_ch1),
+        .S_out_ch2(S_out_ch2)
     );
+
+
 
 endmodule

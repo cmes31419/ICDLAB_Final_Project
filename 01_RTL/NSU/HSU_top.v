@@ -20,8 +20,9 @@ module HSU_top (
 );
 
     // Calculate S6 and S8 using the provided S3 and S4 values
-    wire Syndrome_6_i0, Syndrome_8_i0, Syndrome_6_i1, Syndrome_8_i1;
+    wire [5:0] Syndrome_6_i0, Syndrome_8_i0, Syndrome_6_i1, Syndrome_8_i1;
     reg [5:0] Syndrome_6_i0_reg, Syndrome_8_i0_reg, Syndrome_6_i1_reg, Syndrome_8_i1_reg;
+    reg stage_flag_reg;
 
     gf_mul square_inst0 (
         .in1(Syndrome_3_i0),
@@ -137,7 +138,7 @@ module HSU_top (
         end
     end
 
-    reg stage_flag_reg;
+    
     always @(posedge clk or posedge rst) begin  
         if (rst) begin
             stage_flag_reg <= 1'b0;
@@ -242,8 +243,8 @@ module HSU_top (
         end
     end
 
-    wire [5:0] mul0, mul1;
-    wire i_4or6; // 0: S_4; 1: S_6
+    reg [5:0] mul0, mul1;
+    reg i_4or6; // 0: S_4; 1: S_6
     always @(*) begin
         if (counter == 3'd2 && b_reg) begin // S5
             mul0 = S_out_0;
@@ -298,8 +299,8 @@ module HSU_top (
         .i_gf_mul1_in1(mul1),              // S_4_1 or S_6_1
         .i_gf_mul2_in1(mul0),              // S_4_0 or S_6_0
         .i_gf_mul3_in1(mul1),              // S_4_1 or S_6_1
-        .i_undecoded_idx_1(i_undecoded_idx_1_reg),  // Index of the first undecoded interleave (0 to 3)      
-        .i_undecoded_idx_2(i_undecoded_idx_2_reg),  // Index of the second undecoded interleave (0 to 3, or 0 if only 1 undecoded interleave)
+        .i_undecoded_idx_1(undecoded_idx_1_reg),  // Index of the first undecoded interleave (0 to 3)      
+        .i_undecoded_idx_2(undecoded_idx_2_reg),  // Index of the second undecoded interleave (0 to 3, or 0 if only 1 undecoded interleave)
         .o_HS_1(o_HS_1),
         .o_HS_2(o_HS_2),
         .o_HS_3(),

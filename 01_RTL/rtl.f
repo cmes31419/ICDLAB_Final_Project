@@ -23,6 +23,7 @@ CHIP.sv
 ./NSU/horner_a7.v
 ./NSU/horner_a9.v
 ./NSU/horner_a11.v
+./NSU/HSU_top.v
 
 // HSU
 
