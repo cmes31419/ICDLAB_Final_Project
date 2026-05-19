@@ -16,8 +16,9 @@ module CHIP(
     wire        cdone, cfail;
     wire        nested_cdone, nested_cfail;
 
-    wire        naddr;
+    wire [2:0]  naddr;
     wire [62:0] ndata[3:0];
+    wire [11:0] nsyn[1:0];
     wire [3:0]  nflag;
     wire        nkill;
 
@@ -80,10 +81,11 @@ module CHIP(
         .caddr(caddr),
         .cdata(cdata),
         .cwen(cdone & ~cfail),
-        .naddr(naddr),
+        .naddr(naddr[2]),
+        .nkill(nkill),  // TODO: replace with final nested-decoding done signal
         .nflag(nflag),
         .ndata(ndata),
-        .nkill(nkill),  // TODO: replace with final nested-decoding done signal
+        .nsyn(nsyn),
         .oaddr(oaddr),
         .odata(odata),
         .ovalid(ovalid)

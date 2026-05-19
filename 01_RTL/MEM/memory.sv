@@ -15,9 +15,10 @@ module memory(
     input           cwen,
     // nested code interface
     input           naddr,
+    input           nkill,  // force finish when decoding fails
     output [3:0]    nflag,  // bitmask of sub-codewords not yet decoded
     output [62:0]   ndata[3:0],
-    input           nkill,  // force finish when decoding fails
+    output [11:0]   nsyn[1:0],
     // output read interface
     input [5:0]     oaddr,
     output [7:0]    odata,
@@ -36,11 +37,14 @@ module memory(
     assign odata = data[oaddr[5]][oaddr[4:3]][oaddr[2:0]*8+:8];
     assign ovalid = done[oaddr[5]][oaddr[4:3]];
 
-    assign nflag = {~done[naddr][0], ~done[naddr][1], ~done[naddr][2], ~done[naddr][3]};
+    assign nflag = {~done[naddr][3], ~done[naddr][2], ~done[naddr][1], ~done[naddr][0]};
 
     generate
         for (gi=0;gi<4;gi=gi+1) begin
             assign ndata[gi] = data[naddr][gi];
+        end
+        for (gi=0;gi<2;gi=gi+1) begin
+            assign nsyn[gi] = syn[gi];
         end
     endgenerate
 
