@@ -6,7 +6,12 @@ module BM(
     input [5:0] LO_syndrome[3:0],
 
     output sigma_done,
-    output [5:0] sigma[2:0]
+    output [5:0] sigma_out[2:0],
+    output [5:0] b_out[2:0],
+    output [5:0] delta_even_out[1:0],
+    output [5:0] theta_even_out[1:0],
+    output [5:0] gamma_out,
+    output [1:0] k_out
 );
 
 
@@ -14,11 +19,16 @@ wire [5:0] b_poly0;
 wire [5:0] gamma, discrepancy;
 wire branch, first_iter;
 wire start, hold;
+wire [5:0] delta_poly2, delta_poly3;
+
+assign delta_even_out[0] = discrepancy;
+assign delta_even_out[1] = delta_poly2;
+assign gamma_out = gamma;
 
 // ============ Control ===============
 BM_control bm_ctrl( .clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .discrepancy(discrepancy),
     .start(start), .hold(hold),
-    .gamma(gamma),
+    .gamma(gamma), .k_out(k_out),
     .first_iter(first_iter), .branch(branch), .sigma_done(sigma_done)
 );
 
@@ -29,8 +39,8 @@ BM_PE0 u_PE00(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .b
     .sigma_init(6'b1),
     .b_poly_in(6'b0),
 
-    .b_poly_out(b_poly0),
-    .sigma_poly_out(sigma[0])
+    .b_poly_out(b_out[0]),
+    .sigma_poly_out(sigma_out[0])
 );
 
 BM_PE0 u_PE01(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
@@ -38,20 +48,19 @@ BM_PE0 u_PE01(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .b
     .sigma_init(6'b0),
     .b_poly_in(first_iter? 6'b1 : 6'b0),
 
-    .b_poly_out(),
-    .sigma_poly_out(sigma[1])
+    .b_poly_out(b_out[1]),
+    .sigma_poly_out(sigma_out[1])
 );
 
 BM_PE0 u_PE02(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
     .start(start), .hold(hold),
     .sigma_init(6'b0),
-    .b_poly_in(b_poly0),
+    .b_poly_in(b_out[0]),
 
-    .b_poly_out(),
-    .sigma_poly_out(sigma[2])
+    .b_poly_out(b_out[2]),
+    .sigma_poly_out(sigma_out[2])
 );
 
-wire [5:0] delta_poly2, delta_poly3;
 
 // ============ PE1 array ==============
 BM_PE1 u_PE10(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
@@ -60,17 +69,18 @@ BM_PE1 u_PE10(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .b
     .theta_init(LO_syndrome[1]),
     .delta_poly_in(delta_poly2),
 
-    .delta_poly_out(discrepancy)
+    .delta_poly_out(discrepancy),
+    .theta_poly_out(theta_even_out[0])
 );
 
-BM_PE1 u_PE11(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
-    .start(start), .hold(hold),
-    .delta_init(LO_syndrome[1]),
-    .theta_init(LO_syndrome[2]),
-    .delta_poly_in(delta_poly3),
+// BM_PE1 u_PE11(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+//     .start(start), .hold(hold),
+//     .delta_init(LO_syndrome[1]),
+//     .theta_init(LO_syndrome[2]),
+//     .delta_poly_in(delta_poly3),
 
-    .delta_poly_out()
-);
+//     .delta_poly_out()
+// );
 
 BM_PE1 u_PE12(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
     .start(start), .hold(hold),
@@ -78,17 +88,19 @@ BM_PE1 u_PE12(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .b
     .theta_init(LO_syndrome[3]),
     .delta_poly_in(6'b0),
 
-    .delta_poly_out(delta_poly2)
+    .delta_poly_out(delta_poly2),
+    .theta_poly_out(theta_even_out[1])
+
 );
 
-BM_PE1 u_PE13(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
-    .start(start), .hold(hold),
-    .delta_init(LO_syndrome[3]),
-    .theta_init(6'b0),
-    .delta_poly_in(6'b0),
+// BM_PE1 u_PE13(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+//     .start(start), .hold(hold),
+//     .delta_init(LO_syndrome[3]),
+//     .theta_init(6'b0),
+//     .delta_poly_in(6'b0),
 
-    .delta_poly_out(delta_poly3)
-);
+//     .delta_poly_out(delta_poly3)
+// );
 
 endmodule
 
@@ -103,7 +115,9 @@ module BM_control(
     output reg [5:0] gamma,
     output first_iter,
     output branch,
-    output sigma_done
+    output sigma_done,
+
+    output [1:0] k_out
 );
 
 localparam S_IDLE = 2'd0;
@@ -120,6 +134,7 @@ assign first_iter = (state == S_ITER0);
 assign sigma_done = (state == S_DONE);
 assign start = syndrome_rdy;
 assign hold = (state == S_DONE || state == S_IDLE)&& !syndrome_rdy;
+assign k_out = k;
 
 always @(*) begin
     if (syndrome_rdy) begin

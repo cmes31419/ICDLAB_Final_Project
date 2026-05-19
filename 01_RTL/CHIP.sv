@@ -32,6 +32,8 @@ module CHIP(
 
     wire        nsu_start, nsu_b, nsu_stage_flag;
 
+    wire [5:0] LKES_b_out[2:0], LKES_delta_even_out[1:0], LKES_theta_even_out[1:0], LKES_gamma_out;
+    wire [1:0] LKES_k_out;
     // temporaily set to only LKES
     genvar gi;
 
@@ -106,9 +108,36 @@ module CHIP(
         .rst(rst),
         .syndrome_rdy(sdone),
         .LO_syndrome(LO_syn),
+
         .sigma_done(LKES_done),
-        .sigma(LKES_sigma_out)
+        .sigma_out(LKES_sigma_out),
+        .b_out(LKES_b_out),
+        .delta_even_out(LKES_delta_even_out),
+        .theta_even_out(LKES_theta_even_out),
+        .gamma_out(LKES_gamma_out),
+        .k_out(LKES_k_out)
     );
+
+    NKES nkes0(
+        .clk(clk),
+        .rst(rst),
+        .syn_rdy(0),
+        .HO_syn(),
+
+        .Lstate_rdy(LKES_done),
+        .cdone(cdone),
+        .cfail(cfail),
+        .Lsigma(LKES_sigma_out),
+        .Lb(LKES_b_out),
+        .Ldelta_even(LKES_delta_even_out),
+        .Ltheta_even(LKES_theta_even_out),
+        .Lgamma(LKES_gamma_out),
+        .Lk(LKES_k_out),
+
+        .sigma_done(),
+        .sigma()
+    );
+
 
     chien_search cs0(
         .clk(clk),

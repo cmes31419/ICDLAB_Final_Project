@@ -32,6 +32,12 @@ CHIP.sv
 ./KES/BM_PE1.sv
 ./KES/gf_mul.sv
 
+// NKES
+./NKES/NKES.sv
+./NKES/state_buff.sv
+./NKES/NKES_PE0.sv
+./NKES/NKES_PE1.sv
+
 // CS
 ./CS/chien_search.sv
 ./CS/chien_checker.sv

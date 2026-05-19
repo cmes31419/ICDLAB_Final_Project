@@ -12,13 +12,15 @@ module BM_PE1(
     input [5:0] theta_init,
     input [5:0] delta_poly_in,
 
-    output [5:0] delta_poly_out
+    output [5:0] delta_poly_out,
+    output [5:0] theta_poly_out
 );
 
 reg [5:0] delta_poly, delta_poly_next, theta_poly, theta_poly_next;
 wire [5:0] gfmul0_out, gfmul1_out;
 
 assign delta_poly_out = delta_poly;
+assign theta_poly_out = theta_poly;
 
 gf_mul u_gfmul0(.in1(gamma), .in2(delta_poly_in), .prod(gfmul0_out));
 gf_mul u_gfmul1(.in1(theta_poly), .in2(discrepancy), .prod(gfmul1_out));
