@@ -138,7 +138,7 @@ assign k_out = k;
 
 always @(*) begin
     if (syndrome_rdy) begin
-        k_next = 2'd1;
+        k_next = 2'd0;
     end
     else begin
         k_next = (branch)? -k : k - 1'b1; 
