@@ -1,6 +1,6 @@
 module A_inv (
     input i_clk,
-    input i_rst_n,
+    input i_rst,
 
     input i_mode, // 0: square; 1: A inverse
     input i_4or6, // 0: S_4; 1: S_6
@@ -55,15 +55,15 @@ module A_inv (
         .prod(gf_mul3_prod)
     );
 
-    logic [5:0] o_HS_1_w, o_HS_1_r;
-    logic [5:0] o_HS_2_w, o_HS_2_r;
-    logic [5:0] o_HS_3_w, o_HS_3_r;
-    logic [5:0] o_HS_4_w, o_HS_4_r;
+    logic [5:0] o_HS_1_w;
+    logic [5:0] o_HS_2_w;
+    logic [5:0] o_HS_3_w;
+    logic [5:0] o_HS_4_w;
 
-    assign o_HS_1 = o_HS_1_r;
-    assign o_HS_2 = o_HS_2_r;
-    assign o_HS_3 = o_HS_3_r;
-    assign o_HS_4 = o_HS_4_r;
+    assign o_HS_1 = o_HS_1_w;
+    assign o_HS_2 = o_HS_2_w;
+    assign o_HS_3 = o_HS_3_w;
+    assign o_HS_4 = o_HS_4_w;
 
     always_comb begin
         gf_mul0_in2 = 6'd0;
@@ -195,20 +195,6 @@ module A_inv (
             o_HS_2_w = gf_mul2_prod ^ gf_mul3_prod;
             o_HS_3_w = 6'd0;
             o_HS_4_w = 6'd0;
-        end
-    end
-
-    always @(posedge i_clk or negedge i_rst_n) begin
-        if (!i_rst_n) begin
-            o_HS_1_r <= 6'd0;
-            o_HS_2_r <= 6'd0;
-            o_HS_3_r <= 6'd0;
-            o_HS_4_r <= 6'd0;
-        end else begin
-            o_HS_1_r <= o_HS_1_w;
-            o_HS_2_r <= o_HS_2_w;
-            o_HS_3_r <= o_HS_3_w;
-            o_HS_4_r <= o_HS_4_w;
         end
     end
 endmodule
