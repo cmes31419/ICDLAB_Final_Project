@@ -1,0 +1,1 @@
+vcs -f rtl.f -pvalue+CYCLE=10 -full64 -R -debug_access+all +v2k +notimingcheck -sverilog

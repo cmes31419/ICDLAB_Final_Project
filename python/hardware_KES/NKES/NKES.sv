@@ -98,7 +98,7 @@ syndrome_buff u_syn_buff(
     .rst(rst),
     .write_en(write_syn_en),
     .write_idx(write_syn_idx),
-    .syn_in(HO_syn[0]),
+    .syn_in(HO_syn[1]),
 
     .read_idx(read_syn_idx),
     .syn_out(syn_buff_out)
@@ -127,7 +127,7 @@ module NKES_ctrl(
 
     output read_idx, 
     output write_en,
-    output write_idx
+    output write_idx,
 
     output write_syn_en,
     output write_syn_idx,
@@ -140,22 +140,22 @@ module NKES_ctrl(
     parameter S_CHECK1  = 4'd3;
     parameter S_FULL    = 4'd4;
 
-    parameter S_INIT0   = 4'd5;
-    parameter S_INIT1   = 4'd6; 
-    parameter S_CYC00   = 4'd7;
-    parameter S_CYC01   = 4'd8;
-    parameter S_CYC10   = 4'd9;
-    parameter S_CYC11   = 4'd10;
+    parameter S_INIT1   = 4'd5; 
+    parameter S_CYC00   = 4'd6;
+    parameter S_CYC01   = 4'd7;
+    parameter S_CYC10   = 4'd8;
+    parameter S_CYC11   = 4'd9;
+    parameter S_DONE    = 4'd10;
 
     reg [3:0] state, state_next;
 
     assign write_en = (state == S_STORE0 || state == S_STORE1) && Lstate_rdy;
     assign write_idx = (state== S_STORE0)? 1'b0 : 1'b1;
-    assign read_idx = (state == S_INIT0)? 1'b0 : 1'b1;
+    assign read_idx = (state == S_INIT1);
 
-    assign write_syn_en = (state == S_INIT0 || state == S_INIT1 || state == S_CYC00 || state == S_CYC01);
-    assign write_syn_idx = (~state[0]);
-    assign read_syn_idx = ~state[0];
+    assign write_syn_en = ((state==S_STORE1 || state==S_FULL) && syn_rdy) || (state == S_INIT1 || state == S_CYC00 || state == S_CYC01);
+    assign write_syn_idx = (state == S_INIT1 || state == S_CYC01);
+    assign read_syn_idx = (state == S_INIT1 || state == S_CYC01);
 
     always @(*) begin
         case(state) 
@@ -167,7 +167,7 @@ module NKES_ctrl(
             else state_next = state;
         end
         S_STORE1: begin 
-            if (syn_rdy) state_next = S_INIT0;
+            if (syn_rdy) state_next = S_INIT1;
             else state_next = (Lstate_rdy)? S_CHECK1 : state;
         end
         S_CHECK1: begin
@@ -175,13 +175,13 @@ module NKES_ctrl(
             else state_next = state;
         end
         S_FULL: begin
-            state_next = (syn_rdy)? S_INIT0 : state; 
+            state_next = (syn_rdy)? S_INIT1 : state; 
         end
-        S_INIT0: state_next = S_INIT1;            
         S_INIT1: state_next = S_CYC00;
         S_CYC00: state_next = S_CYC01;
         S_CYC01: state_next = S_CYC10;
         S_CYC10: state_next = S_CYC11;
+        S_CYC11: state_next = S_DONE;
         default: state_next = state;
         endcase 
     end
@@ -207,18 +207,18 @@ module precompute_unit(
     output [5:0] theta_init_out[2:0]
 );
 
-wire [5:0] syn_sigma_prod[2:0];
-wire [5:0] syn_b_prod[2:0];
-genvar gi;
-generate
-    for (gi = 0; gi < 3; gi = gi + 1) begin
-        gf_mul u_gf_mul_sigma(.in1(Su), .in2(sigma_even_in[gi]), .prod(syn_sigma_prod[gi]));
-        gf_mul u_gf_mul_b(.in1(Su), .in2(b_even_in[gi]), .prod(syn_b_prod[gi]));
+    wire [5:0] syn_sigma_prod[2:0];
+    wire [5:0] syn_b_prod[2:0];
+    genvar gi;
+    generate
+        for (gi = 0; gi < 3; gi = gi + 1) begin
+            gf_mul u_gf_mul_sigma(.in1(Su), .in2(sigma_even_in[gi]), .prod(syn_sigma_prod[gi]));
+            gf_mul u_gf_mul_b(.in1(Su), .in2(b_even_in[gi]), .prod(syn_b_prod[gi]));
 
-        assign delta_init_out[gi] = syn_sigma_prod[gi] ^ delta_even_in[gi];
-        assign theta_init_out[gi] = syn_b_prod[gi] ^ theta_even_in[gi];
-    end 
-endgenerate
+            assign delta_init_out[gi] = syn_sigma_prod[gi] ^ delta_even_in[gi];
+            assign theta_init_out[gi] = syn_b_prod[gi] ^ theta_even_in[gi];
+        end 
+    endgenerate
 
 endmodule
 
@@ -234,30 +234,30 @@ module syndrome_buff(
     output [5:0] syn_out
 );
 
-reg [5:0] syn_buff[1:0], syn_buff_next[1:0];
+    reg [5:0] syn_buff[1:0], syn_buff_next[1:0];
 
-assign syn_out = syn_buff[read_idx];
+    assign syn_out = syn_buff[read_idx];
 
-always @(*) begin
-    if (write_en) begin
-        syn_buff_next[0] = (write_idx == 1'b0)? syn_in : syn_buff[0];
-        syn_buff_next[1] = (write_idx == 1'b1)? syn_in : syn_buff[1];
+    always @(*) begin
+        if (write_en) begin
+            syn_buff_next[0] = (write_idx == 1'b0)? syn_in : syn_buff[0];
+            syn_buff_next[1] = (write_idx == 1'b1)? syn_in : syn_buff[1];
+        end
+        else begin
+            syn_buff_next[0] = syn_buff[0];
+            syn_buff_next[1] = syn_buff[1];
+        end
     end
-    else begin
-        syn_buff_next[0] = syn_buff[0];
-        syn_buff_next[1] = syn_buff[1];
-    end
-end
 
-always @(posedge clk or posedge rst) begin
-    if (rst) begin
-        syn_buff[0] <= 6'b0;
-        syn_buff[1] <= 6'b0;
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            syn_buff[0] <= 6'b0;
+            syn_buff[1] <= 6'b0;
+        end
+        else begin
+            syn_buff[0] <= syn_buff_next[0];
+            syn_buff[1] <= syn_buff_next[1];
+        end
     end
-    else begin
-        syn_buff[0] <= syn_buff_next[0];
-        syn_buff[1] <= syn_buff_next[1];
-    end
-end
 
 endmodule
