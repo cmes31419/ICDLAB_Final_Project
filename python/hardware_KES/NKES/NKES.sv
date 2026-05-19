@@ -27,6 +27,46 @@ wire [1:0] Lk_out;
 
 wire [5:0] delta_even_in[2:0], theta_even_in[2:0], sigma_even_in[2:0], b_even_in[2:0];
 wire [5:0] delta_init_out[2:0], theta_init_out[2:0];
+
+wire start, hold;
+wire [5:0] delta_poly[3:0];
+wire [5:0] sigma_even[3:0], sigma_odd[3:0], b_even[2:0], b_odd[2:0];
+wire [5:0] b_poly_out[7:0];
+wire [5:0] Hsyn_odd, Hsyn_even;
+wire last_iter;
+
+wire [5:0] gamma_out, discrepancy_out;
+wire branch_out;
+
+// retime registers for PE1 array
+reg [5:0] gamma_time, gamma_time_next, dis_time, dis_time_next;
+reg branch_time, branch_time_next;
+
+assign Hsyn_even = (last_iter)? 6'b0: HO_syn[0]; 
+assign Hsyn_odd = syn_buff_out;
+
+// =========== retime registers =============
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        gamma_time <= 6'b0;
+        dis_time <= 6'b0;
+        branch_time <= 0;
+    end
+    else begin
+        gamma_time <= gamma_time_next;
+        dis_time <= dis_time_next;
+        branch_time <= branch_time_next;
+    end
+end
+
+always @(*) begin
+    gamma_time_next = (start)? 6'b1 : gamma_out;
+    dis_time_next = (start)? 6'b0 : discrepancy_out;
+    branch_time_next = (start)? 1'b0 : branch_out;
+end
+
+// ==========================================
+
 // ignore second round nested decoding for now 
 genvar gi;
 generate
@@ -67,7 +107,18 @@ NKES_ctrl u_ctrl(
 
     .write_syn_en(write_syn_en),
     .write_syn_idx(write_syn_idx),
-    .read_syn_idx(read_syn_idx)
+    .read_syn_idx(read_syn_idx),
+
+    .discrepancy_in(delta_poly[0]),
+    .gamma_init(),
+    .k_init(),
+    .gamma_out(gamma_out),
+    .discrepancy_out(discrepancy_out),
+    .branch_out(branch_out),
+
+    .last_iter(last_iter),
+    .start(start),
+    .hold(hold)
 );
 
 state_buff u_state_buff(
@@ -104,17 +155,144 @@ syndrome_buff u_syn_buff(
     .syn_out(syn_buff_out)
 );
 
-// NKES_PE1 u_PE10(.clk(clk), .rst(rst), .start(), .hold(), .gamma(), .discrepancy(), .branch(),
-//     .delta_init(),
-//     .theta_init(),
-//     .delta_poly_in(),
+// todo: gamma, discrepancy, branch signals for PE array
 
-//     .sigma_even() .sigma_odd(),
-//     .b_even() .b_odd(),
+// ============ PE1 array ====================
+NKES_PE1 u_PE10(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_time), .discrepancy(dis_time), .branch(branch_time),
+    .delta_init(delta_init_out[0]),
+    .theta_init(theta_init_out[0]),
+    .delta_poly_in(delta_poly[1]),
 
-//     .delta_poly_out()
-// );
+    .sigma_even(sigma_even[0]), .sigma_odd(sigma_odd[0]),
+    .b_even(6'b0), .b_odd(6'b0),
 
+    .delta_poly_out(delta_poly[0])
+);
+
+NKES_PE1 u_PE11(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_time), .discrepancy(dis_time), .branch(branch_time),
+    .delta_init(delta_init_out[1]),
+    .theta_init(theta_init_out[1]),
+    .delta_poly_in(delta_poly[2]),
+
+    .sigma_even(sigma_even[1]), .sigma_odd(sigma_odd[1]),
+    .b_even(b_even[0]), .b_odd(b_odd[0]),
+
+    .delta_poly_out(delta_poly[1])
+);
+
+NKES_PE1 u_PE12(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_time), .discrepancy(dis_time), .branch(branch_time),
+    .delta_init(delta_init_out[2]),
+    .theta_init(theta_init_out[2]),
+    .delta_poly_in(delta_poly[3]),
+
+    .sigma_even(sigma_even[2]), .sigma_odd(sigma_odd[2]),
+    .b_even(b_even[1]), .b_odd(b_odd[1]),
+
+    .delta_poly_out(delta_poly[2])
+);
+
+NKES_PE1 u_PE13(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_time), .discrepancy(dis_time), .branch(branch_time),
+    .delta_init(6'b0),
+    .theta_init(6'b0),
+    .delta_poly_in(6'b0),
+
+    .sigma_even(sigma_even[3]), .sigma_odd(sigma_odd[3]),
+    .b_even(b_even[2]), .b_odd(b_odd[2]),
+
+    .delta_poly_out(delta_poly[3])
+);
+// =========================================
+
+// ============ PE0 array ====================
+NKES_PE0 u_PE00(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(), .discrepancy(), .branch(),
+    .H_syn(Hsyn_even),
+    .b_poly_in(6'b0),
+    .sigma_init(),
+    .b_init(),
+
+    .sigma_syn(sigma_even[0]),
+    .b_syn(b_even[0]),
+    .b_poly_out(b_poly_out[0]),
+    .sigma_poly_out()
+);
+NKES_PE0 u_PE02(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(), .discrepancy(), .branch(),
+    .H_syn(Hsyn_even),
+    .b_poly_in(b_poly_out[0]),
+    .sigma_init(),
+    .b_init(),
+
+    .sigma_syn(sigma_even[1]),
+    .b_syn(b_even[1]),
+    .b_poly_out(b_poly_out[2]),
+    .sigma_poly_out()
+);
+NKES_PE0 u_PE04(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(), .discrepancy(), .branch(),
+    .H_syn(Hsyn_even),
+    .b_poly_in(b_poly_out[2]),
+    .sigma_init(),
+    .b_init(),
+
+    .sigma_syn(sigma_even[2]),
+    .b_syn(b_even[2]),
+    .b_poly_out(b_poly_out[4]),
+    .sigma_poly_out()
+);
+NKES_PE0 u_PE06(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(), .discrepancy(), .branch(),
+    .H_syn(Hsyn_even),
+    .b_poly_in(b_poly_out[4]),
+    .sigma_init(),
+    .b_init(),
+
+    .sigma_syn(sigma_even[3]),
+    // .b_syn(),
+    // .b_poly_out(),
+    .sigma_poly_out()
+);
+
+NKES_PE0 u_PE01(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(), .discrepancy(), .branch(),
+    .H_syn(Hsyn_odd),
+    .b_poly_in(6'b0),
+    .sigma_init(),
+    .b_init(),
+
+    .sigma_syn(sigma_odd[0]),
+    .b_syn(b_odd[0]),
+    .b_poly_out(b_poly_out[1]),
+    .sigma_poly_out()
+);
+NKES_PE0 u_PE03(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(), .discrepancy(), .branch(),
+    .H_syn(Hsyn_odd),
+    .b_poly_in(b_poly_out[1]),
+    .sigma_init(),
+    .b_init(),
+
+    .sigma_syn(sigma_odd[1]),
+    .b_syn(b_odd[1]),
+    .b_poly_out(b_poly_out[3]),
+    .sigma_poly_out()
+);
+NKES_PE0 u_PE05(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(), .discrepancy(), .branch(),
+    .H_syn(Hsyn_odd),
+    .b_poly_in(b_poly_out[3]),
+    .sigma_init(),
+    .b_init(),
+
+    .sigma_syn(sigma_odd[2]),
+    .b_syn(b_odd[2]),
+    .b_poly_out(b_poly_out[5]),
+    .sigma_poly_out()
+);
+NKES_PE0 u_PE07(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(), .discrepancy(), .branch(),
+    .H_syn(Hsyn_odd),
+    .b_poly_in(b_poly_out[5]),
+    .sigma_init(),
+    .b_init(),
+
+    .sigma_syn(sigma_odd[3])
+    // .b_syn(),
+    // .b_poly_out(),
+    // .sigma_poly_out()
+);
 endmodule
 
 module NKES_ctrl(
@@ -131,7 +309,18 @@ module NKES_ctrl(
 
     output write_syn_en,
     output write_syn_idx,
-    output read_syn_idx
+    output read_syn_idx,
+
+    input [5:0] discrepancy_in,
+    input [5:0] gamma_init,
+    input [1:0] k_init,
+    output [5:0] gamma_out,
+    output [5:0] discrepancy_out,
+    output branch_out,
+
+    output last_iter,
+    output start,
+    output hold
 );
 
     parameter S_STORE0  = 4'd0;
@@ -148,15 +337,60 @@ module NKES_ctrl(
     parameter S_DONE    = 4'd10;
 
     reg [3:0] state, state_next;
+    reg [5:0] gamma, gamma_next, gamma_delay, gamma_delay_next;
+    reg signed [3:0] k, k_next, k_delay, k_delay_next; 
+    wire init;
 
     assign write_en = (state == S_STORE0 || state == S_STORE1) && Lstate_rdy;
     assign write_idx = (state== S_STORE0)? 1'b0 : 1'b1;
     assign read_idx = (state == S_INIT1);
 
-    assign write_syn_en = ((state==S_STORE1 || state==S_FULL) && syn_rdy) || (state == S_INIT1 || state == S_CYC00 || state == S_CYC01);
+    assign init = ((state==S_STORE1 || state==S_FULL) && syn_rdy) || (state == S_INIT1);
+    assign write_syn_en = (init || state == S_CYC00 || state == S_CYC01);
     assign write_syn_idx = (state == S_INIT1 || state == S_CYC01);
     assign read_syn_idx = (state == S_INIT1 || state == S_CYC01);
+    assign last_iter = (state == S_CYC10 || state == S_CYC11);
 
+    assign start = init;
+    // todo: modify hold
+    assign hold = 0;
+    assign gamma_out = gamma;
+    assign discrepancy_out = discrepancy_in;
+    assign branch_out = |discrepancy_in && (k <= 0);
+    // k reg
+    always @(*) begin
+        if (start) begin
+            k_delay_next = {{2{k_init[1]}}, k_init}; // sign extend 
+       end
+        else if (hold) begin
+            k_delay_next = k_delay;
+        end
+        else begin
+            k_delay_next = (branch_out)? -k : k - 1'b1; 
+        end
+
+        if (hold) k_next = k;
+        else k_next = k_delay;
+    end
+
+
+    // gamma
+    always @(*) begin        
+        if (start) begin
+            gamma_delay_next = gamma_init;
+        end
+        else if (hold) begin
+            gamma_delay_next = gamma_delay;
+        end
+        else begin
+            gamma_delay_next = (branch_out)? discrepancy_in : gamma; 
+        end
+
+        if (hold) gamma_next = gamma;
+        else gamma_next = gamma_delay;
+    end
+
+    // FSM
     always @(*) begin
         case(state) 
         S_STORE0: begin 
@@ -188,10 +422,18 @@ module NKES_ctrl(
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            state <= S_STORE0;
+            state       <= S_STORE0;
+            gamma       <= 6'b0;
+            gamma_delay <= 6'b0;
+            k           <= 4'b0;
+            k_delay     <= 4'b0;
         end
         else begin
-            state <= state_next;
+            state       <= state_next;
+            gamma       <= gamma_next;
+            gamma_delay <= gamma_delay_next;
+            k           <= k_next;
+            k_delay     <= k_delay_next;
         end
     end
 endmodule

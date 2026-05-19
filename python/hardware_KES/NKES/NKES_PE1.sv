@@ -25,6 +25,8 @@ wire [5:0] gfmul0_out, gfmul1_out;
 gf_mul u_gfmul0(.in1(gamma), .in2(delta_delay), .prod(gfmul0_out));
 gf_mul u_gfmul1(.in1(discrepancy), .in2(theta_delay), .prod(gfmul1_out));
 
+assign delta_poly_out = delta_poly;
+
 always @(*) begin
     if (start) begin
         delta_delay_next = delta_init;
@@ -63,5 +65,5 @@ always @(posedge clk or posedge rst) begin
         delta_delay <= delta_delay_next;
         theta_delay <= theta_delay_next;
     end
-    
+end  
 endmodule
