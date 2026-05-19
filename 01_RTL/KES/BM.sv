@@ -126,10 +126,10 @@ localparam S_ITER1 = 2'd2;
 localparam S_DONE = 2'd3;
 
 reg [1:0] state, state_next;
-reg [1:0] k, k_next;
+reg signed [1:0] k, k_next;
 reg [5:0] gamma_next;
 
-assign branch = |discrepancy && (k != 2'd0);
+assign branch = |discrepancy && (k <= 2'd0);
 assign first_iter = (state == S_ITER0);
 assign sigma_done = (state == S_DONE);
 assign start = syndrome_rdy;
@@ -141,11 +141,7 @@ always @(*) begin
         k_next = 2'd1;
     end
     else begin
-        case(k) // synopsys parallel_case
-        2'd1: k_next = (branch)? k : 2'd2;
-        2'd2: k_next = (branch)? 2'd0 : 2'd3;
-        default: k_next = k;
-        endcase
+        k_next = (branch)? -k : k - 1'b1; 
     end
 
     if (syndrome_rdy) begin
@@ -168,7 +164,7 @@ end
 always @(posedge clk or posedge rst) begin
     if (rst) begin
         state   <= S_IDLE;
-        k       <= 2'd1;
+        k       <= 2'd0;
         gamma   <= 6'b0;
     end
     else begin
