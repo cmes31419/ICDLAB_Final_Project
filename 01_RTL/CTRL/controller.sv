@@ -124,12 +124,13 @@ module controller(
         S_STAGE1B:  nstate_next = nested_cdone ? S_CHECK : S_STAGE1B;
         S_CHECK: begin
             if (npending == 3'd0) nstate_next = S_IDLE;
-            else if (npending == 3'd1) nstate_next = S_START2;
+            // else if (npending == 3'd1) nstate_next = S_START2;
             else nstate_next = S_KILL;
         end
-        S_START2:   nstate_next = S_STAGE2;
-        S_STAGE2:   nstate_next = nested_cdone ? (nested_cfail ? S_KILL : S_IDLE) : S_STAGE2;
+        // S_START2:   nstate_next = S_STAGE2;
+        // S_STAGE2:   nstate_next = nested_cdone ? (nested_cfail ? S_KILL : S_IDLE) : S_STAGE2;
         S_KILL:     nstate_next = S_IDLE;
+        default:    nstate_next = S_IDLE;
         endcase
     end
 
