@@ -113,12 +113,7 @@ NKES_ctrl u_ctrl(
     .clk(clk),
     .rst(rst),
     .syn_rdy(syn_rdy),
-    .Lstate_rdy(Lstate_rdy),
-    .cdone(cdone),
-    .cfail(cfail),
 
-    .write_en(write_en),
-    .write_idx(write_idx),
     .read_idx(read_idx),
 
     .write_syn_en(write_syn_en),
@@ -143,9 +138,9 @@ state_buff u_state_buff(
     .clk(clk),
     .rst(rst),
 
+    .Lstate_rdy(Lstate_rdy),
+    .cdone(cdone), .cfail(cfail),
     .read_idx(read_idx),
-    .write_idx(write_idx),
-    .write_en(write_en),
 
     .Lsigma_in(Lsigma),
     .Lb_in(Lb),
@@ -311,17 +306,15 @@ NKES_PE0 u_PE07(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_o
 );
 endmodule
 
+
+
+
 module NKES_ctrl(
     input clk,
     input rst, 
     input syn_rdy,  // high order syndrome ready
 
-    input Lstate_rdy,
-    input cdone, cfail,
-
     output read_idx, 
-    output write_en,
-    output write_idx,
 
     output write_syn_en,
     output write_syn_idx,
@@ -341,30 +334,29 @@ module NKES_ctrl(
     output sigma_done
 );
 
-    parameter S_STORE0  = 4'd0;
-    parameter S_STORE1  = 4'd1;
-    parameter S_CHECK0  = 4'd2;
-    parameter S_CHECK1  = 4'd3;
-    parameter S_FULL    = 4'd4;
+    // parameter S_STORE0  = 4'd0;
+    // parameter S_STORE1  = 4'd1;
+    // parameter S_CHECK0  = 4'd2;
+    // parameter S_CHECK1  = 4'd3;
+    // parameter S_FULL    = 4'd4;
 
-    parameter S_INIT1   = 4'd5; 
-    parameter S_CYC00   = 4'd6;
-    parameter S_CYC01   = 4'd7;
-    parameter S_CYC10   = 4'd8;
-    parameter S_CYC11   = 4'd9;
-    parameter S_DONE    = 4'd10;
-    parameter S_KEEP    = 4'd11;
+    parameter S_INIT0   = 4'd0;
+    parameter S_INIT1   = 4'd1; 
+    parameter S_CYC00   = 4'd2;
+    parameter S_CYC01   = 4'd3;
+    parameter S_CYC10   = 4'd4;
+    parameter S_CYC11   = 4'd5;
+    parameter S_DONE    = 4'd6;
+    parameter S_KEEP    = 4'd7;
 
     reg [3:0] state, state_next;
     reg [5:0] gamma, gamma_next, gamma_delay, gamma_delay_next;
     reg signed [3:0] k, k_next, k_delay, k_delay_next; 
     wire init;
 
-    assign write_en = (state == S_STORE0 || state == S_STORE1) && Lstate_rdy;
-    assign write_idx = (state== S_STORE0)? 1'b0 : 1'b1;
     assign read_idx = (state == S_INIT1);
 
-    assign init = ((state==S_STORE1 || state==S_FULL) && syn_rdy) || (state == S_INIT1);
+    assign init = (state == S_INIT0 && syn_rdy) || (state == S_INIT1);
     assign write_syn_en = (init || state == S_CYC00 || state == S_CYC01);
     assign write_syn_idx = (state == S_INIT1 || state == S_CYC01);
     assign read_syn_idx = (state == S_INIT1 || state == S_CYC01);
@@ -413,24 +405,25 @@ module NKES_ctrl(
     // FSM
     always @(*) begin
         case(state) 
-        S_STORE0: begin 
-            state_next = (Lstate_rdy)? S_CHECK0 : state; 
-        end
-        S_CHECK0: begin 
-            if (cdone) state_next = (cfail)? S_STORE1 : S_STORE0;
-            else state_next = state;
-        end
-        S_STORE1: begin 
-            if (syn_rdy) state_next = S_INIT1;
-            else state_next = (Lstate_rdy)? S_CHECK1 : state;
-        end
-        S_CHECK1: begin
-            if (cdone) state_next = (cfail)? S_FULL : S_STORE1;
-            else state_next = state;
-        end
-        S_FULL: begin
-            state_next = (syn_rdy)? S_INIT1 : state; 
-        end
+        // S_STORE0: begin 
+        //     state_next = (Lstate_rdy)? S_CHECK0 : state; 
+        // end
+        // S_CHECK0: begin 
+        //     if (cdone) state_next = (cfail)? S_STORE1 : S_STORE0;
+        //     else state_next = state;
+        // end
+        // S_STORE1: begin 
+        //     if (syn_rdy) state_next = S_INIT1;
+        //     else state_next = (Lstate_rdy)? S_CHECK1 : state;
+        // end
+        // S_CHECK1: begin
+        //     if (cdone) state_next = (cfail)? S_FULL : S_STORE1;
+        //     else state_next = state;
+        // end
+        // S_FULL: begin
+        //     state_next = (syn_rdy)? S_INIT1 : state; 
+        // end
+        S_INIT0: state_next = (syn_rdy)? S_INIT1 : state;
         S_INIT1: state_next = S_CYC00;
         S_CYC00: state_next = S_CYC01;
         S_CYC01: state_next = S_CYC10;
@@ -444,7 +437,7 @@ module NKES_ctrl(
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            state       <= S_STORE0;
+            state       <= S_INIT0;
             gamma       <= 6'b0;
             gamma_delay <= 6'b0;
             k           <= 4'b0;

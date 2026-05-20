@@ -2,9 +2,9 @@ module state_buff (
     input clk,
     input rst,
 
+    input Lstate_rdy,
+    input cdone, cfail,
     input read_idx,
-    input write_idx,
-    input write_en,
 
     input [5:0] Lsigma_in [2:0],
     input [5:0] Lb_in [2:0],
@@ -31,6 +31,16 @@ module state_buff (
     reg [1:0] k_buff[1:0], k_buff_next[1:0];
 
     integer i, j;
+
+    // control the write index and enable for the state buffer
+    state_buff_ctrl u_ctrl( 
+        .clk(clk), .rst(rst),
+        .Lstate_rdy(Lstate_rdy),
+        .cdone(cdone), .cfail(cfail),
+
+        .write_idx(write_idx),
+        .write_en(write_en)
+    );
 
     // output assignment
     genvar gi;
@@ -120,4 +130,71 @@ module state_buff (
         end
 
     end
+endmodule
+
+module state_buff_ctrl(
+    input clk,
+    input rst,
+
+    input Lstate_rdy,
+    input cdone, cfail,
+
+    output write_idx,
+    output write_en
+);
+
+    parameter S_STORE0  = 4'd0;
+    parameter S_STORE1  = 4'd1;
+    parameter S_CHECK0  = 4'd2;
+    parameter S_CHECK1  = 4'd3;
+    parameter S_FULL    = 4'd4;
+
+    reg [2:0] state, state_next;
+    reg [1:0] cnt, cnt_next;
+
+    assign write_en = (state == S_STORE0 || state == S_STORE1) && Lstate_rdy;
+    assign write_idx = (state == S_STORE0)? 1'b0 : 1'b1;
+
+    always @(*) begin
+        case(state)
+        S_STORE0: state_next = (Lstate_rdy)? S_CHECK0 : state;
+        S_CHECK0: begin
+            if (cdone) begin
+                if (cnt == 2'd3) state_next = S_STORE0;
+                else state_next = (cfail)? S_STORE1 : S_STORE0;
+            end
+            else begin
+                state_next = state;
+            end 
+        end
+        S_STORE1: state_next = (Lstate_rdy)? S_CHECK1 : S_STORE1;
+        S_CHECK1: begin
+            if (cdone) begin
+                if (cnt == 2'd3) state_next = S_STORE0;
+                else state_next = (cfail)? S_FULL : S_STORE1;
+            end
+            else begin
+                state_next = state;
+            end 
+        end
+        S_FULL: state_next = (cnt == 2'd3 && cdone)? S_STORE0 : S_FULL; 
+        endcase  
+    end
+
+    always @(*) begin
+        cnt_next = (cdone)? cnt + 1 : cnt;
+    end
+
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            state <= 0;
+            cnt <= 0;
+        end
+        else begin
+            state <= state_next;
+            cnt <= cnt_next;
+        end
+    end
+
 endmodule

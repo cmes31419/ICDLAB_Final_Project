@@ -121,7 +121,7 @@ module CHIP(
     NKES nkes0(
         .clk(clk),
         .rst(rst),
-        .syn_rdy(0),
+        .syn_rdy(),
         .HO_syn(),
 
         .Lstate_rdy(LKES_done),
@@ -156,7 +156,7 @@ module CHIP(
     wire syn_rdy;
     wire [5:0] S_out_ch1, S_out_ch2;
 
-    HSU_top(
+    HSU_top hsu0(
         .clk(clk),
         .rst(rst),
         .start(clk),
