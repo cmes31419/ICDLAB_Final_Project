@@ -34,6 +34,29 @@ initial begin
 		$readmemb("../00_TB/testdata/pattern/p0.txt", testdata);
 		$readmemb("../00_TB/testdata/codeword/p0a.txt", testa);
 	end
+	if (PATTERN == 1) begin
+		CODEWORD_CNT = 1;
+		$readmemb("../00_TB/testdata/pattern/p1.txt", testdata);
+		$readmemb("../00_TB/testdata/codeword/p1a.txt", testa);
+	end
+	if (PATTERN == 2) begin
+		CODEWORD_CNT = 1;
+		$readmemb("../00_TB/testdata/pattern/p2.txt", testdata);
+		$readmemb("../00_TB/testdata/codeword/p2a.txt", testa);
+	end
+	if (PATTERN == 3) begin
+		CODEWORD_CNT = 1;
+		$readmemb("../00_TB/testdata/pattern/p3.txt", testdata);
+		$readmemb("../00_TB/testdata/codeword/p3a.txt", testa);
+	end
+	if (PATTERN == 4) begin
+		CODEWORD_CNT = 4;
+		$readmemb("../00_TB/testdata/pattern/p4.txt", testdata);
+		$readmemb("../00_TB/testdata/codeword/p4a.txt", testa);
+	end
+	// Recalculate dependent parameters
+	NTEST = CODEWORD_CNT * 4;
+	TESTBYTE = NTEST * 8;
 	// ===========================	
 end
 

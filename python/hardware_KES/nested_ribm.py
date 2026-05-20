@@ -422,21 +422,32 @@ if __name__ == "__main__":
     kes = GIIBCHNestedKES(q=q, tv=tv, p_str=p_str)
     F = kes.field
 
-    lambda_even = [F(7), F(18), F(37)]     
-    lambda_odd  = [F(63), F(42)]
-    b_even      = [F(49), F(35)]
-    b_odd       = [F(51), F(57)]
-    delta_even  = [F(41), F(41)]
-    theta_even  = [F(47), F(2)]
-    gamma       = F(4)
-    k           = -1
+    # lambda_even = [F(7), F(18), F(37)]     
+    # lambda_odd  = [F(63), F(42)]
+    # b_even      = [F(49), F(35)]
+    # b_odd       = [F(51), F(57)]
+    # delta_even  = [F(41), F(41)]
+    # theta_even  = [F(47), F(2)]
+    # gamma       = F(4)
+    # k           = -1
 
+    lambda_even = [F(43), F(39)]     
+    lambda_odd  = [F(54)]
+    b_even      = [F(1), F(0)]
+    b_odd       = [F(43)]
+    delta_even  = [F(17), F(0)]
+    theta_even  = [F(8), F(0)]
+    gamma       = F(39)
+    k           = -1
     # full syndrome array; must contain S_u ... S_w, with S_w = 0 if needed
     # syndromes = [F(0), F(0), F(0), F(0), F(11), F(12), F(13), F(0)]
-    # syndromes = [F(43), F(54), F(41), F(40), F(27), F(50), F(23), F(51), F(0)]
-    syndromes = [F(9), F(2), F(42), F(4), F(45), F(55), F(41), F(16), F(15), F(34), F(60), F(41)]
-    u = 8
-    w = 12   # run r = 4, 6
+    syndromes = [F(43), F(54), F(41), F(40), F(27), F(50), F(23), F(51), F(0)]
+    # syndromes = [F(9), F(2), F(42), F(4), F(45), F(55), F(41), F(16), F(15), F(34), F(60), F(41)]
+    # u = 8
+    # w = 12   # run r = 4, 6
+
+    u=4
+    w=8
 
     # print(kes._poly_add(
     #     [F(17), F(0)],
