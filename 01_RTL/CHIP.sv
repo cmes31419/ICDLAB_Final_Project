@@ -27,8 +27,8 @@ module CHIP(
 
     wire [2:0]  syn_cnt;
     wire [5:0]  LO_syn[3:0];
-    wire        LKES_done;
-    wire [5:0]  cs_sigma_in [6:0], LKES_sigma_out[2:0];
+    wire        LKES_done, NKES_done;
+    wire [5:0]  cs_sigma_in[6:0], LKES_sigma_out[2:0], NKES_sigma_out[6:0];
 
     wire        nsu_start, nsu_b, nsu_stage_flag;
 
@@ -39,10 +39,12 @@ module CHIP(
 
     generate
         for (gi=0;gi<3;gi=gi+1) begin
-            assign cs_sigma_in[gi] = LKES_sigma_out[gi];
+            // assign cs_sigma_in[gi] = LKES_sigma_out[gi];
+            assign cs_sigma_in[gi] = LKES_sigma_out[gi] | NKES_sigma_out[gi];
         end
         for (gi=3;gi<7;gi=gi+1) begin
-            assign cs_sigma_in[gi] = 0;
+            // assign cs_sigma_in[gi] = 0;
+            assign cs_sigma_in[gi] = NKES_sigma_out[gi];
         end
     endgenerate
 
@@ -134,8 +136,8 @@ module CHIP(
         .Lgamma(LKES_gamma_out),
         .Lk(LKES_k_out),
 
-        .sigma_done(),
-        .sigma()
+        .sigma_done(NKES_sigma_out),
+        .sigma(NKES_done)
     );
 
 
@@ -143,7 +145,7 @@ module CHIP(
         .clk(clk),
         .rst(rst),
         .sigma(cs_sigma_in),
-        .sigma_valid(LKES_done),
+        .sigma_valid(LKES_done | NKES_done),
         .ready(),
         .cdata(cdata),
         .cdone(cdone),
