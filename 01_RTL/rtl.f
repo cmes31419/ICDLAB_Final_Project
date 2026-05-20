@@ -26,6 +26,7 @@ CHIP.sv
 ./NSU/HSU_top.v
 
 // HSU
+./HSU/Ainv.sv
 
 // KES
 ./KES/BM.sv
