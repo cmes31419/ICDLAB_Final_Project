@@ -34,6 +34,14 @@ module CHIP(
 
     wire [5:0] LKES_b_out[2:0], LKES_delta_even_out[1:0], LKES_theta_even_out[1:0], LKES_gamma_out;
     wire [1:0] LKES_k_out;
+    wire [5:0] HO_syn[1:0];
+
+    wire syn_rdy;
+    wire [5:0] S_out_ch1, S_out_ch2;
+
+    assign HO_syn[0] = S_out_ch1;
+    assign HO_syn[1] = S_out_ch2;
+
     // temporaily set to only LKES
     genvar gi;
 
@@ -123,8 +131,8 @@ module CHIP(
     NKES nkes0(
         .clk(clk),
         .rst(rst),
-        .syn_rdy(),
-        .HO_syn(),
+        .syn_rdy(syn_rdy),
+        .HO_syn(HO_syn),
 
         .Lstate_rdy(LKES_done),
         .cdone(cdone),
@@ -153,10 +161,6 @@ module CHIP(
         .nested_cdone(nested_cdone),
         .nested_cfail(nested_cfail)
     );
-
-    // 可刪 
-    wire syn_rdy;
-    wire [5:0] S_out_ch1, S_out_ch2;
 
     HSU_top hsu0(
         .clk(clk),
