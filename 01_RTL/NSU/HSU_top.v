@@ -194,7 +194,7 @@ module HSU_top (
                     S_out_ch1 <= o_HS_1;            // Output first S5
                     S_out_ch2 <= Syndrome_6_i0_reg; // Output first S6
                 end else begin                  // 1 undercoded interleave
-                    S_out_ch1 <= S_out_0_reg;       // Output the only S5
+                    S_out_ch1 <= S_out_0;       // Output the only S5
                     S_out_ch2 <= Syndrome_6_i0_reg; // Output the only S6
                 end
             end else begin                  // Stage 2
