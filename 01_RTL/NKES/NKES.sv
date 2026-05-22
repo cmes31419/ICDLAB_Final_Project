@@ -15,6 +15,10 @@ module NKES(
     input [5:0] Lgamma,
     input [1:0] Lk,
 
+    // high order control
+    input ncget, ncdone, ncfail,
+    input fail_num,
+
     output sigma_done,
     output [5:0] sigma[6:0]
 );
@@ -119,6 +123,9 @@ NKES_ctrl u_ctrl(
     .write_syn_en(write_syn_en),
     .write_syn_idx(write_syn_idx),
     .read_syn_idx(read_syn_idx),
+
+    .ncget(ncget), .ncdone(ncdone), .ncfail(ncfail),
+    .fail_num(fail_num),
 
     .discrepancy_in(delta_poly[0]),
     .gamma_init(gamma_init),
@@ -320,6 +327,9 @@ module NKES_ctrl(
     output write_syn_idx,
     output read_syn_idx,
 
+    input ncget, ncdone, ncfail,
+    input fail_num,
+
     input [5:0] discrepancy_in,
     input [5:0] gamma_init,
     input [1:0] k_init,
@@ -346,8 +356,12 @@ module NKES_ctrl(
     parameter S_CYC01   = 4'd3;
     parameter S_CYC10   = 4'd4;
     parameter S_CYC11   = 4'd5;
-    parameter S_DONE    = 4'd6;
-    parameter S_KEEP    = 4'd7;
+    parameter S_WAIT1   = 4'd6;
+    parameter S_CHECK1  = 4'd7;
+    parameter S_FAIL1   = 4'd8;
+    parameter S_WAIT2   = 4'd9;
+    parameter S_CHECK2  = 4'd10;
+    parameter S_FINIT   = 4'd11;
 
     reg [3:0] state, state_next;
     reg [5:0] gamma, gamma_next, gamma_delay, gamma_delay_next;
@@ -363,12 +377,12 @@ module NKES_ctrl(
     assign last_iter = (state == S_CYC10 || state == S_CYC11);
 
     assign start = init;
-    // todo: modify hold
-    assign hold = (state == S_KEEP);
+    assign hold = ((state == S_WAIT1 || state == S_WAIT2) && !ncget) 
+    || (state == S_CHECK1 || state == S_CHECK2 || state == S_FAIL1 || state == S_FINIT); 
     assign gamma_out = gamma;
     assign discrepancy_out = discrepancy_in;
     assign branch_out = |discrepancy_in && (k <= 0);
-    assign sigma_done = (state == S_DONE);
+    assign sigma_done = (state >= 4'd6 && state <= 4'd10); 
 
     // k reg
     always @(*) begin
@@ -405,32 +419,28 @@ module NKES_ctrl(
     // FSM
     always @(*) begin
         case(state) 
-        // S_STORE0: begin 
-        //     state_next = (Lstate_rdy)? S_CHECK0 : state; 
-        // end
-        // S_CHECK0: begin 
-        //     if (cdone) state_next = (cfail)? S_STORE1 : S_STORE0;
-        //     else state_next = state;
-        // end
-        // S_STORE1: begin 
-        //     if (syn_rdy) state_next = S_INIT1;
-        //     else state_next = (Lstate_rdy)? S_CHECK1 : state;
-        // end
-        // S_CHECK1: begin
-        //     if (cdone) state_next = (cfail)? S_FULL : S_STORE1;
-        //     else state_next = state;
-        // end
-        // S_FULL: begin
-        //     state_next = (syn_rdy)? S_INIT1 : state; 
-        // end
         S_INIT0: state_next = (syn_rdy)? S_INIT1 : state;
         S_INIT1: state_next = S_CYC00;
         S_CYC00: state_next = S_CYC01;
         S_CYC01: state_next = S_CYC10;
         S_CYC10: state_next = S_CYC11;
-        S_CYC11: state_next = S_DONE;
-        S_DONE: state_next = S_KEEP;
-        S_KEEP: state_next = S_KEEP; // todo
+        S_CYC11: state_next = S_WAIT1;
+        S_WAIT1: state_next = (ncget)? S_CHECK1 : S_WAIT1;
+        S_CHECK1: begin
+            state_next = state;
+            if (ncdone) begin
+                case({fail_num, ncfail}) // synopsys parallel_case full_case
+                2'b00: state_next = S_INIT0;
+                2'b01: state_next = S_FINIT;
+                2'b10: state_next = S_WAIT2;
+                2'b11: state_next = S_FAIL1;
+                endcase 
+            end
+        end
+        S_FAIL1: state_next = (ncdone)? ((ncfail)? S_INIT0 : S_FINIT): state;
+        S_WAIT2: state_next = (ncget)? S_CHECK2 : state;
+        S_CHECK2: state_next = (ncdone)? ((ncfail)? S_FINIT : S_INIT0) : state;
+        S_FINIT: state_next = (syn_rdy)? S_INIT1 : state;
         default: state_next = state;
         endcase 
     end

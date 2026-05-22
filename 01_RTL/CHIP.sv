@@ -14,7 +14,7 @@ module CHIP(
     wire [2:0]  caddr;
     wire [62:0] cdata;
     wire        cdone, cfail;
-    wire        nested_cdone, nested_cfail;
+    wire        nested_cdone, nested_cfail, nested_cget;
 
     wire [2:0]  naddr;
     wire [62:0] ndata[3:0];
@@ -142,6 +142,9 @@ module CHIP(
         .Lgamma(LKES_gamma_out),
         .Lk(LKES_k_out),
 
+        .ncget(nested_cget), .ncdone(nested_cdone), .ncfail(nested_cfail),
+        .fail_num(nsu_b),
+
         .sigma_done(NKES_done),
         .sigma(NKES_sigma_out)
     );
@@ -158,7 +161,7 @@ module CHIP(
         .cget(),
         .cdone(cdone),
         .cfail(cfail),
-        .nested_cget(),
+        .nested_cget(nested_cget),
         .nested_cdone(nested_cdone),
         .nested_cfail(nested_cfail)
     );
