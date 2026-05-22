@@ -2,11 +2,14 @@ module chien_checker(
     input               clk,
     input               rst,
     input               start,
+    input               nested,
     input [2:0]         degree,
     input [31:0]        zeros,
     output reg [62:0]   cdata,
     output reg          cdone,
-    output              cfail
+    output              cfail,
+    output reg          nested_cdone,
+    output              nested_cfail
 );
 
     reg         cnt, cnt_next;
@@ -14,6 +17,7 @@ module chien_checker(
     reg [2:0]   root_num, root_num_next;
     reg [62:0]  cdata_next;
     reg         cdone_next;
+    reg         nested_cdone_next;
 
     reg [1:0]   sum2 [15:0];
     reg [2:0]   sum4 [7:0];
@@ -21,9 +25,13 @@ module chien_checker(
     reg [2:0]   sum16 [1:0];
     reg [2:0]   pop_cnt32;
 
+    wire fail;
+
     integer i;
 
-    assign cfail = (cdone && root_num != degree_rec) ? 1 : 0;
+    assign fail = (root_num != degree_rec) ? 1 : 0;
+    assign cfail = (cdone & fail) ? 1 : 0;
+    assign nested_cfail = (nested_cdone & fail) ? 1 : 0;
 
     always @(*) begin
         sum2[0] = zeros[0] + zeros[1];
@@ -84,8 +92,11 @@ module chien_checker(
             cdata_next[0+:32] = (cnt == 1) ? zeros : cdata[0+:32];
         end
         else cdata_next = 0;
+    end
 
-        cdone_next = (cnt == 1) ? 1 : 0;
+    always @(*) begin
+        cdone_next = (cnt == 1 && ~nested) ? 1 : 0;
+        nested_cdone_next = (cnt == 1 && nested) ? 1 : 0;
     end
     
     always @(*) begin
@@ -95,18 +106,20 @@ module chien_checker(
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            cnt         <= 0;
-            degree_rec  <= 0;
-            root_num    <= 0;
-            cdata       <= 0;
-            cdone       <= 0;
+            cnt             <= 0;
+            degree_rec      <= 0;
+            root_num        <= 0;
+            cdata           <= 0;
+            cdone           <= 0;
+            nested_cdone    <= 0;
         end
         else begin
-            cnt         <= cnt_next;
-            degree_rec  <= degree_rec_next;
-            root_num    <= root_num_next;
-            cdata       <= cdata_next;
-            cdone       <= cdone_next;
+            cnt             <= cnt_next;
+            degree_rec      <= degree_rec_next;
+            root_num        <= root_num_next;
+            cdata           <= cdata_next;
+            cdone           <= cdone_next;
+            nested_cdone    <= nested_cdone_next;
         end
     end
 

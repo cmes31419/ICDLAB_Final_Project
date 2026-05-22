@@ -47,12 +47,10 @@ module CHIP(
 
     generate
         for (gi=0;gi<3;gi=gi+1) begin
-            // assign cs_sigma_in[gi] = LKES_sigma_out[gi];
-            assign cs_sigma_in[gi] = LKES_sigma_out[gi] | NKES_sigma_out[gi];
+            assign cs_sigma_in[gi] = LKES_sigma_out[gi];
         end
         for (gi=3;gi<7;gi=gi+1) begin
-            // assign cs_sigma_in[gi] = 0;
-            assign cs_sigma_in[gi] = NKES_sigma_out[gi];
+            assign cs_sigma_in[gi] = 0;
         end
     endgenerate
 
@@ -144,8 +142,8 @@ module CHIP(
         .Lgamma(LKES_gamma_out),
         .Lk(LKES_k_out),
 
-        .sigma_done(NKES_sigma_out),
-        .sigma(NKES_done)
+        .sigma_done(NKES_done),
+        .sigma(NKES_sigma_out)
     );
 
 
@@ -153,14 +151,21 @@ module CHIP(
         .clk(clk),
         .rst(rst),
         .sigma(cs_sigma_in),
-        .sigma_valid(LKES_done | NKES_done),
-        .ready(),
+        .sigma_valid(LKES_done),
+        .nested_sigma(NKES_sigma_out),
+        .nested_sigma_valid(NKES_done),
         .cdata(cdata),
+        .cget(),
         .cdone(cdone),
         .cfail(cfail),
+        .nested_cget(),
         .nested_cdone(nested_cdone),
         .nested_cfail(nested_cfail)
     );
+
+    // 可刪 
+    wire syn_rdy;
+    wire [5:0] S_out_ch1, S_out_ch2;
 
     HSU_top hsu0(
         .clk(clk),

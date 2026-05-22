@@ -302,9 +302,7 @@ module HSU_top (
         .i_undecoded_idx_1(undecoded_idx_1_reg),  // Index of the first undecoded interleave (0 to 3)      
         .i_undecoded_idx_2(undecoded_idx_2_reg),  // Index of the second undecoded interleave (0 to 3, or 0 if only 1 undecoded interleave)
         .o_HS_1(o_HS_1),
-        .o_HS_2(o_HS_2),
-        .o_HS_3(),
-        .o_HS_4()
+        .o_HS_2(o_HS_2)
     );
 
 endmodule
