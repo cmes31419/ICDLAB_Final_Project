@@ -72,13 +72,22 @@ module chien_search(
     end
 
     always @(*) begin
-        if (cget || nested_cget) begin
+        if (cget) begin
             if (sigma[6] != 0) degree_next = 6;
             else if (sigma[5] != 0) degree_next = 5;
             else if (sigma[4] != 0) degree_next = 4;
             else if (sigma[3] != 0) degree_next = 3;
             else if (sigma[2] != 0) degree_next = 2;
             else if (sigma[1] != 0) degree_next = 1;
+            else degree_next = 0;
+        end
+        else if (nested_cget) begin
+            if (nested_sigma[6] != 0) degree_next = 6;
+            else if (nested_sigma[5] != 0) degree_next = 5;
+            else if (nested_sigma[4] != 0) degree_next = 4;
+            else if (nested_sigma[3] != 0) degree_next = 3;
+            else if (nested_sigma[2] != 0) degree_next = 2;
+            else if (nested_sigma[1] != 0) degree_next = 1;
             else degree_next = 0;
         end
         else if (cdone || nested_cdone) degree_next = 0;
