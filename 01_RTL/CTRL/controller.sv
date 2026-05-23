@@ -32,8 +32,8 @@ module controller(
     localparam S_STAGE2     = 3'd6;
     localparam S_KILL       = 3'd7;
 
-    reg [5:0]   icnt, icnt_next;    // input byte counter with wrap bit
-    reg [5:0]   ocnt, ocnt_next;    // output byte counter with wrap bit
+    reg [6:0]   icnt, icnt_next;    // input byte counter with wrap bit
+    reg [6:0]   ocnt, ocnt_next;    // output byte counter with wrap bit
     // reg [1:0]   scnt, scnt_next;
     reg [2:0]   ccnt, ccnt_next;    // correction codeword counter
     reg         ncnt, ncnt_next;
@@ -66,7 +66,8 @@ module controller(
     assign nsu_stage_flag = (nstate == S_START2 || nstate == S_STAGE2) ? 1 : 0;
 
     // FIFO-style full check
-    assign iready = (icnt[5] != ccnt[2] || icnt[4:3] >= ccnt[1:0]) ? 1 : 0;
+    // assign iready = (icnt[5] != ccnt[2] || icnt[4:3] >= ccnt[1:0]) ? 1 : 0;
+    assign iready = (icnt[6] != ocnt[6] && icnt[5:0] == ccnt[5:0]) ? 0 : 1;
 
     always @(*) begin
         if (ivalid) icnt_next = icnt + 1;
@@ -124,11 +125,11 @@ module controller(
         S_STAGE1B:  nstate_next = nested_cdone ? S_CHECK : S_STAGE1B;
         S_CHECK: begin
             if (npending == 3'd0) nstate_next = S_IDLE;
-            // else if (npending == 3'd1) nstate_next = S_START2;
+            else if (npending == 3'd1) nstate_next = S_START2;
             else nstate_next = S_KILL;
         end
-        // S_START2:   nstate_next = S_STAGE2;
-        // S_STAGE2:   nstate_next = nested_cdone ? (nested_cfail ? S_KILL : S_IDLE) : S_STAGE2;
+        S_START2:   nstate_next = S_STAGE2;
+        S_STAGE2:   nstate_next = nested_cdone ? (nested_cfail ? S_KILL : S_IDLE) : S_STAGE2;
         S_KILL:     nstate_next = S_IDLE;
         default:    nstate_next = S_IDLE;
         endcase
