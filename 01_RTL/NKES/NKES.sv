@@ -18,6 +18,7 @@ module NKES(
     // high order control
     input ncget, ncdone, ncfail,
     input fail_num,
+    input nsu_stage_flag,
 
     output sigma_done,
     output [5:0] sigma[6:0]
@@ -153,6 +154,7 @@ NKES_ctrl u_ctrl(
 
     .ncget(ncget), .ncdone(ncdone), .ncfail(ncfail),
     .fail_num(fail_num),
+    .nsu_stage_flag(nsu_stage_flag),
 
     .discrepancy_in(delta_poly[0]),
     .Lgamma_init(gamma_init),
@@ -376,6 +378,7 @@ module NKES_ctrl(
 
     input ncget, ncdone, ncfail,
     input fail_num,
+    input nsu_stage_flag,
 
     input [5:0] discrepancy_in,
     input [5:0] Lgamma_init,
@@ -493,7 +496,7 @@ module NKES_ctrl(
             if (ncdone) begin
                 case({fail_num, ncfail}) // synopsys parallel_case full_case
                 2'b00: state_next = S_INIT0;
-                2'b01: state_next = S_FINIT;
+                2'b01: state_next = (nsu_stage_flag)? S_INIT0 : S_FINIT;
                 2'b10: state_next = S_WAIT2;
                 2'b11: state_next = S_FAIL1;
                 endcase 

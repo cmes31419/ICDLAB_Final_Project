@@ -150,6 +150,7 @@ module CHIP(
 
         .ncget(nested_cget), .ncdone(nested_cdone), .ncfail(nested_cfail),
         .fail_num(nsu_b),
+        .nsu_stage_flag(nsu_stage_flag),
 
         .sigma_done(NKES_done),
         .sigma(NKES_sigma_out)
