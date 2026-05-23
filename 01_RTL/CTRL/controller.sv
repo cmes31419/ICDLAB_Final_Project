@@ -35,7 +35,7 @@ module controller(
     reg [6:0]   icnt, icnt_next;    // input byte counter with wrap bit
     reg [6:0]   ocnt, ocnt_next;    // output byte counter with wrap bit
     // reg [1:0]   scnt, scnt_next;
-    reg [2:0]   ccnt, ccnt_next;    // correction codeword counter
+    reg [3:0]   ccnt, ccnt_next;    // correction codeword counter
     reg [1:0]   ncnt, ncnt_next;
 
     reg [2:0]   nstate, nstate_next;
@@ -51,7 +51,7 @@ module controller(
     // Address mapping: input/output bytes are stored and read in reverse byte order
     assign iaddr = {icnt[5:3], 3'h7 - icnt[2:0]};
     assign oaddr = {ocnt[5:3], 3'h7 - ocnt[2:0]};
-    assign caddr = ccnt;
+    assign caddr = ccnt[2:0];
     assign naddr = {ncnt[0], npos};
 
     assign swen = ~err_num[1] & sdone;
@@ -66,7 +66,6 @@ module controller(
     assign nsu_stage_flag = (nstate == S_START2 || nstate == S_STAGE2) ? 1 : 0;
 
     // FIFO-style full check
-    // assign iready = (icnt[5] != ccnt[2] || icnt[4:3] >= ccnt[1:0]) ? 1 : 0;
     assign iready = ((icnt[6] != ocnt[6] && icnt[5:3] == ocnt[5:3]) || (icnt[6] != ncnt[1] && icnt[5] == ncnt[0])) ? 0 : 1;
 
     always @(*) begin
@@ -78,7 +77,7 @@ module controller(
         // else scnt_next = scnt;
         if (cdone) ccnt_next = ccnt + 1;
         else ccnt_next = ccnt;
-        if (ncnt[0] != ccnt[2] && npending == 3'd0) ncnt_next = ncnt + 1;
+        if (ncnt != ccnt[3:2] && npending == 3'd0) ncnt_next = ncnt + 1;
         else ncnt_next = ncnt;
     end
 
@@ -113,7 +112,7 @@ module controller(
     always @(*) begin
         case (nstate)
         S_IDLE: begin
-            if (ncnt[0] != ccnt[2]) begin
+            if (ncnt != ccnt[3:2]) begin
                 if (npending == 3'd0) nstate_next = S_IDLE;
                 else if (npending == 3'd1 || npending == 3'd2) nstate_next = S_START1;
                 else nstate_next = S_KILL;
