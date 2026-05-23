@@ -67,7 +67,7 @@ module controller(
 
     // FIFO-style full check
     // assign iready = (icnt[5] != ccnt[2] || icnt[4:3] >= ccnt[1:0]) ? 1 : 0;
-    assign iready = (icnt[6] != ocnt[6] && icnt[5:0] == ccnt[5:0]) ? 0 : 1;
+    assign iready = (icnt[6] != ocnt[6] && icnt[5:0] == ocnt[5:0]) ? 0 : 1;
 
     always @(*) begin
         if (ivalid) icnt_next = icnt + 1;
@@ -131,7 +131,7 @@ module controller(
         S_START2:   nstate_next = S_STAGE2;
         S_STAGE2:   nstate_next = nested_cdone ? (nested_cfail ? S_KILL : S_IDLE) : S_STAGE2;
         S_KILL:     nstate_next = S_IDLE;
-        default:    nstate_next = S_IDLE;
+        // default:    nstate_next = S_IDLE;
         endcase
     end
 
