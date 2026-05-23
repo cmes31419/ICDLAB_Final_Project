@@ -22,6 +22,9 @@ module CHIP(
     wire [3:0]  nflag;
     wire        nkill;
 
+    wire [2:0]  cwaddr;
+    wire        cwen;
+
     wire        sdone;
     wire        swen, ssel;
 
@@ -41,6 +44,9 @@ module CHIP(
 
     assign HO_syn[0] = S_out_ch1;
     assign HO_syn[1] = S_out_ch2;
+
+    assign cwen = (cdone & ~cfail) | (nested_cdone & ~nested_cfail);
+    assign cwaddr = (cdone & ~cfail) ? caddr : naddr;
 
     // temporaily set to only LKES
     genvar gi;
@@ -88,9 +94,9 @@ module CHIP(
         .sdata({LO_syn[3], LO_syn[2]}),
         .swen(swen),
         .ssel(ssel),
-        .caddr(caddr),
+        .caddr(cwaddr),
         .cdata(cdata),
-        .cwen(cdone & ~cfail),
+        .cwen(cwen),
         .naddr(naddr[2]),
         .nkill(nkill),  // TODO: replace with final nested-decoding done signal
         .nflag(nflag),
