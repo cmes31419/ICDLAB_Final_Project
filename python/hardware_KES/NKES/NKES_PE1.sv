@@ -15,7 +15,8 @@ module NKES_PE1 (
     input [5:0] sigma_even, sigma_odd,
     input [5:0] b_even, b_odd,
 
-    output [5:0] delta_poly_out
+    output [5:0] delta_poly_out, delta_delay_out,
+    output [5:0] theta_poly_out, theta_delay_out
 );
 
 reg [5:0] delta_poly, delta_poly_next, theta_poly, theta_poly_next;
@@ -26,6 +27,9 @@ gf_mul u_gfmul0(.in1(gamma), .in2(delta_delay), .prod(gfmul0_out));
 gf_mul u_gfmul1(.in1(discrepancy), .in2(theta_delay), .prod(gfmul1_out));
 
 assign delta_poly_out = delta_poly;
+assign theta_poly_out = theta_poly;
+assign delta_delay_out = delta_delay;
+assign theta_delay_out = theta_delay;
 
 always @(*) begin
     if (start) begin

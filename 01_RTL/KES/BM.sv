@@ -4,6 +4,7 @@ module BM(
     input syndrome_rdy,
 
     input [5:0] LO_syndrome[3:0],
+    input cget,
 
     output sigma_done,
     output [5:0] sigma_out[2:0],
@@ -29,6 +30,7 @@ assign gamma_out = gamma;
 BM_control bm_ctrl( .clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .discrepancy(discrepancy),
     .start(start), .hold(hold),
     .gamma(gamma), .k_out(k_out),
+    .cget(cget),
     .first_iter(first_iter), .branch(branch), .sigma_done(sigma_done)
 );
 
@@ -109,6 +111,7 @@ module BM_control(
     input rst,
     input syndrome_rdy,
     input [5:0] discrepancy,
+    input cget,
 
     output start,
     output hold,
@@ -157,7 +160,7 @@ always @(*) begin
     S_IDLE: state_next = (syndrome_rdy)? S_ITER0 : state;
     S_ITER0: state_next = S_ITER1;
     S_ITER1: state_next = S_DONE;
-    S_DONE: state_next = S_IDLE;
+    S_DONE: state_next = (cget)? S_IDLE : state;
     endcase
 end
 

@@ -15,8 +15,8 @@ module NKES_PE0(
     
     output [5:0] sigma_syn, // sigma * syndrome
     output [5:0] b_syn,     // b * syndrome
-    output [5:0] b_poly_out,
-    output [5:0] sigma_poly_out
+    output [5:0] b_poly_out, b_delay_out,
+    output [5:0] sigma_poly_out, sigma_delay_out
 );
 
 reg [5:0] b_poly, b_poly_next, sigma_poly, sigma_poly_next;
@@ -25,6 +25,8 @@ wire [5:0] gfmul0_out, gfmul1_out;
 
 assign sigma_poly_out = sigma_poly;
 assign b_poly_out = b_poly;
+assign sigma_delay_out = sigma_delay;
+assign b_delay_out = b_delay;
 
 gf_mul u_gfmul0(.in1(gamma), .in2(sigma_poly), .prod(gfmul0_out));
 gf_mul u_gfmul1(.in1(b_poly_in), .in2(discrepancy), .prod(gfmul1_out));

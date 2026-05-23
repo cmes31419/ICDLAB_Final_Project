@@ -13,7 +13,7 @@ module CHIP(
 
     wire [2:0]  caddr;
     wire [62:0] cdata;
-    wire        cdone, cfail;
+    wire        cdone, cfail, cget;
     wire        nested_cdone, nested_cfail, nested_cget;
 
     wire [2:0]  naddr;
@@ -116,7 +116,7 @@ module CHIP(
         .rst(rst),
         .syndrome_rdy(sdone),
         .LO_syndrome(LO_syn),
-
+        .cget(cget),
         .sigma_done(LKES_done),
         .sigma_out(LKES_sigma_out),
         .b_out(LKES_b_out),
@@ -158,17 +158,13 @@ module CHIP(
         .nested_sigma(NKES_sigma_out),
         .nested_sigma_valid(NKES_done),
         .cdata(cdata),
-        .cget(),
+        .cget(cget),
         .cdone(cdone),
         .cfail(cfail),
         .nested_cget(nested_cget),
         .nested_cdone(nested_cdone),
         .nested_cfail(nested_cfail)
     );
-
-    // 可刪 
-    wire syn_rdy;
-    wire [5:0] S_out_ch1, S_out_ch2;
 
     HSU_top hsu0(
         .clk(clk),
