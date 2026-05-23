@@ -67,7 +67,7 @@ module controller(
 
     // FIFO-style full check
     // assign iready = (icnt[5] != ccnt[2] || icnt[4:3] >= ccnt[1:0]) ? 1 : 0;
-    assign iready = (icnt[6] != ocnt[6] && icnt[5:0] == ocnt[5:0]) ? 0 : 1;
+    assign iready = (icnt[6] != ocnt[6] && icnt[5:3] == ocnt[5:3]) ? 0 : 1;
 
     always @(*) begin
         if (ivalid) icnt_next = icnt + 1;
