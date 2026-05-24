@@ -24,9 +24,50 @@ module HSU_top (
     reg [5:0] Syndrome_6_i0_reg, Syndrome_8_i0_reg, Syndrome_6_i1_reg, Syndrome_8_i1_reg;
     reg stage_flag_reg;
 
+    reg [5:0] square_S3_S5, square_S3_S6;
+    reg i2_valid;
+    reg [5:0] Syndrome_5_i0_reg, Syndrome_5_i1_reg;
+
+    reg [1:0] undecoded_idx_1_reg, undecoded_idx_2_reg; // 2-bit indices of the undecoded interleaves (0 to 3)
+    reg [1:0] undecoded_idx_1, undecoded_idx_2;
+
+    reg [1:0] stage2_match_idx;
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            stage2_match_idx <= 2'd0;
+        end else if (start && stage_flag) begin
+            // During stage 2, determine which S3/S4 pair corresponds to the undecoded interleave(s) based on the flags
+            if (flag0) begin
+                stage2_match_idx <= 2'd0;
+            end else if (flag1) begin
+                stage2_match_idx <= 2'd1;
+            end else if (flag2) begin
+                stage2_match_idx <= 2'd2;
+            end else if (flag3) begin
+                stage2_match_idx <= 2'd3;
+            end
+        end
+    end
+
+    always @(*) begin
+        if (valid_S3_S4 && ~stage_flag) begin
+            square_S3_S5 = Syndrome_3_i0; // S3_i0 for S6 calculation
+            square_S3_S6 = Syndrome_3_i1; // S3_i1 for S6 calculation
+        end else begin
+            if (~i2_valid || (i2_valid && stage2_match_idx == undecoded_idx_1_reg)) begin
+                square_S3_S5 = Syndrome_5_i0_reg;
+                square_S3_S6 = Syndrome_6_i0_reg;
+            end else begin
+                square_S3_S5 = Syndrome_5_i1_reg; // S4_i0 for S8 calculation
+                square_S3_S6 = Syndrome_6_i1_reg; // S4_i1 for S8 calculation
+            end
+        end
+    end
+
     gf_mul square_inst0 (
-        .in1(Syndrome_3_i0),
-        .in2(Syndrome_3_i0),
+        .in1(square_S3_S5),
+        .in2(square_S3_S5),
         .prod(Syndrome_6_i0)
     );
 
@@ -37,8 +78,8 @@ module HSU_top (
     );
 
     gf_mul square_inst2 (
-        .in1(Syndrome_3_i1), // S3_i1 for S6 calculation
-        .in2(Syndrome_3_i1),
+        .in1(square_S3_S6), // S3_i1 for S6 calculation
+        .in2(square_S3_S6),
         .prod(Syndrome_6_i1)
     );
 
@@ -54,7 +95,7 @@ module HSU_top (
             Syndrome_8_i0_reg <= 6'd0;
             Syndrome_6_i1_reg <= 6'd0;
             Syndrome_8_i1_reg <= 6'd0;
-        end else if (valid_S3_S4) begin 
+        end else if (valid_S3_S4 && ~stage_flag) begin 
             Syndrome_6_i0_reg <= Syndrome_6_i0; // S6 = S3^2 = S3_i0 ** 2
             Syndrome_8_i0_reg <= Syndrome_8_i0; // S8 = S4^2 = S4_i0 ** 2
             Syndrome_6_i1_reg <= Syndrome_6_i1; // S6 = S3^2 = S3_i1 ** 2
@@ -63,8 +104,7 @@ module HSU_top (
     end
 
     reg [5:0] Syndrome_12_i0_reg, Syndrome_12_i1_reg;
-    reg [1:0] idx_12_i0_reg, idx_12_i1_reg;
-    reg i1_valid;
+    
 
     //   - b        : 0 -> 1 interleave undecoded (only Ŝ_0 needed)
     //                1 -> 2 interleaves undecoded (need both Ŝ_0 and Ŝ_1)
@@ -80,19 +120,17 @@ module HSU_top (
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            i1_valid <= 1'b0;
+            i2_valid <= 1'b0;
         end
         else if (start && ~stage_flag) begin
             if (b) begin
-                i1_valid <= 1'b1;
+                i2_valid <= 1'b1;
             end else begin
-                i1_valid <= 1'b0;
+                i2_valid <= 1'b0;
             end
         end
     end
 
-    reg [1:0] undecoded_idx_1_reg, undecoded_idx_2_reg; // 2-bit indices of the undecoded interleaves (0 to 3)
-    reg [1:0] undecoded_idx_1, undecoded_idx_2;
     always @(*) begin
         if (flag0) begin
             undecoded_idx_1 = 2'd0;
@@ -203,8 +241,8 @@ module HSU_top (
                     S_out_ch2 <= Syndrome_6_i0_reg; // Output the only S6
                 end
             end else begin                  // Stage 2
-                S_out_ch1 <= S_out_0_reg; // Output S9
-                S_out_ch2 <= 6'd0; // Output S10
+                S_out_ch1 <= S_out_0; // Output S9
+                S_out_ch2 <= Syndrome_6_i0; // Output S10
             end
         end else if (counter == 3'd3) begin
             if (~stage_flag_reg) begin      // Stage 1
@@ -230,7 +268,7 @@ module HSU_top (
                 end
             end else begin                  // Stage 2
                 S_out_ch1 <= S_out_1_reg; // Output S11
-                S_out_ch2 <= 6'd0; // Output S12
+                S_out_ch2 <= Syndrome_6_i1; // Output S12
             end
         end else if (counter == 3'd5) begin
             if (~stage_flag_reg) begin      // Stage 1
@@ -266,14 +304,19 @@ module HSU_top (
         end
     end
 
-    reg [5:0] Syndrome_5_i0_reg, Syndrome_5_i1_reg;
+    
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             Syndrome_5_i0_reg <= 6'd0;
             Syndrome_5_i1_reg <= 6'd0;
         end else if (counter == 3'd2 && ~stage_flag_reg) begin
-            Syndrome_5_i0_reg <= S_out_0; // First S5
-            Syndrome_5_i1_reg <= S_out_2; // Second S5 (if exists)
+            if (b_reg) begin
+                Syndrome_5_i0_reg <= o_HS_1; // First S5
+                Syndrome_5_i1_reg <= o_HS_2; // Second S5 (if exists)
+            end else begin
+                Syndrome_5_i0_reg <= S_out_0; // The only S5
+                Syndrome_5_i1_reg <= 6'd0;
+            end
         end
     end
 
