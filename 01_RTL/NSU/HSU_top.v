@@ -82,7 +82,7 @@ module HSU_top (
         if (rst) begin
             i1_valid <= 1'b0;
         end
-        else if (start && ~stage_flag_reg) begin
+        else if (start && ~stage_flag) begin
             if (b) begin
                 i1_valid <= 1'b1;
             end else begin
@@ -92,28 +92,33 @@ module HSU_top (
     end
 
     reg [1:0] undecoded_idx_1_reg, undecoded_idx_2_reg; // 2-bit indices of the undecoded interleaves (0 to 3)
+    reg [1:0] undecoded_idx_1, undecoded_idx_2;
+    always @(*) begin
+        if (flag0) begin
+            undecoded_idx_1 = 2'd0;
+        end else if (flag1) begin
+            undecoded_idx_1 = 2'd1;
+        end else if (flag2) begin
+            undecoded_idx_1 = 2'd2;
+        end else if (flag3) begin
+            undecoded_idx_1 = 2'd3;
+        end else begin
+            undecoded_idx_1 = 2'd0; // Default value when no interleaves are undecoded (should not be used in this case)
+        end
+    end
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             undecoded_idx_1_reg <= 2'd0;
             undecoded_idx_2_reg <= 2'd0;
-        end else if (start && ~stage_flag_reg) begin
+        end else if (start && ~stage_flag) begin
             // Capture the indices of the undecoded interleaves at the start of processing
-            if (flag0) begin
-                undecoded_idx_1_reg <= 2'd0;
-            end else if (flag1) begin
-                undecoded_idx_1_reg <= 2'd1;
-            end else if (flag2) begin
-                undecoded_idx_1_reg <= 2'd2;
-            end else if (flag3) begin
-                undecoded_idx_1_reg <= 2'd3;
-            end
-
+            undecoded_idx_1_reg <= undecoded_idx_1;
             if (b) begin // If there are 2 undecoded interleaves, find the second one
-                if (flag1 && undecoded_idx_1_reg != 2'd1) begin
+                if (flag1 && undecoded_idx_1 != 2'd1) begin
                     undecoded_idx_2_reg <= 2'd1;
-                end else if (flag2 && undecoded_idx_1_reg != 2'd2) begin
+                end else if (flag2 && undecoded_idx_1 != 2'd2) begin
                     undecoded_idx_2_reg <= 2'd2;
-                end else if (flag3 && undecoded_idx_1_reg != 2'd3) begin
+                end else if (flag3 && undecoded_idx_1 != 2'd3) begin
                     undecoded_idx_2_reg <= 2'd3;
                 end
             end
