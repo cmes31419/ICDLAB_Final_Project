@@ -63,7 +63,7 @@ module CHIP(
     controller ctrl0(
         .clk(clk),
         .rst(rst),
-        .ivalid(ivalid),
+        .ivalid(ivalid & iready),
         .ovalid(ovalid),
         .sdone(sdone),
         .cdone(cdone),
@@ -90,7 +90,7 @@ module CHIP(
         .rst(rst),
         .iaddr(iaddr),
         .idata(idata),
-        .iwen(ivalid),
+        .iwen(ivalid & iready),
         .sdata({LO_syn[3], LO_syn[2]}),
         .swen(swen),
         .ssel(ssel),
@@ -112,7 +112,7 @@ module CHIP(
         .rst(rst),
         .cnt(syn_cnt),
         .idata(idata),
-        .ivalid(ivalid),
+        .ivalid(ivalid & iready),
         .S(LO_syn),
         .sdone(sdone)
     );
