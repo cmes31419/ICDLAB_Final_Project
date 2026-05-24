@@ -159,6 +159,8 @@ initial begin
 	    end
 
 	end
+	@(negedge clk);
+	ivalid = 0;
 end
 
 // check output
@@ -168,11 +170,11 @@ initial begin
 		if (ovalid === 1) begin
 			if (odata !== testa[i2][(63-obyte_cnt*8)-:8]) begin          
 				errcnt = errcnt + 1;
-				$write("design output = %8b, golden output = %8b. Byte Error\n", odata, testa[i2][(63-obyte_cnt*8)-:8]);
+				$write("design output = %8b, golden output = %8b. Byte Error, code_idx = %d\n", odata, testa[i2][(63-obyte_cnt*8)-:8], i2);
 			end
 			else begin
 				correctcnt = correctcnt + 1;
-				$write("design output = %8b, golden output = %8b. Byte Correct\n", odata, testa[i2][(63-obyte_cnt*8)-:8]);
+				$write("design output = %8b, golden output = %8b. Byte Correct, code_idx = %d\n", odata, testa[i2][(63-obyte_cnt*8)-:8], i2);
 			end
 			obyte_cnt = obyte_cnt + 1; 
         	if (obyte_cnt >= 8) begin

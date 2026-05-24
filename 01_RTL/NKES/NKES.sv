@@ -260,7 +260,7 @@ NKES_PE1 u_PE13(.clk(clk), .rst(rst), .start(start || fail_init), .hold(hold), .
     .delta_poly_out(delta_poly[3]),
     .theta_poly_out(theta_poly[3]),
     .delta_delay_out(delta_delay_out[3]),
-    .theta_delay_out(delta_delay_out[3])
+    .theta_delay_out(theta_delay_out[3])
 );
 // =========================================
 
@@ -313,7 +313,9 @@ NKES_PE0 u_PE06(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_o
     .sigma_syn(sigma_even[3]),
     // .b_syn(),
     // .b_poly_out(),
-    .sigma_poly_out(sigma[6])
+    .sigma_poly_out(sigma[6]),
+    .sigma_delay_out(sigma_delay_out[6]),
+    .b_delay_out(b_delay_out[6])
 );
 
 NKES_PE0 u_PE01(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_out), .discrepancy(discrepancy_out), .branch(branch_out),
@@ -325,7 +327,9 @@ NKES_PE0 u_PE01(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_o
     .sigma_syn(sigma_odd[0]),
     .b_syn(b_odd[0]),
     .b_poly_out(b_poly_out[1]),
-    .sigma_poly_out(sigma[1])
+    .sigma_poly_out(sigma[1]),
+    .sigma_delay_out(sigma_delay_out[1]),
+    .b_delay_out(b_delay_out[1])
 );
 NKES_PE0 u_PE03(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_out), .discrepancy(discrepancy_out), .branch(branch_out),
     .H_syn(Hsyn_odd),
@@ -336,7 +340,9 @@ NKES_PE0 u_PE03(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_o
     .sigma_syn(sigma_odd[1]),
     .b_syn(b_odd[1]),
     .b_poly_out(b_poly_out[3]),
-    .sigma_poly_out(sigma[3])
+    .sigma_poly_out(sigma[3]),
+    .sigma_delay_out(sigma_delay_out[3]),
+    .b_delay_out(b_delay_out[3])
 );
 NKES_PE0 u_PE05(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_out), .discrepancy(discrepancy_out), .branch(branch_out),
     .H_syn(Hsyn_odd),
@@ -347,7 +353,9 @@ NKES_PE0 u_PE05(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_o
     .sigma_syn(sigma_odd[2]),
     .b_syn(b_odd[2]),
     .b_poly_out(b_poly_out[5]),
-    .sigma_poly_out(sigma[5])
+    .sigma_poly_out(sigma[5]),
+    .sigma_delay_out(sigma_delay_out[5]),
+    .b_delay_out(b_delay_out[5])
 );
 NKES_PE0 u_PE07(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_out), .discrepancy(discrepancy_out), .branch(branch_out),
     .H_syn(Hsyn_odd),
@@ -355,10 +363,12 @@ NKES_PE0 u_PE07(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_o
     .sigma_init(sigma_init[7]),
     .b_init(b_init[7]),
 
-    .sigma_syn(sigma_odd[3])
+    .sigma_syn(sigma_odd[3]),
     // .b_syn(),
     // .b_poly_out(),
     // .sigma_poly_out()
+    .sigma_delay_out(sigma_delay_out[7]),
+    .b_delay_out(b_delay_out[7])
 );
 endmodule
 
@@ -432,7 +442,7 @@ module NKES_ctrl(
     || ((state == S_WAIT1 || state == S_WAIT2) && ncget);
     assign write_syn_en = (init || state == S_CYC00 || state == S_CYC01);
     assign write_syn_idx = (state == S_INIT1 || state == S_CYC01);
-    assign read_syn_idx = (state == S_INIT1 || state == S_CYC01);
+    assign read_syn_idx = (state == S_CYC11|| state == S_CYC01);
     assign last_iter = (state == S_CYC10 || state == S_CYC11);
 
     assign store_from_PE = (state == S_WAIT1) || (state == S_WAIT2);
