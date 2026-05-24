@@ -450,7 +450,7 @@ module NKES_ctrl(
 
     assign start = init;
     assign hold = ((state == S_WAIT1 || state == S_WAIT2) && !ncget) 
-    || (state == S_CHECK1 || state == S_CHECK2 || state == S_FAIL1 || state == S_FINIT); 
+    || (state == S_CHECK1 || state == S_CHECK2 || state == S_CHECK3 || state == S_FAIL1 || state == S_FINIT); 
     assign gamma_out = gamma;
     assign discrepancy_out = discrepancy_in;
     assign branch_out = |discrepancy_in && (k <= 0);
