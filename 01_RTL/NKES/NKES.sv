@@ -440,9 +440,9 @@ module NKES_ctrl(
     // assign re_init = (state == S_FINIT) && syn_rdy;
     assign init = ((state == S_INIT0) && syn_rdy) || (state == S_INIT1) 
     || ((state == S_WAIT1 || state == S_WAIT2) && ncget);
-    assign write_syn_en = (init || state == S_CYC00 || state == S_CYC01);
+    assign write_syn_en = (((state == S_INIT0 || state == S_FINIT) && syn_rdy) || state == S_INIT1|| state == S_CYC00 || state == S_CYC01);
     assign write_syn_idx = (state == S_INIT1 || state == S_CYC01);
-    assign read_syn_idx = (state == S_CYC11|| state == S_CYC01);
+    assign read_syn_idx = (state == S_CYC11 || state == S_CYC01);
     assign last_iter = (state == S_CYC10 || state == S_CYC11);
 
     assign store_from_PE = (state == S_WAIT1) || (state == S_WAIT2);
