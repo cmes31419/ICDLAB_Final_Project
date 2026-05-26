@@ -177,7 +177,8 @@ module state_buff_ctrl(
                 state_next = state;
             end 
         end
-        S_FULL: state_next = (cnt == 2'd3 && cdone)? S_STORE0 : S_FULL; 
+        S_FULL: state_next = (cnt == 2'd3 && cdone)? S_STORE0 : S_FULL;
+        default: state_next = S_STORE0;  
         endcase  
     end
 
