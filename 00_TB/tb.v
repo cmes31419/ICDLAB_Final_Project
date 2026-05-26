@@ -7,8 +7,8 @@ module test;
 parameter CYCLE = 10;
 parameter PATTERN = 1;
 integer CODEWORD_CNT = 1;
-integer NTEST = CODEWORD_CNT*4;
-integer TESTBYTE = NTEST * 8;
+integer NTEST; //= CODEWORD_CNT*4;
+integer TESTBYTE; //= NTEST * 8;
 // --------------------------
 // signals
 reg clk, rst;
@@ -53,6 +53,11 @@ initial begin
 		CODEWORD_CNT = 4;
 		$readmemb("../00_TB/testdata/pattern/p4.txt", testdata);
 		$readmemb("../00_TB/testdata/codeword/p4a.txt", testa);
+	end
+	if (PATTERN == 5) begin
+		CODEWORD_CNT = 10;
+		$readmemb("../00_TB/testdata/pattern/p5.txt", testdata);
+		$readmemb("../00_TB/testdata/codeword/p5a.txt", testa);
 	end
 	// Recalculate dependent parameters
 	NTEST = CODEWORD_CNT * 4;

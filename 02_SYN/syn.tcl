@@ -11,7 +11,8 @@ link
 
 ############in sdc file
 # Set the Optimization Constraints 
-create_clock -period 10 -name "clk" -waveform {0 5} "clk"
+set cycle 10.0
+create_clock -period $cycle -name "clk" -waveform {0 5} "clk"
 set_dont_touch_network [get_ports clk]
 set_fix_hold [get_clocks clk]
 
@@ -45,13 +46,13 @@ check_design
 compile_ultra -no_autoungroup
 
 # Analyze and debug the design
-report_area > area_${DESIGN}.out
-report_power > power_${DESIGN}.out
-report_timing -path full -delay max > timing_${DESIGN}.out
+report_area -hierarchy > "./Report/area_${DESIGN}.out"
+report_power > "./Report/power_${DESIGN}.out"
+report_timing -path full -delay max > "./Report/timing_${DESIGN}.out"
 
 #write -format db -hierarchy -output $active_design.db
-write -format verilog -hierarchy -output ${DESIGN}_syn.v
-write_sdf -version 2.1 -context verilog ${DESIGN}.sdf
-write_sdc ${DESIGN}.sdc
+write -format verilog -hierarchy -output "./Netlist/${DESIGN}_syn.v"
+write_sdf -version 2.1 -context verilog "./Netlist/${DESIGN}_syn.sdf"
+write_sdc "./Netlist/${DESIGN}_syn.sdc"
 
-exit
+# exit
