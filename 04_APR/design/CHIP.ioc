@@ -2,43 +2,43 @@ Version: 1
 
 Orient: R90
 Pad: CORNER0          NW  CORNERD
-Pad: ipad_clk         N   
-Pad: ipad_rst         N    
+Pad: ipad_idata_2     N 
+Pad: ipad_idata_1     N 
 Pad: ipad_idata_0     N   
 Pad: ipad_CoreVDD1    N   VCCKD
 Pad: ipad_CoreVSS1    N   GNDKD
-Pad: ipad_idata_1     N 
-Pad: ipad_idata_2     N 
-Pad: ipad_idata_3     N   
+Pad: ipad_rst         N    
+Pad: ipad_clk         N   
 
 Orient: R0 
 Pad: CORNER1          NE  CORNERD
-Pad: ipad_idata_4     W
-Pad: ipad_idata_5     W   
+Pad: ipad_ivalid      W   
+Pad: ipad_idata_7     W   
 Pad: ipad_idata_6     W    
 Pad: ipad_IOVDD1      W   VCC3IOD
 Pad: ipad_IOVSS1      W   GNDIOD
-Pad: ipad_idata_7     W   
-Pad: ipad_ivalid      W   
-Pad: opad_iready      W    
+Pad: ipad_idata_5     W   
+Pad: ipad_idata_4     W
+Pad: ipad_idata_3     W
 
 Orient: R180
 Pad: CORNER2          SW  CORNERD
-Pad: opad_odata_0     S   
-Pad: opad_odata_1     S
-Pad: opad_odata_2     S 
+Pad: opad_iready      S
+Pad: opad_odata_7     S
 Pad: ipad_CoreVSS2    S   GNDKD
 Pad: ipad_CoreVDD2    S   VCCKD
-Pad: opad_odata_3     S   
-Pad: opad_odata_4     S
+Pad: opad_odata_6     S
 Pad: opad_odata_5     S
+Pad: opad_odata_4     S
 
 Orient: R270
 Pad: CORNER3          SE  CORNERD
-Pad: opad_odata_6     E
-Pad: opad_odata_7     E      
+Pad: opad_odata_3     E   
+Pad: opad_odata_2     E 
+Pad: opad_odata_1     E
 Pad: ipad_IOVDD2      E   VCC3IOD
 Pad: ipad_IOVSS2      E   GNDIOD
+Pad: opad_odata_0     E
 Pad: opad_ovalid      E 
 
 
