@@ -207,7 +207,7 @@ syndrome_buff u_syn_buff(
 );
 
 // ============ PE1 array ====================
-NKES_PE1 u_PE10(.clk(clk), .rst(rst), .start(start || fail_init), .hold(hold), .gamma(gamma_time), .discrepancy(dis_time), .branch(branch_time),
+NKES_PE1_unified u_PE10(.clk(clk), .rst(rst), .start(start || fail_init), .hold(hold), .mode(1), .gamma(gamma_time), .discrepancy(dis_time), .branch(branch_time),
     .delta_init(delta_init[0]),
     .theta_init(theta_init[0]),
     .delta_poly_in(delta_poly[1]),
@@ -221,7 +221,7 @@ NKES_PE1 u_PE10(.clk(clk), .rst(rst), .start(start || fail_init), .hold(hold), .
     .theta_delay_out(theta_delay_out[0])
 );
 
-NKES_PE1 u_PE11(.clk(clk), .rst(rst), .start(start || fail_init) , .hold(hold), .gamma(gamma_time), .discrepancy(dis_time), .branch(branch_time),
+NKES_PE1_unified u_PE11(.clk(clk), .rst(rst), .start(start || fail_init) , .hold(hold), .mode(1), .gamma(gamma_time), .discrepancy(dis_time), .branch(branch_time),
     .delta_init(delta_init[1]),
     .theta_init(theta_init[1]),
     .delta_poly_in(delta_poly[2]),
@@ -265,7 +265,7 @@ NKES_PE1 u_PE13(.clk(clk), .rst(rst), .start(start || fail_init), .hold(hold), .
 // =========================================
 
 // ============ PE0 array ====================
-NKES_PE0 u_PE00(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_out), .discrepancy(discrepancy_out), .branch(branch_out),
+NKES_PE0_unified u_PE00(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(1), .gamma(gamma_out), .discrepancy(discrepancy_out), .branch(branch_out),
     .H_syn(Hsyn_even),
     .b_poly_in(6'b0),
     .sigma_init(sigma_init[0]),
@@ -278,7 +278,7 @@ NKES_PE0 u_PE00(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_o
     .sigma_delay_out(sigma_delay_out[0]),
     .b_delay_out(b_delay_out[0])
 );
-NKES_PE0 u_PE02(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_out), .discrepancy(discrepancy_out), .branch(branch_out),
+NKES_PE0_unified u_PE02(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(1), .gamma(gamma_out), .discrepancy(discrepancy_out), .branch(branch_out),
     .H_syn(Hsyn_even),
     .b_poly_in(b_poly_out[0]),
     .sigma_init(sigma_init[2]),
@@ -318,7 +318,7 @@ NKES_PE0 u_PE06(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_o
     .b_delay_out(b_delay_out[6])
 );
 
-NKES_PE0 u_PE01(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma_out), .discrepancy(discrepancy_out), .branch(branch_out),
+NKES_PE0_unified u_PE01(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(1), .gamma(gamma_out), .discrepancy(discrepancy_out), .branch(branch_out),
     .H_syn(Hsyn_odd),
     .b_poly_in(6'b0),
     .sigma_init(sigma_init[1]),
