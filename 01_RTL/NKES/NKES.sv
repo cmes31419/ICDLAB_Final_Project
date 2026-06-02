@@ -454,7 +454,7 @@ module NKES_ctrl(
     assign gamma_out = gamma;
     assign discrepancy_out = discrepancy_in;
     assign branch_out = |discrepancy_in && (k <= 0);
-    assign sigma_done = (state == S_WAIT1) || (state >= 4'd7 && state <= 4'd9 && fail_num == 1'b1); 
+    assign sigma_done = (state == S_WAIT1) || (state >= 4'd8 && state <= 4'd9 && fail_num == 1'b1); 
 
     assign k_init = (store_from_PE)? k : {{2{Lk_init[1]}}, Lk_init};
     assign gamma_init = (store_from_PE)? gamma : Lgamma_init;

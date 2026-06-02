@@ -59,6 +59,16 @@ initial begin
 		$readmemb("../00_TB/testdata/pattern/p5.txt", testdata);
 		$readmemb("../00_TB/testdata/codeword/p5a.txt", testa);
 	end
+	if (PATTERN == 6) begin
+		CODEWORD_CNT = 8;
+		$readmemb("../00_TB/testdata/pattern/p6.txt", testdata);
+		$readmemb("../00_TB/testdata/codeword/p6a.txt", testa);
+	end
+	if (PATTERN == 7) begin
+		CODEWORD_CNT = 100;
+		$readmemb("../00_TB/testdata/pattern/p7.txt", testdata);
+		$readmemb("../00_TB/testdata/codeword/p7a.txt", testa);
+	end
 	// Recalculate dependent parameters
 	NTEST = CODEWORD_CNT * 4;
 	TESTBYTE = NTEST * 8;
