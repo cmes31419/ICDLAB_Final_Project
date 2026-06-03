@@ -12,10 +12,12 @@ module NKES_PE1_unified(
     input [5:0] delta_init,
     input [5:0] theta_init,
     input [5:0] delta_poly_in,
+    input [5:0] nested_delta_poly_in,
 
     input [5:0] sigma_even, sigma_odd,
     input [5:0] b_even, b_odd,
 
+    output [5:0] delta_poly_pre_out,
     output [5:0] delta_poly_out, delta_delay_out,
     output [5:0] theta_poly_out, theta_delay_out
 );
@@ -27,6 +29,7 @@ wire [5:0] gfmul0_out, gfmul1_out;
 gf_mul u_gfmul0(.in1(gamma), .in2(mode ? delta_delay : delta_poly_in), .prod(gfmul0_out));
 gf_mul u_gfmul1(.in1(discrepancy), .in2(mode ? theta_delay : theta_poly), .prod(gfmul1_out));
 
+assign delta_poly_pre_out = delta_poly_next;
 assign delta_poly_out = delta_poly;
 assign theta_poly_out = theta_poly;
 assign delta_delay_out = delta_delay;
@@ -42,7 +45,7 @@ always @(*) begin
         theta_delay_next = theta_delay;  
     end
     else begin
-        delta_delay_next = delta_poly_in ^ sigma_even ^ sigma_odd; 
+        delta_delay_next = nested_delta_poly_in ^ sigma_even ^ sigma_odd; 
         theta_delay_next = theta_poly ^ b_even ^ b_odd;
     end
 

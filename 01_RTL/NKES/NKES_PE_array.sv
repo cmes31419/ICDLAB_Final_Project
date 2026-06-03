@@ -50,10 +50,12 @@ NKES_PE1_unified u_PE10(
     .delta_init(delta_init[0]),
     .theta_init(theta_init[0]),
     .delta_poly_in(delta_poly[1]),
+    .nested_delta_poly_in(delta_poly[1]),
 
     .sigma_even(sigma_even[0]), .sigma_odd(sigma_odd[0]),
     .b_even(6'b0), .b_odd(6'b0),
 
+    .delta_poly_pre_out(),
     .delta_poly_out(delta_poly[0]),
     .theta_poly_out(theta_poly[0]),
     .delta_delay_out(delta_delay_out[0]),
@@ -74,10 +76,12 @@ NKES_PE1_unified u_PE11(
     .delta_init(delta_init[1]),
     .theta_init(theta_init[1]),
     .delta_poly_in(delta_poly[2]),
+    .nested_delta_poly_in(delta_poly[2]),
 
     .sigma_even(sigma_even[1]), .sigma_odd(sigma_odd[1]),
     .b_even(b_even[0]), .b_odd(b_odd[0]),
-
+    
+    .delta_poly_pre_out(),
     .delta_poly_out(delta_poly[1]),
     .theta_poly_out(theta_poly[1]),
     .delta_delay_out(delta_delay_out[1]),
