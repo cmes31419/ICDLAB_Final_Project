@@ -36,7 +36,7 @@ BM_control bm_ctrl( .clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .discrepa
 
 
 // ============ PE0 array ==============
-NKES_PE0_unified u_PE00(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+NKES_PE0_unified u_PE00(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(1'b0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
     .H_syn(6'b0),
     .b_poly_in(6'b0),
     .sigma_init(6'b1),
@@ -50,7 +50,7 @@ NKES_PE0_unified u_PE00(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(
     .b_delay_out()
 );
 
-NKES_PE0_unified u_PE01(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+NKES_PE0_unified u_PE01(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(1'b0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
     .H_syn(6'b0),
     .b_poly_in(first_iter? 6'b1 : 6'b0),
     .sigma_init(6'b0),
@@ -64,7 +64,7 @@ NKES_PE0_unified u_PE01(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(
     .b_delay_out()
 );
 
-NKES_PE0_unified u_PE02(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+NKES_PE0_unified u_PE02(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(1'b0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
     .H_syn(6'b0),
     .b_poly_in(b_out[0]),
     .sigma_init(6'b0),
@@ -80,7 +80,7 @@ NKES_PE0_unified u_PE02(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(
 
 
 // ============ PE1 array ==============
-NKES_PE1_unified u_PE10(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+NKES_PE1_unified u_PE10(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(1'b0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
     .delta_init(LO_syndrome[0]),
     .theta_init(LO_syndrome[1]),
     .delta_poly_in(delta_poly2),
@@ -94,7 +94,7 @@ NKES_PE1_unified u_PE10(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(
     .theta_delay_out()
 );
 
-NKES_PE1_unified u_PE12(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+NKES_PE1_unified u_PE12(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(1'b0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
     .delta_init(LO_syndrome[2]),
     .theta_init(LO_syndrome[3]),
     .delta_poly_in(6'b0),
