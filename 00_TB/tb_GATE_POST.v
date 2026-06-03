@@ -4,7 +4,7 @@ module test;
 
 // --------------------------
 // parameters
-parameter CYCLE = 10;
+parameter CYCLE = 20;
 parameter PATTERN = 1;
 integer CODEWORD_CNT = 1;
 integer NTEST; //= CODEWORD_CNT*4;
@@ -59,16 +59,6 @@ initial begin
 		$readmemb("../00_TB/testdata/pattern/p5.txt", testdata);
 		$readmemb("../00_TB/testdata/codeword/p5a.txt", testa);
 	end
-	if (PATTERN == 6) begin
-		CODEWORD_CNT = 8;
-		$readmemb("../00_TB/testdata/pattern/p6.txt", testdata);
-		$readmemb("../00_TB/testdata/codeword/p6a.txt", testa);
-	end
-	if (PATTERN == 7) begin
-		CODEWORD_CNT = 100;
-		$readmemb("../00_TB/testdata/pattern/p7.txt", testdata);
-		$readmemb("../00_TB/testdata/codeword/p7a.txt", testa);
-	end
 	// Recalculate dependent parameters
 	NTEST = CODEWORD_CNT * 4;
 	TESTBYTE = NTEST * 8;
@@ -76,8 +66,8 @@ initial begin
 end
 
 initial begin
-	$fsdbDumpfile("waveform.fsdb");
-	$fsdbDumpvars("+mda");
+	$dumpfile("CHIP.vcd");
+	$dumpvars;
 end
 
 // --------------------------
@@ -94,7 +84,7 @@ CHIP dut(
 `ifdef SDF_GATE
 	initial $sdf_annotate("../02_SYN/Netlist/CHIP_syn.sdf", dut);
 `elsif SDF_POST
-	initial $sdf_annotate("../04_APR/Netlist/CHIP_apr.sdf", dut);
+	initial $sdf_annotate("../04_APR/CHIP.sdf", dut);
 `endif
 
 // --------------------------

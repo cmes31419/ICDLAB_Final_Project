@@ -3,8 +3,11 @@
 
 // Define files
 
-// Design
-`include "../01_RTL/CHIP.sv"
+// CHIP
+`include "../01_RTL/CHIP.v"
+
+// DESIGN
+`include "../01_RTL/TOP.sv"
 
 // CTRL
 `include "../01_RTL/CTRL/controller.sv"

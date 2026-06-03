@@ -1,1 +1,1 @@
-vcs ../00_TB/tb.v ../02_SYN/Netlist/CHIP_syn.v ../02_SYN/fsa0m_a_generic_core_21.lib.src -pvalue+CYCLE=10.0 -pvalue+PATTERN=4 -full64 -R -debug_access+all +v2k +define+SDF_GATE +neg_tchk
+vcs ../00_TB/tb_GATE_POST.v ../02_SYN/Netlist/CHIP_syn.v -v ../02_SYN/fsa0m_a_generic_core_21.lib.src ../02_SYN/fsa0m_a_t33_generic_io_21.lib.src -pvalue+CYCLE=10.0 -pvalue+PATTERN=4 -full64 -R -debug_access+all +v2k +define+SDF_GATE +neg_tchk

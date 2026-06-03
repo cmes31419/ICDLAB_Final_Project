@@ -1,10 +1,10 @@
 // testbench
-../00_TB/tb.v
+../00_TB/tb_RTL.v
 
 // Define files
 
 // Design
-CHIP.sv
+TOP.sv
 
 // CTRL
 ./CTRL/controller.sv

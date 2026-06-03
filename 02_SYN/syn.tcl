@@ -9,32 +9,35 @@ link
 
 #source -echo -verbose ./your_design.sdc
 
-############in sdc file
+############ 修正後的 SDC 段落 ############
 # Set the Optimization Constraints 
 set cycle 10.0
-create_clock -period $cycle -name "clk" -waveform {0 5} "clk"
-set_dont_touch_network [get_ports clk]
-set_fix_hold [get_clocks clk]
-
+create_clock -period $cycle -name "clk" -waveform [list 0 [expr $cycle*0.5]] [get_ports clk]
+set_ideal_network [get_ports clk]
+# 註解掉 set_fix_hold，合成時不修 hold
 
 # Define the design environment
 set_clock_uncertainty  0.1  [get_clocks clk]
 set_clock_latency      0.5  [get_clocks clk]
-set_input_delay  [expr $cycle*0.5] -clock clk [all_inputs]
-set_output_delay [expr $cycle*0.5] -clock clk [all_outputs] 
-set_drive 1  [all_inputs]
-set_load  10 [all_outputs]
 
+# 精準抓出除了 clk 以外的輸入腳位
+set actual_inputs [remove_from_collection [all_inputs] [get_ports clk]]
+set_input_delay  [expr $cycle*0.5] -clock clk $actual_inputs
+set_output_delay [expr $cycle*0.5] -clock clk [all_outputs] 
+
+# 移除對 Pad 下的 set_drive
+set_load  1  [all_outputs];
 
 set_fix_multiple_port_nets -all -buffer_constants
 
+# 請務必確認 BCCOM / WCCOM 是否與你的 .lib 檔案內部命名一致！
 set_operating_conditions -min_library fsa0m_a_generic_core_ff1p98vm40c -min BCCOM -max_library fsa0m_a_generic_core_ss1p62v125c -max WCCOM
 set_wire_load_model -name G200K -library fsa0m_a_generic_core_tt1p8v25c
 
 set_max_area 0
-set_max_fanout 20 [all_inputs]
+set_max_fanout 6 $actual_inputs;
 set_boundary_optimization {"*"}
-#############in sdc file
+##########################################
 
 
 check_design

@@ -1,4 +1,4 @@
-module CHIP(
+module TOP (
     input           clk,
     input           rst,
     input [7:0]     idata,
