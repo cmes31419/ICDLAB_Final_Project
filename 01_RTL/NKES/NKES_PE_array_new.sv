@@ -22,16 +22,18 @@ module NKES_PE_array_new(
     input [5:0] sigma_init[7:0],
     input [5:0] b_init[7:0],
 
-    output [5:0] delta_poly[3:0],
-    output [5:0] theta_poly[3:0],
-    output [5:0] delta_delay_out[3:0],
-    output [5:0] theta_delay_out[3:0],
+    output       pe_cnt,
+
+    output [5:0] delta_poly[1:0],
+    output [5:0] theta_poly[1:0],
+    output [5:0] delta_delay_out[1:0],
+    output [5:0] theta_delay_out[1:0],
 
     output       sigma_done,
     output [5:0] sigma[6:0],
-    output [5:0] sigma_delay_out[7:0],
-    output [5:0] b_poly_out[5:0],
-    output [5:0] b_delay_out[7:0]
+    output [5:0] sigma_delay_out[3:0],
+    output [5:0] b_poly_out[3:0],
+    output [5:0] b_delay_out[3:0]
 );
 
 localparam S_IDLE   = 1'd0;
@@ -79,6 +81,7 @@ reg [5:0] b_init_6_rec;
 reg [5:0] b_init_7_rec;
 // ------------------------------------------
 
+assign pe_cnt = cnt[0];
 assign sigma_done = valid;
 
 generate
@@ -99,17 +102,17 @@ NKES_PE1_unified u_PE10(
     .hold(hold), 
     .mode(mode), 
     
-    .gamma(cnt[0] ? gamma_time_rec : gamma_time), 
-    .discrepancy(cnt[0] ? dis_time_rec : dis_time), 
-    .branch(cnt[0] ? branch_time_rec : branch_time),
+    .gamma(pe_cnt ? gamma_time_rec : gamma_time), 
+    .discrepancy(pe_cnt ? dis_time_rec : dis_time), 
+    .branch(pe_cnt ? branch_time_rec : branch_time),
 
-    .delta_init(cnt[0] ? delta_init_2_rec : delta_init[0]),
-    .theta_init(cnt[0] ? theta_init_2_rec : theta_init[0]),
+    .delta_init(pe_cnt ? delta_init_2_rec : delta_init[0]),
+    .theta_init(pe_cnt ? theta_init_2_rec : theta_init[0]),
     .delta_poly_in(delta_poly[1]),
     .nested_delta_poly_in(delta_poly[1]),
 
     .sigma_even(sigma_even[0]), .sigma_odd(sigma_odd[0]),
-    .b_even(cnt[0] ? b_even_1_rec : 6'b0), .b_odd(cnt[0] ? b_odd_1_rec : 6'b0),
+    .b_even(pe_cnt ? b_even_1_rec : 6'b0), .b_odd(pe_cnt ? b_odd_1_rec : 6'b0),
 
     .delta_poly_pre_out(delta_poly_pre_out_0),
 
@@ -126,14 +129,14 @@ NKES_PE1_unified u_PE11(
     .hold(hold), 
     .mode(mode), 
     
-    .gamma(cnt[0] ? gamma_time_rec : gamma_time), 
-    .discrepancy(cnt[0] ? dis_time_rec : dis_time), 
-    .branch(cnt[0] ? branch_time_rec : branch_time),
+    .gamma(pe_cnt ? gamma_time_rec : gamma_time), 
+    .discrepancy(pe_cnt ? dis_time_rec : dis_time), 
+    .branch(pe_cnt ? branch_time_rec : branch_time),
 
-    .delta_init(cnt[0] ? 6'b0 : delta_init[1]),
-    .theta_init(cnt[0] ? 6'b0 : theta_init[1]),
+    .delta_init(pe_cnt ? 6'b0 : delta_init[1]),
+    .theta_init(pe_cnt ? 6'b0 : theta_init[1]),
     .delta_poly_in(6'b0),
-    .nested_delta_poly_in(cnt[0] ? 6'b0 : delta_poly_pre_out_0),
+    .nested_delta_poly_in(pe_cnt ? 6'b0 : delta_poly_pre_out_0),
 
     .sigma_even(sigma_even[1]), .sigma_odd(sigma_odd[1]),
     .b_even(b_even[0]), .b_odd(b_odd[0]),
@@ -155,14 +158,14 @@ NKES_PE0_unified u_PE00(
     .hold(hold), 
     .mode(mode), 
     
-    .gamma(cnt[0] ? gamma_out_rec : gamma_out), 
-    .discrepancy(cnt[0] ? dis_out_rec : dis_out), 
-    .branch(cnt[0] ? branch_out_rec : branch_out),
+    .gamma(pe_cnt ? gamma_out_rec : gamma_out), 
+    .discrepancy(pe_cnt ? dis_out_rec : dis_out), 
+    .branch(pe_cnt ? branch_out_rec : branch_out),
 
-    .H_syn(cnt[0] ? Hsyn_even_rec : Hsyn_even),
-    .b_poly_in(cnt[0] ? b_poly_2_rec : 6'b0),
-    .sigma_init(cnt[0] ? sigma_init_4_rec : sigma_init[0]),
-    .b_init(cnt[0] ? b_init_4_rec : b_init[0]),
+    .H_syn(pe_cnt ? Hsyn_even_rec : Hsyn_even),
+    .b_poly_in(pe_cnt ? b_poly_2_rec : 6'b0),
+    .sigma_init(pe_cnt ? sigma_init_4_rec : sigma_init[0]),
+    .b_init(pe_cnt ? b_init_4_rec : b_init[0]),
 
     .sigma_syn(sigma_even[0]),
     .b_syn(b_even[0]),
@@ -180,14 +183,14 @@ NKES_PE0_unified u_PE02(
     .hold(hold), 
     .mode(mode), 
     
-    .gamma(cnt[0] ? gamma_out_rec : gamma_out), 
-    .discrepancy(cnt[0] ? dis_out_rec : dis_out), 
-    .branch(cnt[0] ? branch_out_rec : branch_out),
+    .gamma(pe_cnt ? gamma_out_rec : gamma_out), 
+    .discrepancy(pe_cnt ? dis_out_rec : dis_out), 
+    .branch(pe_cnt ? branch_out_rec : branch_out),
 
-    .H_syn(cnt[0] ? Hsyn_even_rec : Hsyn_even),
+    .H_syn(pe_cnt ? Hsyn_even_rec : Hsyn_even),
     .b_poly_in(b_poly_out[0]),
-    .sigma_init(cnt[0] ? sigma_init_6_rec : sigma_init[2]),
-    .b_init(cnt[0] ? b_init_6_rec : b_init[2]),
+    .sigma_init(pe_cnt ? sigma_init_6_rec : sigma_init[2]),
+    .b_init(pe_cnt ? b_init_6_rec : b_init[2]),
 
     .sigma_syn(sigma_even[1]),
     .b_syn(b_even[1]),
@@ -205,14 +208,14 @@ NKES_PE0_unified u_PE01(
     .hold(hold), 
     .mode(mode), 
     
-    .gamma(cnt[0] ? gamma_out_rec : gamma_out), 
-    .discrepancy(cnt[0] ? dis_out_rec : dis_out), 
-    .branch(cnt[0] ? branch_out_rec : branch_out),
+    .gamma(pe_cnt ? gamma_out_rec : gamma_out), 
+    .discrepancy(pe_cnt ? dis_out_rec : dis_out), 
+    .branch(pe_cnt ? branch_out_rec : branch_out),
 
-    .H_syn(cnt[0] ? Hsyn_odd_rec : Hsyn_odd),
-    .b_poly_in(cnt[0] ? b_poly_3_rec : 6'b0),
-    .sigma_init(cnt[0] ? sigma_init_5_rec : sigma_init[1]),
-    .b_init(cnt[0] ? b_init_5_rec : b_init[1]),
+    .H_syn(pe_cnt ? Hsyn_odd_rec : Hsyn_odd),
+    .b_poly_in(pe_cnt ? b_poly_3_rec : 6'b0),
+    .sigma_init(pe_cnt ? sigma_init_5_rec : sigma_init[1]),
+    .b_init(pe_cnt ? b_init_5_rec : b_init[1]),
 
     .sigma_syn(sigma_odd[0]),
     .b_syn(b_odd[0]),
@@ -229,14 +232,14 @@ NKES_PE0 u_PE03(
     .start(start), 
     .hold(hold), 
     
-    .gamma(cnt[0] ? gamma_out_rec : gamma_out), 
-    .discrepancy(cnt[0] ? dis_out_rec : dis_out), 
-    .branch(cnt[0] ? branch_out_rec : branch_out),
+    .gamma(pe_cnt ? gamma_out_rec : gamma_out), 
+    .discrepancy(pe_cnt ? dis_out_rec : dis_out), 
+    .branch(pe_cnt ? branch_out_rec : branch_out),
 
-    .H_syn(cnt[0] ? Hsyn_odd_rec : Hsyn_odd),
+    .H_syn(pe_cnt ? Hsyn_odd_rec : Hsyn_odd),
     .b_poly_in(b_poly_out[1]),
-    .sigma_init(cnt[0] ? sigma_init_7_rec : sigma_init[3]),
-    .b_init(cnt[0] ? b_init_7_rec : b_init[3]),
+    .sigma_init(pe_cnt ? sigma_init_7_rec : sigma_init[3]),
+    .b_init(pe_cnt ? b_init_7_rec : b_init[3]),
 
     .sigma_syn(sigma_odd[1]),
     .b_syn(b_odd[1]),
