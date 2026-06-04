@@ -142,6 +142,7 @@ module TOP (
         .HO_syn(HO_syn),
 
         .Lstate_rdy(LKES_done),
+        .LKES_fail(LKES_fail),
         .cdone(cdone),
         .cfail(cfail),
         .Lsigma(LKES_sigma_out),

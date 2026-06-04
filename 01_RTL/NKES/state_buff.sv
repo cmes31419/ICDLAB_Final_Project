@@ -2,7 +2,7 @@ module state_buff (
     input clk,
     input rst,
 
-    input Lstate_rdy,
+    input Lstate_rdy, LKES_fail,
     input cdone, cfail,
     input read_idx,
 
@@ -36,6 +36,7 @@ module state_buff (
     state_buff_ctrl u_ctrl( 
         .clk(clk), .rst(rst),
         .Lstate_rdy(Lstate_rdy),
+        .LKES_fail(LKES_fail),
         .cdone(cdone), .cfail(cfail),
 
         .write_idx(write_idx),
@@ -137,6 +138,7 @@ module state_buff_ctrl(
     input rst,
 
     input Lstate_rdy,
+    input LKES_fail,
     input cdone, cfail,
 
     output write_idx,
@@ -157,7 +159,7 @@ module state_buff_ctrl(
 
     always @(*) begin
         case(state)
-        S_STORE0: state_next = (Lstate_rdy)? S_CHECK0 : state;
+        S_STORE0: state_next = (Lstate_rdy)? (LKES_fail? S_STORE1 : S_CHECK0) : S_STORE0;
         S_CHECK0: begin
             if (cdone) begin
                 if (cnt == 2'd3) state_next = S_STORE0;
@@ -167,7 +169,7 @@ module state_buff_ctrl(
                 state_next = state;
             end 
         end
-        S_STORE1: state_next = (Lstate_rdy)? S_CHECK1 : S_STORE1;
+        S_STORE1: state_next = (Lstate_rdy)? (LKES_fail? S_FULL : S_CHECK1) : S_STORE1;
         S_CHECK1: begin
             if (cdone) begin
                 if (cnt == 2'd3) state_next = S_STORE0;

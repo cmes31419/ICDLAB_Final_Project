@@ -6,7 +6,7 @@ module NKES(
     input [5:0] HO_syn[1:0],
 
     // from low order riBM
-    input Lstate_rdy,
+    input Lstate_rdy, LKES_fail,
     input cdone, cfail,
     input [5:0] Lsigma [3:0],
     input [5:0] Lb [3:0],
@@ -177,6 +177,7 @@ state_buff u_state_buff(
     .rst(rst),
 
     .Lstate_rdy(Lstate_rdy),
+    .LKES_fail(LKES_fail),
     .cdone(cdone), .cfail(cfail),
     .read_idx(read_idx),
 
