@@ -7,8 +7,9 @@ module BM(
     input cget,
 
     output sigma_done,
-    output [5:0] sigma_out[2:0],
-    output [5:0] b_out[2:0],
+    output sigma_fail,
+    output [5:0] sigma_out[3:0],
+    output [5:0] b_out[3:0],
     output [5:0] delta_even_out[1:0],
     output [5:0] theta_even_out[1:0],
     output [5:0] gamma_out,
@@ -25,6 +26,7 @@ wire [5:0] delta_poly2, delta_poly3;
 assign delta_even_out[0] = discrepancy;
 assign delta_even_out[1] = delta_poly2;
 assign gamma_out = gamma;
+assign sigma_fail = sigma_done && (|sigma_out[3]);
 
 // ============ Control ===============
 BM_control bm_ctrl( .clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .discrepancy(discrepancy),
@@ -61,6 +63,15 @@ BM_PE0 u_PE02(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .b
 
     .b_poly_out(b_out[2]),
     .sigma_poly_out(sigma_out[2])
+);
+
+BM_PE0 u_PE03(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+    .start(start), .hold(hold),
+    .sigma_init(6'b0),
+    .b_poly_in(b_out[1]),
+
+    .b_poly_out(b_out[3]),
+    .sigma_poly_out(sigma_out[3])
 );
 
 

@@ -8,8 +8,8 @@ module NKES(
     // from low order riBM
     input Lstate_rdy,
     input cdone, cfail,
-    input [5:0] Lsigma [2:0],
-    input [5:0] Lb [2:0],
+    input [5:0] Lsigma [3:0],
+    input [5:0] Lb [3:0],
     input [5:0] Ldelta_even [1:0], // delta_even[0] = d0, delta_even[1] = d2
     input [5:0] Ltheta_even [1:0], // theta_even[0] = t0, theta_even[1] = t2
     input [5:0] Lgamma,
@@ -27,7 +27,7 @@ wire write_en, write_idx, read_idx;
 wire write_syn_en, write_syn_idx, read_syn_idx;
 wire [5:0] syn_buff_out;
 
-wire [5:0] Lsigma_out [2:0], Lb_out [2:0], Ldelta_even_out [1:0], Ltheta_even_out [1:0], Lgamma_out;
+wire [5:0] Lsigma_out [3:0], Lb_out [3:0], Ldelta_even_out [1:0], Ltheta_even_out [1:0], Lgamma_out;
 wire [1:0] Lk_out;
 
 wire start, hold;
@@ -106,11 +106,11 @@ generate
         assign b_even_in[2]     = (fail_init)? b_delay_out[4] : 6'd0;
 
     // sigma, b init
-    for (gi=0; gi < 3; gi = gi + 1) begin
+    for (gi=0; gi < 4; gi = gi + 1) begin
         assign sigma_init[gi] = (store_from_PE)? sigma[gi] : Lsigma_out[gi];
         assign b_init[gi] = (store_from_PE)? b_poly_out[gi] : Lb_out[gi];
     end
-    for (gi=3; gi < 6; gi = gi + 1) begin
+    for (gi=4; gi < 6; gi = gi + 1) begin
         assign sigma_init[gi] = (store_from_PE)? sigma[gi] : 6'd0;
         assign b_init[gi] = (store_from_PE)? b_poly_out[gi] : 6'd0;
     end

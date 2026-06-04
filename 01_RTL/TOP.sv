@@ -30,8 +30,8 @@ module TOP (
 
     wire [2:0]  syn_cnt;
     wire [5:0]  LO_syn[3:0];
-    wire        LKES_done, NKES_done;
-    wire [5:0]  cs_sigma_in[6:0], LKES_sigma_out[2:0], NKES_sigma_out[6:0];
+    wire        LKES_done, NKES_done, LKES_fail;
+    wire [5:0]  cs_sigma_in[6:0], LKES_sigma_out[3:0], NKES_sigma_out[3:0];
 
     wire        nsu_start, nsu_b, nsu_stage_flag;
 
@@ -124,6 +124,7 @@ module TOP (
         .LO_syndrome(LO_syn),
         .cget(cget),
         .sigma_done(LKES_done),
+        .sigma_fail(LKES_fail),
         .sigma_out(LKES_sigma_out),
         .b_out(LKES_b_out),
         .delta_even_out(LKES_delta_even_out),
