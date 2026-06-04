@@ -241,6 +241,42 @@ NKES_PE_array u_pe_arr(
     .b_delay_out(b_delay_out)
 );
 
+NKES_PE_array_new u_pe_arr_n(
+    .clk(clk),
+    .rst(rst),
+    .start(start),
+    .hold(hold),
+    .fail_init(fail_init),
+    .mode(1'b1),
+
+    .gamma_time(gamma_time),
+    .dis_time(dis_time),
+    .branch_time(branch_time),
+
+    .gamma_out(gamma_out),
+    .dis_out(discrepancy_out),
+    .branch_out(branch_out),
+
+    .Hsyn_odd(Hsyn_odd), 
+    .Hsyn_even(Hsyn_even),
+
+    .delta_init(delta_init),
+    .theta_init(theta_init),
+    .sigma_init(sigma_init),
+    .b_init(b_init),
+
+    .delta_poly(),
+    .theta_poly(),
+    .delta_delay_out(),
+    .theta_delay_out(),
+    
+    .sigma_done(),
+    .sigma(),
+    .sigma_delay_out(),
+    .b_poly_out(),
+    .b_delay_out()
+);
+
 endmodule
 
 
