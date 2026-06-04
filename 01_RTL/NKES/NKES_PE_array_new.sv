@@ -17,10 +17,10 @@ module NKES_PE_array_new(
     input [5:0] Hsyn_odd, 
     input [5:0] Hsyn_even,
 
-    input [5:0] delta_init[2:0],
-    input [5:0] theta_init[2:0],
-    input [5:0] sigma_init[7:0],
-    input [5:0] b_init[7:0],
+    input [5:0] delta_init[1:0],
+    input [5:0] theta_init[1:0],
+    input [5:0] sigma_init[3:0],
+    input [5:0] b_init[3:0],
 
     output       pe_cnt,
 
@@ -31,6 +31,7 @@ module NKES_PE_array_new(
 
     output       sigma_done,
     output [5:0] sigma[6:0],
+    output [5:0] sigma_poly_out[3:0],
     output [5:0] sigma_delay_out[3:0],
     output [5:0] b_poly_out[3:0],
     output [5:0] b_delay_out[3:0]
@@ -53,7 +54,6 @@ reg [5:0]   sigma_poly_out_rec[3:0], sigma_poly_out_rec_next[3:0];
 wire [5:0]  sigma_even[1:0], sigma_odd[1:0];
 wire [5:0]  b_even[1:0], b_odd[1:0];
 wire [5:0]  delta_poly_pre_out_0;
-wire [5:0]  sigma_poly_out[3:0];
 
 integer i;
 
@@ -69,16 +69,16 @@ reg       branch_out_rec;
 reg [5:0] Hsyn_odd_rec;
 reg [5:0] Hsyn_even_rec;
 
-reg [5:0] delta_init_2_rec;
-reg [5:0] theta_init_2_rec;
-reg [5:0] sigma_init_4_rec;
-reg [5:0] sigma_init_5_rec;
-reg [5:0] sigma_init_6_rec;
-reg [5:0] sigma_init_7_rec;
-reg [5:0] b_init_4_rec;
-reg [5:0] b_init_5_rec;
-reg [5:0] b_init_6_rec;
-reg [5:0] b_init_7_rec;
+// reg [5:0] delta_init_2_rec;
+// reg [5:0] theta_init_2_rec;
+// reg [5:0] sigma_init_4_rec;
+// reg [5:0] sigma_init_5_rec;
+// reg [5:0] sigma_init_6_rec;
+// reg [5:0] sigma_init_7_rec;
+// reg [5:0] b_init_4_rec;
+// reg [5:0] b_init_5_rec;
+// reg [5:0] b_init_6_rec;
+// reg [5:0] b_init_7_rec;
 // ------------------------------------------
 
 assign pe_cnt = cnt[0];
@@ -106,8 +106,10 @@ NKES_PE1_unified u_PE10(
     .discrepancy(pe_cnt ? dis_time_rec : dis_time), 
     .branch(pe_cnt ? branch_time_rec : branch_time),
 
-    .delta_init(pe_cnt ? delta_init_2_rec : delta_init[0]),
-    .theta_init(pe_cnt ? theta_init_2_rec : theta_init[0]),
+    // .delta_init(pe_cnt ? delta_init_2_rec : delta_init[0]),
+    // .theta_init(pe_cnt ? theta_init_2_rec : theta_init[0]),
+    .delta_init(delta_init[0]),
+    .theta_init(theta_init[0]),
     .delta_poly_in(delta_poly[1]),
     .nested_delta_poly_in(delta_poly[1]),
 
@@ -133,8 +135,10 @@ NKES_PE1_unified u_PE11(
     .discrepancy(pe_cnt ? dis_time_rec : dis_time), 
     .branch(pe_cnt ? branch_time_rec : branch_time),
 
-    .delta_init(pe_cnt ? 6'b0 : delta_init[1]),
-    .theta_init(pe_cnt ? 6'b0 : theta_init[1]),
+    // .delta_init(pe_cnt ? 6'b0 : delta_init[1]),
+    // .theta_init(pe_cnt ? 6'b0 : theta_init[1]),
+    .delta_init(delta_init[1]),
+    .theta_init(theta_init[1]),
     .delta_poly_in(6'b0),
     .nested_delta_poly_in(pe_cnt ? 6'b0 : delta_poly_pre_out_0),
 
@@ -164,8 +168,10 @@ NKES_PE0_unified u_PE00(
 
     .H_syn(pe_cnt ? Hsyn_even_rec : Hsyn_even),
     .b_poly_in(pe_cnt ? b_poly_2_rec : 6'b0),
-    .sigma_init(pe_cnt ? sigma_init_4_rec : sigma_init[0]),
-    .b_init(pe_cnt ? b_init_4_rec : b_init[0]),
+    // .sigma_init(pe_cnt ? sigma_init_4_rec : sigma_init[0]),
+    // .b_init(pe_cnt ? b_init_4_rec : b_init[0]),
+    .sigma_init(sigma_init[0]),
+    .b_init(b_init[0]),
 
     .sigma_syn(sigma_even[0]),
     .b_syn(b_even[0]),
@@ -189,8 +195,10 @@ NKES_PE0_unified u_PE02(
 
     .H_syn(pe_cnt ? Hsyn_even_rec : Hsyn_even),
     .b_poly_in(b_poly_out[0]),
-    .sigma_init(pe_cnt ? sigma_init_6_rec : sigma_init[2]),
-    .b_init(pe_cnt ? b_init_6_rec : b_init[2]),
+    // .sigma_init(pe_cnt ? sigma_init_6_rec : sigma_init[2]),
+    // .b_init(pe_cnt ? b_init_6_rec : b_init[2]),
+    .sigma_init(sigma_init[2]),
+    .b_init(b_init[2]),
 
     .sigma_syn(sigma_even[1]),
     .b_syn(b_even[1]),
@@ -214,8 +222,10 @@ NKES_PE0_unified u_PE01(
 
     .H_syn(pe_cnt ? Hsyn_odd_rec : Hsyn_odd),
     .b_poly_in(pe_cnt ? b_poly_3_rec : 6'b0),
-    .sigma_init(pe_cnt ? sigma_init_5_rec : sigma_init[1]),
-    .b_init(pe_cnt ? b_init_5_rec : b_init[1]),
+    // .sigma_init(pe_cnt ? sigma_init_5_rec : sigma_init[1]),
+    // .b_init(pe_cnt ? b_init_5_rec : b_init[1]),
+    .sigma_init(sigma_init[1]),
+    .b_init(b_init[1]),
 
     .sigma_syn(sigma_odd[0]),
     .b_syn(b_odd[0]),
@@ -238,8 +248,10 @@ NKES_PE0 u_PE03(
 
     .H_syn(pe_cnt ? Hsyn_odd_rec : Hsyn_odd),
     .b_poly_in(b_poly_out[1]),
-    .sigma_init(pe_cnt ? sigma_init_7_rec : sigma_init[3]),
-    .b_init(pe_cnt ? b_init_7_rec : b_init[3]),
+    // .sigma_init(pe_cnt ? sigma_init_7_rec : sigma_init[3]),
+    // .b_init(pe_cnt ? b_init_7_rec : b_init[3]),
+    .sigma_init(sigma_init[3]),
+    .b_init(b_init[3]),
 
     .sigma_syn(sigma_odd[1]),
     .b_syn(b_odd[1]),
@@ -296,16 +308,16 @@ always @(posedge clk or posedge rst) begin
         branch_out_rec      <= 0;
         Hsyn_odd_rec        <= 0;
         Hsyn_even_rec       <= 0;
-        delta_init_2_rec    <= 0;
-        theta_init_2_rec    <= 0;
-        sigma_init_4_rec    <= 0;
-        sigma_init_5_rec    <= 0;
-        sigma_init_6_rec    <= 0;
-        sigma_init_7_rec    <= 0;
-        b_init_4_rec    <= 0;
-        b_init_5_rec    <= 0;
-        b_init_6_rec    <= 0;
-        b_init_7_rec    <= 0;
+        // delta_init_2_rec    <= 0;
+        // theta_init_2_rec    <= 0;
+        // sigma_init_4_rec    <= 0;
+        // sigma_init_5_rec    <= 0;
+        // sigma_init_6_rec    <= 0;
+        // sigma_init_7_rec    <= 0;
+        // b_init_4_rec    <= 0;
+        // b_init_5_rec    <= 0;
+        // b_init_6_rec    <= 0;
+        // b_init_7_rec    <= 0;
     end
     else begin
         state           <= state_next;
@@ -328,16 +340,16 @@ always @(posedge clk or posedge rst) begin
         branch_out_rec      <= branch_out;
         Hsyn_odd_rec        <= Hsyn_odd;
         Hsyn_even_rec       <= Hsyn_even;
-        delta_init_2_rec    <= delta_init[2];
-        theta_init_2_rec    <= theta_init[2];
-        sigma_init_4_rec    <= sigma_init[4];
-        sigma_init_5_rec    <= sigma_init[5];
-        sigma_init_6_rec    <= sigma_init[6];
-        sigma_init_7_rec    <= sigma_init[7];
-        b_init_4_rec    <= b_init[4];
-        b_init_5_rec    <= b_init[5];
-        b_init_6_rec    <= b_init[6];
-        b_init_7_rec    <= b_init[7];
+        // delta_init_2_rec    <= delta_init[2];
+        // theta_init_2_rec    <= theta_init[2];
+        // sigma_init_4_rec    <= sigma_init[4];
+        // sigma_init_5_rec    <= sigma_init[5];
+        // sigma_init_6_rec    <= sigma_init[6];
+        // sigma_init_7_rec    <= sigma_init[7];
+        // b_init_4_rec    <= b_init[4];
+        // b_init_5_rec    <= b_init[5];
+        // b_init_6_rec    <= b_init[6];
+        // b_init_7_rec    <= b_init[7];
     end
 end
 
