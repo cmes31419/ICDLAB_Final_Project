@@ -38,6 +38,7 @@ TOP.sv
 ./NKES/NKES.sv
 ./NKES/state_buff.sv
 ./NKES/NKES_PE_array.sv
+./NKES/NKES_PE_array_new.sv
 ./NKES/NKES_PE0.sv
 ./NKES/NKES_PE1.sv
 ./NKES/NKES_PE0_unified.sv
