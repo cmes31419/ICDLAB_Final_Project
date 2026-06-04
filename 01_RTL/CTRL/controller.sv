@@ -4,6 +4,8 @@ module controller(
     input           ivalid,
     input           ovalid,
     input           sdone,
+    input           LKES_done,
+    input           LKES_fail,
     input           cdone,
     input           cfail,
     input [3:0]     nflag,
@@ -34,7 +36,6 @@ module controller(
 
     reg [6:0]   icnt, icnt_next;    // input byte counter with wrap bit
     reg [6:0]   ocnt, ocnt_next;    // output byte counter with wrap bit
-    // reg [1:0]   scnt, scnt_next;
     reg [3:0]   ccnt, ccnt_next;    // correction codeword counter
     reg [1:0]   ncnt, ncnt_next;
 
@@ -73,9 +74,7 @@ module controller(
         else icnt_next = icnt;
         if (ovalid) ocnt_next = ocnt + 1;
         else ocnt_next = ocnt;
-        // if (sdone) scnt_next = scnt + 1;
-        // else scnt_next = scnt;
-        if (cdone) ccnt_next = ccnt + 1;
+        if (cdone | (LKES_done & LKES_fail)) ccnt_next = ccnt + 1;
         else ccnt_next = ccnt;
         if (ncnt != ccnt[3:2] && npending == 3'd0) ncnt_next = ncnt + 1;
         else ncnt_next = ncnt;
@@ -84,7 +83,7 @@ module controller(
     always @(*) begin
         if (icnt[4:0] == 5'd7) err_num_next = 2'd0;
         else if (err_num == 2'd2) err_num_next = err_num;
-        else if (cdone && cfail) err_num_next = err_num + 1;
+        else if ((cdone & cfail) | (LKES_done & LKES_fail)) err_num_next = err_num + 1;
         else err_num_next = err_num;
     end
 
