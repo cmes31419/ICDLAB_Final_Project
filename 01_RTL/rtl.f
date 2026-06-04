@@ -42,6 +42,7 @@ TOP.sv
 ./NKES/NKES_PE1.sv
 ./NKES/NKES_PE0_unified.sv
 ./NKES/NKES_PE1_unified.sv
+./NKES/NKES_core_new.sv
 ./NKES/state_buff.sv
 ./NKES/precompute_unit.sv
 

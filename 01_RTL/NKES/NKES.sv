@@ -53,17 +53,6 @@ wire [1:0] k_init;
 reg [5:0] gamma_time, gamma_time_next, dis_time, dis_time_next;
 reg branch_time, branch_time_next;
 
-// TODO: fix -------------------------------
-reg [5:0]   HO_syn_0_rec;
-
-wire [5:0]  delta_even_in_new[1:0], theta_even_in_new[1:0], sigma_even_in_new[1:0], b_even_in_new[1:0];
-wire [5:0]  delta_delay_out_new[1:0], theta_delay_out_new[1:0], sigma_delay_out_new[3:0], b_delay_out_new[3:0];
-wire [5:0]  delta_init_new[1:0], theta_init_new[1:0], sigma_init_new[3:0], b_init_new[3:0];
-wire [5:0]  delta_init_out_new[1:0], theta_init_out_new[1:0];
-wire [5:0]  delta_poly_new[1:0], theta_poly_new[1:0], sigma_poly_out_new[3:0], b_poly_out_new[3:0];
-wire        pe_cnt;
-// -----------------------------------------
-
 assign Hsyn_even = (last_iter)? 6'b0: HO_syn[0]; 
 assign Hsyn_odd = syn_buff_out;
 
@@ -136,30 +125,6 @@ generate
         assign delta_init[gi] = (store_from_PE)? delta_poly[gi] : delta_init_out[gi];
         assign theta_init[gi] = (store_from_PE)? theta_poly[gi] : theta_init_out[gi];
     end
-    
-    // to precompute unit (new)
-    for (gi = 0; gi < 2; gi = gi + 1) begin
-        assign delta_even_in_new[gi] = fail_init ? delta_delay_out_new[gi] : (pe_cnt ? 6'd0 : Ldelta_even_out[gi]);
-        assign theta_even_in_new[gi] = fail_init ? theta_delay_out_new[gi] : (pe_cnt ? 6'd0 : Ltheta_even_out[gi]);
-        assign sigma_even_in_new[gi] = fail_init ? sigma_delay_out_new[gi*2] : (pe_cnt ? 6'd0 : Lsigma_out[gi*2]);
-        assign b_even_in_new[gi]     = fail_init ? b_delay_out_new[gi*2] : (pe_cnt ? 6'd0 : Lb_out[gi*2]); 
-    end
-
-    // sigma, b init (new)
-    for (gi=0; gi < 2; gi = gi + 1) begin
-        assign sigma_init_new[gi] = store_from_PE ? sigma_poly_out_new[gi] : (pe_cnt ? 6'd0 : Lsigma_out[gi]);
-        assign b_init_new[gi] = store_from_PE ? b_poly_out_new[gi] : (pe_cnt ? 6'd0 : Lb_out[gi]);
-    end
-        assign sigma_init_new[2] = pe_cnt ? 6'd0 : (store_from_PE ? sigma_poly_out_new[2] : Lsigma_out[2]);
-        assign b_init_new[2] = pe_cnt ? 6'd0 : (store_from_PE ? b_poly_out_new[2] : Lb_out[2]);
-        assign sigma_init_new[3] = pe_cnt ? 6'd0 : (store_from_PE ? sigma_poly_out_new[3] : 6'd0);
-        assign b_init_new[3] = pe_cnt ? 6'd0 : (store_from_PE ? b_poly_out_new[3] : 6'd0);
-
-    // delta, theta init (new)
-    for (gi=0 ; gi<2 ; gi = gi + 1) begin
-        assign delta_init_new[gi] = store_from_PE ? delta_poly_new[gi] : delta_init_out_new[gi];
-        assign theta_init_new[gi] = store_from_PE ? theta_poly_new[gi] : theta_init_out_new[gi];
-    end
 
 endgenerate
 
@@ -176,17 +141,6 @@ precompute_unit u_PU(
 
     .delta_init_out(delta_init_out),
     .theta_init_out(theta_init_out)
-);
-
-precompute_unit_new u_PU_n(
-    .delta_even_in(delta_even_in_new),
-    .theta_even_in(theta_even_in_new),
-    .sigma_even_in(sigma_even_in_new),
-    .b_even_in(b_even_in_new),
-    .Su(pe_cnt ? HO_syn_0_rec : HO_syn[0]),
-
-    .delta_init_out(delta_init_out_new),
-    .theta_init_out(theta_init_out_new)
 );
 
 NKES_ctrl u_ctrl(
@@ -289,13 +243,14 @@ NKES_PE_array u_pe_arr(
     .b_delay_out(b_delay_out)
 );
 
-NKES_PE_array_new u_pe_arr_n(
+NKES_core_new u_core_n(
     .clk(clk),
     .rst(rst),
+    .mode(1'b1),
     .start(start),
     .hold(hold),
     .fail_init(fail_init),
-    .mode(1'b1),
+    .store_from_PE(store_from_PE),
 
     .gamma_time(gamma_time),
     .dis_time(dis_time),
@@ -305,39 +260,19 @@ NKES_PE_array_new u_pe_arr_n(
     .dis_out(discrepancy_out),
     .branch_out(branch_out),
 
-    .Hsyn_odd(Hsyn_odd), 
+    .Lsigma_out(Lsigma_out),
+    .Lb_out(Lb_out),
+    .Ldelta_even_out(Ldelta_even_out),
+    .Ltheta_even_out(Ltheta_even_out),
+    
+    .Hsyn_odd(Hsyn_odd),
     .Hsyn_even(Hsyn_even),
 
-    .delta_init(delta_init_new),
-    .theta_init(theta_init_new),
-    .sigma_init(sigma_init_new),
-    .b_init(b_init_new),
+    .HO_syn_0(HO_syn[0]),
 
-    .pe_cnt(pe_cnt),
-
-    .delta_poly(delta_poly_new),
-    .theta_poly(theta_poly_new),
-    .delta_delay_out(delta_delay_out_new),
-    .theta_delay_out(theta_delay_out_new),
-    
     .sigma_done(),
-    .sigma(),
-    .sigma_poly_out(sigma_poly_out_new),
-    .sigma_delay_out(sigma_delay_out_new),
-    .b_poly_out(b_poly_out_new),
-    .b_delay_out(b_delay_out_new)
+    .sigma()
 );
-
-// TODO: fix --------------------------------
-always @(posedge clk or posedge rst) begin
-    if (rst) begin
-        HO_syn_0_rec <= 0;
-    end
-    else begin
-        HO_syn_0_rec <= HO_syn[0];
-    end
-end
-// ------------------------------------------
 
 endmodule
 
