@@ -268,8 +268,14 @@ NKES_core_new u_core_n(
 
     .pe_cnt(),
     .discrepancy(discrepancy_in),
+    .sigma_done_pre(),
     .sigma_done(),
-    .sigma()
+    .sigma(),
+
+    .Nsigma(),
+    .Nb(),
+    .Ndelta_even(),
+    .Ntheta_even()
 );
 
 endmodule

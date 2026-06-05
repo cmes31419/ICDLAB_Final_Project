@@ -20,9 +20,15 @@ module NKES_core_new(
     input [5:0]     HO_syn[1:0],
 
     output          pe_cnt,
-    output  [5:0]   discrepancy,
+    output [5:0]    discrepancy,
+    output          sigma_done_pre,
     output          sigma_done,
-    output [5:0]    sigma[6:0]
+    output [5:0]    sigma[6:0],
+
+    output [5:0]    Nsigma[3:0],
+    output [5:0]    Nb[3:0],
+    output [5:0]    Ndelta_even[1:0],
+    output [5:0]    Ntheta_even[1:0]
 );
 
 localparam S_IDLE   = 1'd0;
@@ -37,12 +43,6 @@ reg [5:0]   delta_poly_0_rec;
 reg [5:0]   sigma_poly_out_rec[3:0];
 
 // TODO: fix --------------------------------
-reg [5:0]   gamma_time_rec;
-reg [5:0]   dis_time_rec;
-reg         branch_time_rec;
-reg [5:0]   gamma_out_rec;
-reg [5:0]   dis_out_rec;
-reg         branch_out_rec;
 reg [5:0]   Hsyn_odd_rec;
 reg [5:0]   Hsyn_even_rec;
 reg [5:0]   HO_syn_0_rec;
@@ -66,31 +66,41 @@ genvar gi;
 assign pe_cnt = cnt[0];
 assign last_iter = (cnt == 3'd4) || (cnt == 3'd5);
 assign discrepancy = pe_cnt ? delta_poly_0_rec : delta_poly[0];
+assign sigma_done_pre = valid_pre;
 assign sigma_done = valid;
 
 assign Hsyn_even = last_iter ? 6'b0 : HO_syn[0]; 
 assign Hsyn_odd = syn_buff_out;
 
 generate
-    for (gi=0;gi<4;gi=gi+1) begin
+    for (gi = 0; gi < 4; gi = gi + 1) begin
         assign sigma[gi] = sigma_poly_out_rec[gi];
     end
-    for (gi=4;gi<7;gi=gi+1) begin
+    for (gi = 4; gi < 7; gi = gi + 1) begin
         assign sigma[gi] = sigma_poly_out[gi-4];
+    end
+
+    for (gi = 0; gi < 4; gi = gi + 1) begin
+        assign Nsigma[gi] = sigma_poly_out[gi];
+        assign Nb[gi] = b_poly_out[gi];
+    end
+    for (gi = 0; gi < 2; gi = gi + 1) begin
+        assign Ndelta_even[gi] = delta_poly[gi];
+        assign Ntheta_even[gi] = theta_poly[gi];
     end
     
     // to precompute unit
     for (gi = 0; gi < 2; gi = gi + 1) begin
-        assign delta_even_in[gi] = pe_cnt ? 6'd0 : Ldelta_even_out[gi];
-        assign theta_even_in[gi] = pe_cnt ? 6'd0 : Ltheta_even_out[gi];
-        assign sigma_even_in[gi] = pe_cnt ? 6'd0 : Lsigma_out[gi*2];
-        assign b_even_in[gi] = pe_cnt ? 6'd0 : Lb_out[gi*2]; 
+        assign delta_even_in[gi] = Ldelta_even_out[gi];
+        assign theta_even_in[gi] = Ltheta_even_out[gi];
+        assign sigma_even_in[gi] = Lsigma_out[gi*2];
+        assign b_even_in[gi] = Lb_out[gi*2]; 
     end
 
     // sigma, b init
     for (gi=0; gi < 4; gi = gi + 1) begin
-        assign sigma_init[gi] = pe_cnt ? 6'd0 : Lsigma_out[gi];
-        assign b_init[gi] = pe_cnt ? 6'd0 : Lb_out[gi];
+        assign sigma_init[gi] = Lsigma_out[gi];
+        assign b_init[gi] = Lb_out[gi];
     end
 
     // delta, theta init
@@ -98,7 +108,6 @@ generate
         assign delta_init[gi] = delta_init_out[gi];
         assign theta_init[gi] = theta_init_out[gi];
     end
-
 endgenerate
 
 syndrome_buff u_syn_buff(
@@ -129,14 +138,6 @@ NKES_PE_array_new u_pe_arr_n(
     .pe_cnt(pe_cnt),
     .start(start),
 
-    // .gamma_time(pe_cnt ? gamma_time_rec : gamma_time),
-    // .dis_time(pe_cnt ? dis_time_rec : dis_time),
-    // .branch_time(pe_cnt ? branch_time_rec : branch_time),
-
-    // .gamma_out(pe_cnt ? gamma_out_rec : gamma_out),
-    // .dis_out(pe_cnt ? dis_out_rec : dis_out),
-    // .branch_out(pe_cnt ? branch_out_rec : branch_out),
-
     .gamma_time(gamma_time),
     .dis_time(dis_time),
     .branch_time(branch_time),
@@ -153,18 +154,15 @@ NKES_PE_array_new u_pe_arr_n(
     .sigma_init(sigma_init),
     .b_init(b_init),
 
+    .sigma_poly_out(sigma_poly_out),
+    .sigma_delay_out(sigma_delay_out),
+    .b_poly_out(b_poly_out),
+    .b_delay_out(b_delay_out),
 
     .delta_poly(delta_poly),
     .theta_poly(theta_poly),
     .delta_delay_out(delta_delay_out),
-    .theta_delay_out(theta_delay_out),
-    
-    .sigma_done(sigma_done),
-    .sigma(sigma),
-    .sigma_poly_out(sigma_poly_out),
-    .sigma_delay_out(sigma_delay_out),
-    .b_poly_out(b_poly_out),
-    .b_delay_out(b_delay_out)
+    .theta_delay_out(theta_delay_out)
 );
 
 always @(*) begin
@@ -192,13 +190,7 @@ always @(posedge clk or posedge rst) begin
         for (i=0;i<4;i=i+1) begin
             sigma_poly_out_rec[i]   <= 0;
         end
-        
-        gamma_time_rec      <= 0;
-        dis_time_rec        <= 0;
-        branch_time_rec     <= 0;
-        gamma_out_rec       <= 0;
-        dis_out_rec         <= 0;
-        branch_out_rec      <= 0;
+
         Hsyn_odd_rec        <= 0;
         Hsyn_even_rec       <= 0;
         HO_syn_0_rec        <= 0;
@@ -213,12 +205,6 @@ always @(posedge clk or posedge rst) begin
             sigma_poly_out_rec[i]   <= sigma_poly_out[i];
         end
 
-        gamma_time_rec      <= gamma_time;
-        dis_time_rec        <= dis_time;
-        branch_time_rec     <= branch_time;
-        gamma_out_rec       <= gamma_out;
-        dis_out_rec         <= dis_out;
-        branch_out_rec      <= branch_out;
         Hsyn_odd_rec        <= Hsyn_odd;
         Hsyn_even_rec       <= Hsyn_even;
         HO_syn_0_rec        <= HO_syn[0];

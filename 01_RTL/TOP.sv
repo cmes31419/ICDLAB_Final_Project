@@ -27,7 +27,7 @@ module TOP (
 
     wire        sdone;
     wire        swen, ssel;
-    wire        Lwen;
+    wire        Lwen, Nwen;
     wire        forward;
 
     wire [2:0]  syn_cnt;
@@ -84,6 +84,7 @@ module TOP (
         .ssel(ssel),
         .swen(swen),
         .Lwen(Lwen),
+        .Nwen(Nwen),
         .forward(forward),
         .syn_cnt(syn_cnt),
         .nsu_start(nsu_start),
@@ -179,6 +180,7 @@ module TOP (
         .Ltheta_even(LKES_theta_even_out),
         .Lgamma(LKES_gamma_out),
         .Lk(LKES_k_out),
+        .Nwen_ctrl(Nwen),
     
         .sigma_done(),
         .sigma()
@@ -223,7 +225,5 @@ module TOP (
         .S_out_ch1(S_out_ch1),
         .S_out_ch2(S_out_ch2)
     );
-
-
 
 endmodule

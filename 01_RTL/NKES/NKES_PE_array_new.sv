@@ -1,37 +1,35 @@
 module NKES_PE_array_new(
-    input       clk,
-    input       rst,
-    input       mode,
-    input       pe_cnt,
-    input       start,
+    input           clk,
+    input           rst,
+    input           mode,
+    input           pe_cnt,
+    input           start,
 
-    input [5:0] gamma_time,
-    input [5:0] dis_time,
-    input       branch_time,
+    input [5:0]     gamma_time,
+    input [5:0]     dis_time,
+    input           branch_time,
 
-    input [5:0] gamma_out,
-    input [5:0] dis_out,
-    input       branch_out,
+    input [5:0]     gamma_out,
+    input [5:0]     dis_out,
+    input           branch_out,
 
-    input [5:0] Hsyn_even,
-    input [5:0] Hsyn_odd, 
+    input [5:0]     Hsyn_even,
+    input [5:0]     Hsyn_odd, 
 
-    input [5:0] delta_init[1:0],
-    input [5:0] theta_init[1:0],
-    input [5:0] sigma_init[3:0],
-    input [5:0] b_init[3:0],
+    input [5:0]     delta_init[1:0],
+    input [5:0]     theta_init[1:0],
+    input [5:0]     sigma_init[3:0],
+    input [5:0]     b_init[3:0],
 
-    output [5:0] delta_poly[1:0],
-    output [5:0] theta_poly[1:0],
-    output [5:0] delta_delay_out[1:0],
-    output [5:0] theta_delay_out[1:0],
+    output [5:0]    sigma_poly_out[3:0],
+    output [5:0]    sigma_delay_out[3:0],
+    output [5:0]    b_poly_out[3:0],
+    output [5:0]    b_delay_out[3:0],
 
-    output       sigma_done,
-    output [5:0] sigma[6:0],
-    output [5:0] sigma_poly_out[3:0],
-    output [5:0] sigma_delay_out[3:0],
-    output [5:0] b_poly_out[3:0],
-    output [5:0] b_delay_out[3:0]
+    output [5:0]    delta_poly[1:0],
+    output [5:0]    theta_poly[1:0],
+    output [5:0]    delta_delay_out[1:0],
+    output [5:0]    theta_delay_out[1:0]
 );
 
 reg [5:0]   b_poly_2_rec;

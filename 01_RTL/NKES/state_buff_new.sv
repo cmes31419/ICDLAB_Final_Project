@@ -16,7 +16,8 @@ module state_buff_new(
     input [5:0]     Lgamma_in,
     input [1:0]     Lk_in,
 
-    input           Nwen,
+    input           Nwen0,
+    input           Nwen1,
     input [5:0]     Nsigma_in[3:0],
     input [5:0]     Nb_in[3:0],
     input [5:0]     Ndelta_even_in[1:0],
@@ -76,30 +77,30 @@ module state_buff_new(
 
     always @(*) begin
         for (j = 0; j < 2; j = j + 1) begin
-            sigma_buff_add_next[j] = forward ? 6'b0 :  ((Nwen & pe_cnt) ? Nsigma_in[j] : sigma_buff_add[j]);
-            b_buff_add_next[j] = forward ? 6'b0 : ((Nwen & pe_cnt) ? Nb_in[j] : b_buff_add[j]);
+            sigma_buff_add_next[j] = forward ? 6'b0 :  (Nwen1 ? Nsigma_in[j] : sigma_buff_add[j]);
+            b_buff_add_next[j] = forward ? 6'b0 : (Nwen1 ? Nb_in[j] : b_buff_add[j]);
         end
-        delta_buff_add_next = forward ? 6'b0 : ((Nwen & pe_cnt) ? Ndelta_even_in[0] : delta_buff_add);
-        theta_buff_add_next = forward ? 6'b0 : ((Nwen & pe_cnt) ? Ntheta_even_in[0] : theta_buff_add);
-        k_buff_add_next = forward ? 1'b0 : ((Nwen & pe_cnt) ? Nk_in[2] : k_buff_add);
+        delta_buff_add_next = forward ? 6'b0 : (Nwen1 ? Ndelta_even_in[0] : delta_buff_add);
+        theta_buff_add_next = forward ? 6'b0 : (Nwen1 ? Ntheta_even_in[0] : theta_buff_add);
+        k_buff_add_next = forward ? 1'b0 : (Nwen1 ? Nk_in[2] : k_buff_add);
     end
 
     always @(*) begin
         for (j = 0; j < 4; j = j + 1) begin
-            sigma_no_forward[0][0][j] = (Nwen & ~pe_cnt) ? Nsigma_in[j] : sigma_buff[0][0][j];
+            sigma_no_forward[0][0][j] = Nwen0 ? Nsigma_in[j] : sigma_buff[0][0][j];
             sigma_no_forward[0][1][j] = sigma_buff[0][1][j];
-            b_no_forward[0][0][j] = (Nwen & ~pe_cnt) ? Nb_in[j] : b_buff[0][0][j];
+            b_no_forward[0][0][j] = Nwen0 ? Nb_in[j] : b_buff[0][0][j];
             b_no_forward[0][1][j] = b_buff[0][1][j];
         end
         for (j = 0; j < 2; j = j + 1) begin
-            delta_no_forward[0][0][j] = (Nwen & ~pe_cnt) ? Ndelta_even_in[j] : delta_buff[0][0][j];
+            delta_no_forward[0][0][j] = Nwen0 ? Ndelta_even_in[j] : delta_buff[0][0][j];
             delta_no_forward[0][1][j] = delta_buff[0][1][j];
-            theta_no_forward[0][0][j] = (Nwen & ~pe_cnt) ? Ntheta_even_in[j] : theta_buff[0][0][j];
+            theta_no_forward[0][0][j] = Nwen0 ? Ntheta_even_in[j] : theta_buff[0][0][j];
             theta_no_forward[0][1][j] = theta_buff[0][1][j];
         end
-        gamma_no_forward[0][0] = (Nwen & ~pe_cnt) ? Ngamma_in : gamma_buff[0][0];
+        gamma_no_forward[0][0] = Nwen0 ? Ngamma_in : gamma_buff[0][0];
         gamma_no_forward[0][1] = gamma_buff[0][1];
-        k_no_forward[0][0] = (Nwen & ~pe_cnt) ? Nk_in[1:0] : k_buff[0][0];
+        k_no_forward[0][0] = Nwen0 ? Nk_in[1:0] : k_buff[0][0];
         k_no_forward[0][1] = k_buff[0][1];
 
         for (i = 0; i < 2; i = i + 1) begin

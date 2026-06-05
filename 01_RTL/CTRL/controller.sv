@@ -20,6 +20,7 @@ module controller(
     output          ssel,
     output          swen,
     output          Lwen,
+    output          Nwen,
     output          forward,
     output [2:0]    syn_cnt,
     output          nsu_start,
@@ -45,6 +46,7 @@ module controller(
     reg [1:0]   npos, npos_next;
 
     reg [1:0]   err_num, err_num_next;
+    reg         nested_err_num, nested_err_num_next;
     reg         b, b_next;
 
     wire [2:0]  npending;
@@ -60,6 +62,7 @@ module controller(
     assign ssel = err_num[0];
     assign swen = ~err_num[1] & sdone;
     assign Lwen = ~err_num[1] & LKES_done;
+    assign Nwen = ~nested_err_num;
     assign forward = (nstate == S_IDLE && ncnt != ccnt[3:2]) ? 1 : 0;
 
     assign syn_cnt = icnt[2:0];
@@ -89,6 +92,12 @@ module controller(
         else if (err_num == 2'd2) err_num_next = err_num;
         else if ((cdone & cfail) | (LKES_done & LKES_fail)) err_num_next = err_num + 1;
         else err_num_next = err_num;
+    end
+
+    always @(*) begin
+        if (nstate == S_KILL) nested_err_num_next = 1'd0;
+        else if (nested_cdone & nested_cfail) nested_err_num_next = 1'd1;
+        else nested_err_num_next = nested_err_num;
     end
 
     always @(*) begin
@@ -137,26 +146,26 @@ module controller(
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            icnt    <= 0;
-            ocnt    <= 0;
-            // scnt    <= 0;
-            ccnt    <= 0;
-            ncnt    <= 0;
-            nstate  <= S_IDLE;
-            npos    <= 0;
-            err_num <= 0;
-            b       <= 0;
+            icnt            <= 0;
+            ocnt            <= 0;
+            ccnt            <= 0;
+            ncnt            <= 0;
+            nstate          <= S_IDLE;
+            npos            <= 0;
+            err_num         <= 0;
+            nested_err_num  <= 0;
+            b               <= 0;
         end
         else begin
-            icnt    <= icnt_next;
-            ocnt    <= ocnt_next;
-            // scnt    <= scnt_next;
-            ccnt    <= ccnt_next;
-            ncnt    <= ncnt_next;
-            nstate  <= nstate_next;
-            npos    <= npos_next;
-            err_num <= err_num_next;
-            b       <= b_next;
+            icnt            <= icnt_next;
+            ocnt            <= ocnt_next;
+            ccnt            <= ccnt_next;
+            ncnt            <= ncnt_next;
+            nstate          <= nstate_next;
+            npos            <= npos_next;
+            err_num         <= err_num_next;
+            nested_err_num  <= nested_err_num_next;
+            b               <= b_next;
         end
     end
 

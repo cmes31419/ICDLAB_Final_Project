@@ -17,6 +17,8 @@ module NKES_new(
     input [5:0] Lgamma,
     input [1:0] Lk,
 
+    input Nwen_ctrl,
+
     output sigma_done,
     output [5:0] sigma[6:0]
 );
@@ -24,11 +26,14 @@ module NKES_new(
 wire [5:0]  Lsigma_out[3:0], Lb_out[3:0], Ldelta_even_out[1:0], Ltheta_even_out[1:0], Lgamma_out;
 wire [3:0]  Lk_out;
 
+wire [5:0]  Nsigma[3:0], Nb[3:0], Ndelta_even[1:0], Ntheta_even[1:0];
+
 wire        start;
 
 wire [5:0]  dis_in;
 
 wire        pe_cnt;
+wire        sigma_done_pre;
 
 wire [5:0]  gamma_time;
 wire [5:0]  dis_time;
@@ -37,6 +42,7 @@ wire        branch_time;
 wire [5:0]  gamma_out;
 wire [5:0]  dis_out;
 wire        branch_out;
+wire [2:0]  k_out;
 
 wire [5:0]  gamma_init;
 wire [3:0]  k_init;
@@ -64,7 +70,8 @@ NKES_ctrl_new u_ctrl_n(
 
     .gamma_out(gamma_out),
     .dis_out(dis_out),
-    .branch_out(branch_out)
+    .branch_out(branch_out),
+    .k_out(k_out)
 );
 
 state_buff_new u_state_buff_n(
@@ -85,13 +92,14 @@ state_buff_new u_state_buff_n(
     .Lgamma_in(Lgamma),
     .Lk_in(Lk),
 
-    .Nwen(1'b0),
-    .Nsigma_in(),
-    .Nb_in(),
-    .Ndelta_even_in(),
-    .Ntheta_even_in(),
-    .Ngamma_in(),
-    .Nk_in(),
+    .Nwen0(sigma_done_pre & Nwen_ctrl),
+    .Nwen1(sigma_done & Nwen_ctrl),
+    .Nsigma_in(Nsigma),
+    .Nb_in(Nb),
+    .Ndelta_even_in(Ndelta_even),
+    .Ntheta_even_in(Ntheta_even),
+    .Ngamma_in(gamma_out),
+    .Nk_in(k_out),
 
     .sigma_out(Lsigma_out),
     .b_out(Lb_out),
@@ -124,8 +132,14 @@ NKES_core_new u_core_n(
 
     .pe_cnt(pe_cnt),
     .discrepancy(dis_in),
-    .sigma_done(),
-    .sigma()
+    .sigma_done_pre(sigma_done_pre),
+    .sigma_done(sigma_done),
+    .sigma(sigma),
+    
+    .Nsigma(Nsigma),
+    .Nb(Nb),
+    .Ndelta_even(Ndelta_even),
+    .Ntheta_even(Ntheta_even)
 );
 
 endmodule

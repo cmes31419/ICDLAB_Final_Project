@@ -18,7 +18,8 @@ module NKES_ctrl_new(
 
     output [5:0]    gamma_out,
     output [5:0]    dis_out,
-    output          branch_out
+    output          branch_out,
+    output [2:0]    k_out
 );
 
     parameter S_INIT0   = 2'd0;
@@ -40,13 +41,14 @@ module NKES_ctrl_new(
 
     assign start = (state == S_INIT0 && syn_rdy) || (state == S_INIT1);
 
-    assign gamma_out = gamma;
-    assign dis_out = dis_in;
-    assign branch_out = |dis_in && (k <= 4'd0);
-
     assign gamma_time = gamma_rec;
     assign dis_time = dis_rec;
     assign branch_time = |dis_rec && (k_rec <= 4'd0);
+
+    assign gamma_out = gamma;
+    assign dis_out = dis_in;
+    assign branch_out = |dis_in && (k <= 4'd0);
+    assign k_out = k[2:0];
 
     always @(*) begin
         if (start) begin
