@@ -55,17 +55,6 @@ wire [1:0] k_init;
 reg [5:0] gamma_time, gamma_time_next, dis_time, dis_time_next;
 reg branch_time, branch_time_next;
 
-// TODO: fix -------------------------------
-reg [5:0]   HO_syn_0_rec;
-
-wire [5:0]  delta_even_in_new[1:0], theta_even_in_new[1:0], sigma_even_in_new[1:0], b_even_in_new[1:0];
-wire [5:0]  delta_delay_out_new[1:0], theta_delay_out_new[1:0], sigma_delay_out_new[3:0], b_delay_out_new[3:0];
-wire [5:0]  delta_init_new[1:0], theta_init_new[1:0], sigma_init_new[3:0], b_init_new[3:0];
-wire [5:0]  delta_init_out_new[1:0], theta_init_out_new[1:0];
-wire [5:0]  delta_poly_new[1:0], theta_poly_new[1:0], sigma_poly_out_new[3:0], b_poly_out_new[3:0];
-wire        pe_cnt;
-// -----------------------------------------
-
 assign Hsyn_even = (last_iter)? 6'b0: HO_syn[0]; 
 assign Hsyn_odd = syn_buff_out;
 
@@ -154,17 +143,6 @@ precompute_unit u_PU(
 
     .delta_init_out(delta_init_out),
     .theta_init_out(theta_init_out)
-);
-
-precompute_unit_new u_PU_n(
-    .delta_even_in(delta_even_in_new),
-    .theta_even_in(theta_even_in_new),
-    .sigma_even_in(sigma_even_in_new),
-    .b_even_in(b_even_in_new),
-    .Su(pe_cnt ? HO_syn_0_rec : HO_syn[0]),
-
-    .delta_init_out(delta_init_out_new),
-    .theta_init_out(theta_init_out_new)
 );
 
 NKES_ctrl u_ctrl(
@@ -293,17 +271,6 @@ NKES_core_new u_core_n(
     .sigma_done(),
     .sigma()
 );
-
-// TODO: fix --------------------------------
-always @(posedge clk or posedge rst) begin
-    if (rst) begin
-        HO_syn_0_rec <= 0;
-    end
-    else begin
-        HO_syn_0_rec <= HO_syn[0];
-    end
-end
-// ------------------------------------------
 
 endmodule
 
