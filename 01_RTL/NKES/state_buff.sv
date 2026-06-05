@@ -159,7 +159,13 @@ module state_buff_ctrl(
 
     always @(*) begin
         case(state)
-        S_STORE0: state_next = (Lstate_rdy)? (LKES_fail? S_STORE1 : S_CHECK0) : S_STORE0;
+        S_STORE0: begin
+            if (Lstate_rdy) begin
+                if (cnt == 2'd3) state_next = S_STORE0;
+                else state_next = (LKES_fail)? S_STORE1 : S_CHECK0;
+            end
+            else state_next = state;
+        end
         S_CHECK0: begin
             if (cdone) begin
                 if (cnt == 2'd3) state_next = S_STORE0;
@@ -169,7 +175,14 @@ module state_buff_ctrl(
                 state_next = state;
             end 
         end
-        S_STORE1: state_next = (Lstate_rdy)? (LKES_fail? S_FULL : S_CHECK1) : S_STORE1;
+        S_STORE1: begin
+            if (Lstate_rdy) begin
+                if (cnt == 2'd3) state_next = S_STORE0;
+                else state_next = (LKES_fail)? S_FULL : S_CHECK1;
+            end
+            else state_next = state;
+
+        end
         S_CHECK1: begin
             if (cdone) begin
                 if (cnt == 2'd3) state_next = S_STORE0;
@@ -179,13 +192,13 @@ module state_buff_ctrl(
                 state_next = state;
             end 
         end
-        S_FULL: state_next = (cnt == 2'd3 && cdone)? S_STORE0 : S_FULL;
+        S_FULL: state_next = (cnt == 2'd3 && (cdone || LKES_fail))? S_STORE0 : S_FULL;
         default: state_next = S_STORE0;  
         endcase  
     end
 
     always @(*) begin
-        cnt_next = (cdone)? cnt + 1 : cnt;
+        cnt_next = (cdone || LKES_fail)? cnt + 1 : cnt;
     end
 
 

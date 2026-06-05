@@ -454,7 +454,7 @@ module NKES_ctrl(
     || (state == S_CHECK1 || state == S_CHECK2 || state == S_CHECK3 || state == S_FAIL1 || state == S_FINIT); 
     assign gamma_out = gamma;
     assign discrepancy_out = discrepancy_in;
-    assign branch_out = |discrepancy_in && (k <= 0);
+    assign branch_out = |discrepancy_in && ($signed(k) <= $signed(2'd0));
     assign sigma_done = (state == S_WAIT1) || (state >= 4'd8 && state <= 4'd9 && fail_num == 1'b1); 
 
     assign k_init = (store_from_PE)? k : {{2{Lk_init[1]}}, Lk_init};

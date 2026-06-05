@@ -32,7 +32,7 @@ assign sigma_fail = sigma_done && (|sigma_out[3]);
 BM_control bm_ctrl( .clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .discrepancy(discrepancy),
     .start(start), .hold(hold),
     .gamma(gamma), .k_out(k_out),
-    .cget(cget),
+    .cget(cget), .sigma_fail(sigma_fail),
     .first_iter(first_iter), .branch(branch), .sigma_done(sigma_done)
 );
 
@@ -123,6 +123,7 @@ module BM_control(
     input syndrome_rdy,
     input [5:0] discrepancy,
     input cget,
+    input sigma_fail,
 
     output start,
     output hold,
@@ -140,10 +141,10 @@ localparam S_ITER1 = 2'd2;
 localparam S_DONE = 2'd3;
 
 reg [1:0] state, state_next;
-reg signed [1:0] k, k_next;
+reg [1:0] k, k_next;
 reg [5:0] gamma_next;
 
-assign branch = |discrepancy && (k <= 2'd0);
+assign branch = |discrepancy && ($signed(k) <= $signed(2'd0));
 assign first_iter = (state == S_ITER0);
 assign sigma_done = (state == S_DONE);
 assign start = syndrome_rdy;
@@ -171,7 +172,7 @@ always @(*) begin
     S_IDLE: state_next = (syndrome_rdy)? S_ITER0 : state;
     S_ITER0: state_next = S_ITER1;
     S_ITER1: state_next = S_DONE;
-    S_DONE: state_next = (cget)? S_IDLE : state;
+    S_DONE: state_next = (cget || sigma_fail)? S_IDLE : state;
     endcase
 end
 

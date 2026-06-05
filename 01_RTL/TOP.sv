@@ -31,11 +31,11 @@ module TOP (
     wire [2:0]  syn_cnt;
     wire [5:0]  LO_syn[3:0];
     wire        LKES_done, NKES_done, LKES_fail;
-    wire [5:0]  cs_sigma_in[6:0], LKES_sigma_out[3:0], NKES_sigma_out[3:0];
+    wire [5:0]  cs_sigma_in[6:0], LKES_sigma_out[3:0], NKES_sigma_out[6:0];
 
     wire        nsu_start, nsu_b, nsu_stage_flag;
 
-    wire [5:0] LKES_b_out[2:0], LKES_delta_even_out[1:0], LKES_theta_even_out[1:0], LKES_gamma_out;
+    wire [5:0] LKES_b_out[3:0], LKES_delta_even_out[1:0], LKES_theta_even_out[1:0], LKES_gamma_out;
     wire [1:0] LKES_k_out;
     wire [5:0] HO_syn[1:0];
 
