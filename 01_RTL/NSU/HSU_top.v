@@ -23,7 +23,6 @@ module HSU_top (
     // Calculate S6 and S8 using the provided S3 and S4 values
     wire [5:0] Syndrome_6_i0, Syndrome_8_i0, Syndrome_6_i1, Syndrome_8_i1;
     reg [5:0] Syndrome_6_i0_reg, Syndrome_8_i0_reg, Syndrome_6_i1_reg, Syndrome_8_i1_reg;
-    reg stage_flag_reg;
 
     reg [5:0] square_S3_S5, square_S3_S6;
     reg i2_valid;
@@ -165,30 +164,6 @@ module HSU_top (
 
     wire [5:0] S_out_0, S_out_1, S_out_2, S_out_3; // Final syndrome outputs from HSU
     wire valid; // Signal from HSU indicating that S_out_0..3 are valid and can be registered
-    reg [5:0] S_out_0_reg, S_out_1_reg, S_out_2_reg, S_out_3_reg; // Registered versions of the outputs
-
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            S_out_0_reg <= 6'd0;
-            S_out_1_reg <= 6'd0;
-            S_out_2_reg <= 6'd0;
-            S_out_3_reg <= 6'd0;
-        end else if (valid) begin
-            S_out_0_reg <= S_out_0;
-            S_out_1_reg <= S_out_1;
-            S_out_2_reg <= S_out_2;
-            S_out_3_reg <= S_out_3;
-        end
-    end
-
-    
-    always @(posedge clk or posedge rst) begin  
-        if (rst) begin
-            stage_flag_reg <= 1'b0;
-        end else if (start) begin
-            stage_flag_reg <= stage_flag; // Latch stage_flag at the start of processing
-        end
-    end
 
     // state controller for HSU_top
     reg [2:0] counter;
@@ -232,7 +207,7 @@ module HSU_top (
             S_out_ch1 <= 6'd0;
             S_out_ch2 <= 6'd0;
         end else if (counter == 3'd2) begin
-            if (~stage_flag_reg) begin      // Stage 1
+            if (~stage_flag) begin      // Stage 1
                 if (b_reg) begin                // 2 undercoded interleaves
                     S_out_ch1 <= o_HS_1;            // Output first S5
                     S_out_ch2 <= Syndrome_6_i0_reg; // Output first S6
@@ -245,7 +220,7 @@ module HSU_top (
                 S_out_ch2 <= Syndrome_6_i0; // Output S10
             end
         end else if (counter == 3'd3) begin
-            if (~stage_flag_reg) begin      // Stage 1
+            if (~stage_flag) begin      // Stage 1
                 if (b_reg) begin                // 2 undercoded interleaves
                     S_out_ch1 <= o_HS_2_reg;        // Output second S5
                     S_out_ch2 <= Syndrome_6_i1_reg; // Output second S6
@@ -258,20 +233,20 @@ module HSU_top (
                 S_out_ch2 <= 6'd0;
             end
         end else if (counter == 3'd4) begin
-            if (~stage_flag_reg) begin      // Stage 1
+            if (~stage_flag) begin      // Stage 1
                 if (b_reg) begin                // 2 undercoded interleaves
                     S_out_ch1 <= o_HS_1;            // Output first S7
                     S_out_ch2 <= Syndrome_8_i0_reg; // Output first S8
                 end else begin                  // 1 undercoded interleave
-                    S_out_ch1 <= S_out_1_reg;       // Output the only S7    
+                    S_out_ch1 <= S_out_1;       // Output the only S7    
                     S_out_ch2 <= Syndrome_8_i0_reg; // Output the only S8
                 end
             end else begin                  // Stage 2
-                S_out_ch1 <= S_out_1_reg; // Output S11
+                S_out_ch1 <= S_out_1; // Output S11
                 S_out_ch2 <= Syndrome_6_i1; // Output S12
             end
         end else if (counter == 3'd5) begin
-            if (~stage_flag_reg) begin      // Stage 1
+            if (~stage_flag) begin      // Stage 1
                 if (b_reg) begin                // 2 undercoded interleaves
                     S_out_ch1 <= o_HS_2_reg;        // Output second S7
                     S_out_ch2 <= Syndrome_8_i1_reg; // Output second S8
@@ -294,8 +269,8 @@ module HSU_top (
             mul1 = S_out_2;
             i_4or6 = 1'b0;
         end else if (counter == 3'd4 && b_reg) begin // S7
-            mul0 = S_out_1_reg;
-            mul1 = S_out_3_reg;
+            mul0 = S_out_1;
+            mul1 = S_out_3;
             i_4or6 = 1'b1;
         end else begin
             mul0 = 6'd0;
@@ -309,7 +284,7 @@ module HSU_top (
         if (rst) begin
             Syndrome_5_i0_reg <= 6'd0;
             Syndrome_5_i1_reg <= 6'd0;
-        end else if (counter == 3'd2 && ~stage_flag_reg) begin
+        end else if (counter == 3'd2 && ~stage_flag) begin
             if (b_reg) begin
                 Syndrome_5_i0_reg <= o_HS_1; // First S5
                 Syndrome_5_i1_reg <= o_HS_2; // Second S5 (if exists)

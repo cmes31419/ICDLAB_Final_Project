@@ -186,10 +186,10 @@ module nsu_top (
     // Output mux (based on stage_flag / b)
     //----------------------------------------------------------------
     wire [5:0]  S_out_0_next, S_out_1_next, S_out_2_next, S_out_3_next;
-    assign S_out_0_next = (stage_flag == 1'b0) ? S_5_k0 : S_9_k0;
-    assign S_out_1_next = (stage_flag == 1'b0) ? S_7_k0 : S_11_k0;
-    assign S_out_2_next = (stage_flag == 1'b0) ? S_5_k1 : S_9_k1;
-    assign S_out_3_next = (stage_flag == 1'b0) ? S_7_k1 : S_11_k1;
+    assign S_out_0_next = run_active ? ((stage_flag == 1'b0) ? S_5_k0 : S_9_k0) : S_out_0;
+    assign S_out_1_next = run_active ? ((stage_flag == 1'b0) ? S_7_k0 : S_11_k0) : S_out_1;
+    assign S_out_2_next = run_active ? ((stage_flag == 1'b0) ? S_5_k1 : S_9_k1) : S_out_2;
+    assign S_out_3_next = run_active ? ((stage_flag == 1'b0) ? S_7_k1 : S_11_k1) : S_out_3;
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
