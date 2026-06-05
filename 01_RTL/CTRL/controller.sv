@@ -60,7 +60,7 @@ module controller(
     assign ssel = err_num[0];
     assign swen = ~err_num[1] & sdone;
     assign Lwen = ~err_num[1] & LKES_done;
-    assign forward = (ncnt != ccnt[3:2] && npending == 3'd0) ? 1 : 0;
+    assign forward = (nstate == S_IDLE && ncnt != ccnt[3:2]) ? 1 : 0;
 
     assign syn_cnt = icnt[2:0];
 
@@ -80,7 +80,7 @@ module controller(
         else ocnt_next = ocnt;
         if (cdone | (LKES_done & LKES_fail)) ccnt_next = ccnt + 1;
         else ccnt_next = ccnt;
-        if (forward) ncnt_next = ncnt + 1;
+        if (nstate == S_KILL) ncnt_next = ncnt + 1;
         else ncnt_next = ncnt;
     end
 
@@ -116,8 +116,7 @@ module controller(
         case (nstate)
         S_IDLE: begin
             if (ncnt != ccnt[3:2]) begin
-                if (npending == 3'd0) nstate_next = S_IDLE;
-                else if (npending == 3'd1 || npending == 3'd2) nstate_next = S_START1;
+                if (npending == 3'd1 || npending == 3'd2) nstate_next = S_START1;
                 else nstate_next = S_KILL;
             end
             else nstate_next = S_IDLE;
@@ -126,12 +125,11 @@ module controller(
         S_STAGE1A:  nstate_next = nested_cdone ? (b ? S_STAGE1B : S_CHECK) : S_STAGE1A;
         S_STAGE1B:  nstate_next = nested_cdone ? S_CHECK : S_STAGE1B;
         S_CHECK: begin
-            if (npending == 3'd0) nstate_next = S_IDLE;
-            else if (npending == 3'd1) nstate_next = S_START2;
+            if (npending == 3'd1) nstate_next = S_START2;
             else nstate_next = S_KILL;
         end
         S_START2:   nstate_next = S_STAGE2;
-        S_STAGE2:   nstate_next = nested_cdone ? (nested_cfail ? S_KILL : S_IDLE) : S_STAGE2;
+        S_STAGE2:   nstate_next = nested_cdone ? S_KILL : S_STAGE2;
         S_KILL:     nstate_next = S_IDLE;
         // default:    nstate_next = S_IDLE;
         endcase

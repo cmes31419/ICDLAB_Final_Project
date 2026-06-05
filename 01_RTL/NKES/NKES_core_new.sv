@@ -103,7 +103,7 @@ endgenerate
 syndrome_buff u_syn_buff(
     .clk(clk),
     .rst(rst),
-    .write_en(cnt == 3'd0 && syn_rdy || cnt == 3'd1 || cnt == 3'd2 || cnt == 3'd3),
+    .write_en(cnt == 3'd0 && start || cnt == 3'd1 || cnt == 3'd2 || cnt == 3'd3),
     .write_idx(cnt[0]),
     .syn_in(HO_syn[1]),
     .read_idx(cnt[0]),
