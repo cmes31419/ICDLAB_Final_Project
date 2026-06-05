@@ -27,6 +27,8 @@ module TOP (
 
     wire        sdone;
     wire        swen, ssel;
+    wire        Lwen;
+    wire        forward;
 
     wire [2:0]  syn_cnt;
     wire [5:0]  LO_syn[3:0];
@@ -79,8 +81,10 @@ module TOP (
         .caddr(caddr),
         .naddr(naddr),
         .nkill(nkill),
-        .swen(swen),
         .ssel(ssel),
+        .swen(swen),
+        .Lwen(Lwen),
+        .forward(forward),
         .syn_cnt(syn_cnt),
         .nsu_start(nsu_start),
         .nsu_b(nsu_b),
@@ -94,8 +98,8 @@ module TOP (
         .idata(idata),
         .iwen(ivalid & iready),
         .sdata({LO_syn[3], LO_syn[2]}),
-        .swen(swen),
         .ssel(ssel),
+        .swen(swen),
         .caddr(cwaddr),
         .cdata(cdata),
         .cwen(cwen),
@@ -160,6 +164,25 @@ module TOP (
         .sigma(NKES_sigma_out)
     );
 
+    NKES_new nkes_n0(
+        .clk(clk),
+        .rst(rst),
+        .syn_rdy(syn_rdy),
+        .HO_syn(HO_syn),
+
+        .forward(forward),
+        .Lwaddr(ssel),
+        .Lwen(Lwen),
+        .Lsigma(LKES_sigma_out),
+        .Lb(LKES_b_out),
+        .Ldelta_even(LKES_delta_even_out),
+        .Ltheta_even(LKES_theta_even_out),
+        .Lgamma(LKES_gamma_out),
+        .Lk(LKES_k_out),
+    
+        .sigma_done(),
+        .sigma()
+    );
 
     chien_search cs0(
         .clk(clk),

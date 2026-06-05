@@ -36,6 +36,7 @@ TOP.sv
 
 // NKES
 ./NKES/NKES.sv
+./NKES/NKES_new.sv
 ./NKES/NKES_PE_array.sv
 ./NKES/NKES_PE_array_new.sv
 ./NKES/NKES_PE0.sv
@@ -43,8 +44,11 @@ TOP.sv
 ./NKES/NKES_PE0_unified.sv
 ./NKES/NKES_PE1_unified.sv
 ./NKES/NKES_core_new.sv
+./NKES/NKES_ctrl_new.sv
 ./NKES/state_buff.sv
+./NKES/state_buff_new.sv
 ./NKES/precompute_unit.sv
+./NKES/syndrome_buff.sv
 
 // CS
 ./CS/chien_search.sv

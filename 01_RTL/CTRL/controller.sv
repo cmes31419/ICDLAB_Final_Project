@@ -17,8 +17,10 @@ module controller(
     output [2:0]    caddr,
     output [2:0]    naddr,
     output          nkill,
-    output          swen,
     output          ssel,
+    output          swen,
+    output          Lwen,
+    output          forward,
     output [2:0]    syn_cnt,
     output          nsu_start,
     output          nsu_b,
@@ -55,8 +57,10 @@ module controller(
     assign caddr = ccnt[2:0];
     assign naddr = {ncnt[0], npos};
 
-    assign swen = ~err_num[1] & sdone;
     assign ssel = err_num[0];
+    assign swen = ~err_num[1] & sdone;
+    assign Lwen = ~err_num[1] & LKES_done;
+    assign forward = (ncnt != ccnt[3:2] && npending == 3'd0) ? 1 : 0;
 
     assign syn_cnt = icnt[2:0];
 
@@ -76,7 +80,7 @@ module controller(
         else ocnt_next = ocnt;
         if (cdone | (LKES_done & LKES_fail)) ccnt_next = ccnt + 1;
         else ccnt_next = ccnt;
-        if (ncnt != ccnt[3:2] && npending == 3'd0) ncnt_next = ncnt + 1;
+        if (forward) ncnt_next = ncnt + 1;
         else ncnt_next = ncnt;
     end
 

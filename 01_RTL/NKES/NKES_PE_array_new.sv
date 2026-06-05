@@ -4,8 +4,6 @@ module NKES_PE_array_new(
     input       mode,
     input       pe_cnt,
     input       start,
-    input       hold,
-    input       fail_init,
 
     input [5:0] gamma_time,
     input [5:0] dis_time,
@@ -49,8 +47,8 @@ wire [5:0]  delta_poly_pre_out_0;
 NKES_PE1_unified u_PE10(
     .clk(clk), 
     .rst(rst), 
-    .start(start || fail_init), 
-    .hold(hold), 
+    .start(start), 
+    .hold(1'b0),
     .mode(mode), 
     
     .gamma(gamma_time), 
@@ -76,8 +74,8 @@ NKES_PE1_unified u_PE10(
 NKES_PE1_unified u_PE11(
     .clk(clk), 
     .rst(rst), 
-    .start(start || fail_init), 
-    .hold(hold), 
+    .start(start), 
+    .hold(1'b0),
     .mode(mode), 
     
     .gamma(gamma_time), 
@@ -106,7 +104,7 @@ NKES_PE0_unified u_PE00(
     .clk(clk), 
     .rst(rst), 
     .start(start), 
-    .hold(hold), 
+    .hold(1'b0),
     .mode(mode), 
     
     .gamma(gamma_out), 
@@ -131,7 +129,7 @@ NKES_PE0_unified u_PE02(
     .clk(clk), 
     .rst(rst), 
     .start(start), 
-    .hold(hold), 
+    .hold(1'b0),
     .mode(mode), 
     
     .gamma(gamma_out), 
@@ -156,7 +154,7 @@ NKES_PE0_unified u_PE01(
     .clk(clk), 
     .rst(rst), 
     .start(start), 
-    .hold(hold), 
+    .hold(1'b0),
     .mode(mode), 
     
     .gamma(gamma_out), 
@@ -181,7 +179,7 @@ NKES_PE0 u_PE03(
     .clk(clk), 
     .rst(rst), 
     .start(start), 
-    .hold(hold), 
+    .hold(1'b0),
     
     .gamma(gamma_out), 
     .discrepancy(dis_out), 

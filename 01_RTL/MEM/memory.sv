@@ -7,8 +7,8 @@ module memory(
     input           iwen,
     // low-level syndrome interface
     input [11:0]    sdata,
-    input           swen,
     input           ssel,
+    input           swen,
     // Chien search correction interface
     input [2:0]     caddr,
     input [62:0]    cdata,
