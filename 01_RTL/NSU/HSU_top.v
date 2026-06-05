@@ -109,7 +109,6 @@ module HSU_top (
 
     //   - b        : 0 -> 1 interleave undecoded (only Ŝ_0 needed)
     //                1 -> 2 interleaves undecoded (need both Ŝ_0 and Ŝ_1)
-    // wire b = ~(flag0 ^ flag1 ^ flag2 ^ flag3); // b is 1 if an odd number of flags are 1, else 0
     reg  b_reg;
     always @(posedge clk or posedge rst) begin
         if (rst) begin
