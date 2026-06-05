@@ -59,8 +59,10 @@ reg branch_time, branch_time_next;
 reg [5:0]   HO_syn_0_rec;
 
 wire [5:0]  delta_even_in_new[1:0], theta_even_in_new[1:0], sigma_even_in_new[1:0], b_even_in_new[1:0];
-wire [5:0]  delta_delay_out_new[1:0], theta_delay_out_new[1:0];
-wire [5:0]  sigma_delay_out_new[3:0], b_delay_out_new[3:0];
+wire [5:0]  delta_delay_out_new[1:0], theta_delay_out_new[1:0], sigma_delay_out_new[3:0], b_delay_out_new[3:0];
+wire [5:0]  delta_init_new[1:0], theta_init_new[1:0], sigma_init_new[3:0], b_init_new[3:0];
+wire [5:0]  delta_init_out_new[1:0], theta_init_out_new[1:0];
+wire [5:0]  delta_poly_new[1:0], theta_poly_new[1:0], sigma_poly_out_new[3:0], b_poly_out_new[3:0];
 wire        pe_cnt;
 // -----------------------------------------
 
@@ -161,8 +163,8 @@ precompute_unit_new u_PU_n(
     .b_even_in(b_even_in_new),
     .Su(pe_cnt ? HO_syn_0_rec : HO_syn[0]),
 
-    .delta_init_out(),
-    .theta_init_out()
+    .delta_init_out(delta_init_out_new),
+    .theta_init_out(theta_init_out_new)
 );
 
 NKES_ctrl u_ctrl(
