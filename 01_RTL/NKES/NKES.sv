@@ -8,8 +8,8 @@ module NKES(
     // from low order riBM
     input Lstate_rdy,
     input cdone, cfail,
-    input [5:0] Lsigma [2:0],
-    input [5:0] Lb [2:0],
+    input [5:0] Lsigma [3:0],
+    input [5:0] Lb [3:0],
     input [5:0] Ldelta_even [1:0], // delta_even[0] = d0, delta_even[1] = d2
     input [5:0] Ltheta_even [1:0], // theta_even[0] = t0, theta_even[1] = t2
     input [5:0] Lgamma,
@@ -27,7 +27,7 @@ wire write_en, write_idx, read_idx;
 wire write_syn_en, write_syn_idx, read_syn_idx;
 wire [5:0] syn_buff_out;
 
-wire [5:0] Lsigma_out [2:0], Lb_out [2:0], Ldelta_even_out [1:0], Ltheta_even_out [1:0], Lgamma_out;
+wire [5:0] Lsigma_out [3:0], Lb_out [3:0], Ldelta_even_out [1:0], Ltheta_even_out [1:0], Lgamma_out;
 wire [1:0] Lk_out;
 
 wire start, hold;
@@ -43,6 +43,8 @@ wire [5:0] sigma_delay_out[7:0], b_delay_out[7:0];
 wire [5:0] Hsyn_odd, Hsyn_even;
 wire last_iter, store_from_PE, fail_init;
 wire re_init;
+
+wire [5:0] discrepancy_in;
 
 wire [5:0] gamma_out, discrepancy_out;
 wire branch_out;
@@ -247,9 +249,6 @@ NKES_core_new u_core_n(
     .rst(rst),
     .mode(1'b1),
     .start(start),
-    .hold(hold),
-    .fail_init(fail_init),
-    .store_from_PE(store_from_PE),
 
     .gamma_time(gamma_time),
     .dis_time(dis_time),
@@ -263,12 +262,11 @@ NKES_core_new u_core_n(
     .Lb_out(Lb_out),
     .Ldelta_even_out(Ldelta_even_out),
     .Ltheta_even_out(Ltheta_even_out),
-    
-    .Hsyn_odd(Hsyn_odd),
-    .Hsyn_even(Hsyn_even),
 
-    .HO_syn_0(HO_syn[0]),
+    .HO_syn(HO_syn),
 
+    .pe_cnt(),
+    .discrepancy(discrepancy_in),
     .sigma_done(),
     .sigma()
 );
@@ -440,44 +438,4 @@ module NKES_ctrl(
             k_delay     <= k_delay_next;
         end
     end
-endmodule
-
-module syndrome_buff(
-    input clk,
-    input rst,
-
-    input write_en,
-    input write_idx,
-    input [5:0] syn_in,
-
-    input read_idx,
-    output [5:0] syn_out
-);
-
-    reg [5:0] syn_buff[1:0], syn_buff_next[1:0];
-
-    assign syn_out = syn_buff[read_idx];
-
-    always @(*) begin
-        if (write_en) begin
-            syn_buff_next[0] = (write_idx == 1'b0)? syn_in : syn_buff[0];
-            syn_buff_next[1] = (write_idx == 1'b1)? syn_in : syn_buff[1];
-        end
-        else begin
-            syn_buff_next[0] = syn_buff[0];
-            syn_buff_next[1] = syn_buff[1];
-        end
-    end
-
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            syn_buff[0] <= 6'b0;
-            syn_buff[1] <= 6'b0;
-        end
-        else begin
-            syn_buff[0] <= syn_buff_next[0];
-            syn_buff[1] <= syn_buff_next[1];
-        end
-    end
-
 endmodule
