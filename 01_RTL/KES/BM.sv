@@ -28,12 +28,6 @@ assign delta_even_out[1] = delta_poly2;
 assign gamma_out = gamma;
 assign sigma_fail = sigma_done && (|sigma_out[3]);
 
-assign sigma_out[3] = 6'b0;
-assign b_out[3] = 6'b0;
-
-assign sigma_out[3] = 6'b0;
-assign b_out[3] = 6'b0;
-
 // ============ Control ===============
 BM_control bm_ctrl( .clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .discrepancy(discrepancy),
     .start(start), .hold(hold),
