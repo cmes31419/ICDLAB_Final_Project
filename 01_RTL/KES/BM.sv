@@ -7,7 +7,10 @@ module BM(
     input cget,
 
     output sigma_done,
+<<<<<<< HEAD
     output sigma_fail,
+=======
+>>>>>>> fdb6577 (modify many modules)
     output [5:0] sigma_out[3:0],
     output [5:0] b_out[3:0],
     output [5:0] delta_even_out[1:0],
