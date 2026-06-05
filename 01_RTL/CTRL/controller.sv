@@ -5,10 +5,7 @@ module controller(
     input           ovalid,
     input           sdone,
     input           LKES_done,
-<<<<<<< HEAD
     input           LKES_fail,
-=======
->>>>>>> fdb6577 (modify many modules)
     input           cdone,
     input           cfail,
     input [3:0]     nflag,
