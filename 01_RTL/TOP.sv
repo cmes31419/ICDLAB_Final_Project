@@ -210,6 +210,7 @@ module TOP (
         .r1(ndata[1]),
         .r2(ndata[2]),
         .r3(ndata[3]),
+        .b(nsu_b),
         .flag0(nflag[0]), 
         .flag1(nflag[1]), 
         .flag2(nflag[2]), 

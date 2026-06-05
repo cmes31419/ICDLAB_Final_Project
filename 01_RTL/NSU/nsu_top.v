@@ -21,7 +21,6 @@
 //        stage_flag=0: S_out_{0..3} = Ŝ_0@L=5, Ŝ_0@L=7, Ŝ_1@L=5, Ŝ_1@L=7
 //        stage_flag=1: S_out_{0..3} = Ŝ_0@L=9, Ŝ_0@L=11, Ŝ_1@L=9, Ŝ_1@L=11
 //        S_out_2, S_out_3 are forced to 0 if b==0.
-//   - b_out    : latched copy of b
 //   - valid    : pulses high when outputs are ready
 //
 // Combinational pre-processing layer:
@@ -46,11 +45,10 @@ module nsu_top (
     input  wire        b,
     input  wire        stage_flag,
 
-    output wire [5:0]  S_out_0,
-    output wire [5:0]  S_out_1,
-    output wire [5:0]  S_out_2,
-    output wire [5:0]  S_out_3,
-    output reg         b_out,
+    output reg [5:0]   S_out_0,
+    output reg [5:0]   S_out_1,
+    output reg [5:0]   S_out_2,
+    output reg [5:0]   S_out_3,
     output wire        valid
 );
 
@@ -73,33 +71,31 @@ module nsu_top (
     assign r_shift = r0 ^ r1_rot ^ r2_rot ^ r3_rot;
 
     //----------------------------------------------------------------
-    // Cycle counter + state latching
+    // Cycle counter
     //----------------------------------------------------------------
-    reg       running;
-    reg [1:0] cyc_cnt;        // 0 = idle, 1 = mid-evaluation
-    reg       latched_stage;
-    reg       latched_b;
+    reg cyc_cnt, cyc_cnt_next;
+    reg done, done_next;
+
+    wire running, run_active;
+    assign running = (cyc_cnt != 1'b0) ? 1 : 0;
+    assign run_active = start | running;
+
+    // valid: pulse when the k=0 path's done goes high
+    assign valid = done;
+
+    always @(*) begin
+        cyc_cnt_next = run_active ? cyc_cnt + 1 : 1'b0;
+        done_next = (cyc_cnt == 1'b1) ? 1'b1 : 1'b0;
+    end
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            running       <= 1'b0;
-            cyc_cnt       <= 2'd0;
-            latched_stage <= 1'b0;
-            latched_b     <= 1'b0;
-            b_out         <= 1'b0;
-        end else if (start) begin
-            running       <= 1'b1;
-            cyc_cnt       <= 2'd1;
-            latched_stage <= stage_flag;
-            latched_b     <= b;
-            b_out         <= b;
-        end else if (running) begin
-            if (cyc_cnt == 2'd1) begin
-                cyc_cnt <= 2'd2;
-            end else begin
-                running <= 1'b0;
-                cyc_cnt <= 2'd0;
-            end
+            cyc_cnt  <= 1'b0;
+            done     <= 1'b0;
+        end
+        else begin
+            cyc_cnt  <= cyc_cnt_next;
+            done     <= done_next;
         end
     end
 
@@ -121,100 +117,93 @@ module nsu_top (
     // Enable signals: only enable Horners we need
     //----------------------------------------------------------------
     // During 'start' cycle, gate by the incoming stage_flag/b.
-    // While running, gate by latched_stage/latched_b.
-    wire stage_now = start ? stage_flag : latched_stage;
-    wire b_now     = start ? b          : latched_b;
+    // While running, gate by stage_flag/b.
+    wire en_a5_k0  = run_active & (stage_flag == 1'b0);
+    wire en_a7_k0  = run_active & (stage_flag == 1'b0);
+    wire en_a9_k0  = run_active & (stage_flag == 1'b1);
+    wire en_a11_k0 = run_active & (stage_flag == 1'b1);
 
-    wire run_active = start | running;
-
-    wire en_a5_k0  = run_active & (stage_now == 1'b0);
-    wire en_a7_k0  = run_active & (stage_now == 1'b0);
-    wire en_a9_k0  = run_active & (stage_now == 1'b1);
-    wire en_a11_k0 = run_active & (stage_now == 1'b1);
-
-    wire en_a5_k1  = run_active & (stage_now == 1'b0) & b_now;
-    wire en_a7_k1  = run_active & (stage_now == 1'b0) & b_now;
-    wire en_a9_k1  = run_active & (stage_now == 1'b1) & b_now;
-    wire en_a11_k1 = run_active & (stage_now == 1'b1) & b_now;
-
-    // Start pulse to each Horner (only the ones being used this run)
-    wire start_a5_k0  = start & (stage_flag == 1'b0);
-    wire start_a7_k0  = start & (stage_flag == 1'b0);
-    wire start_a9_k0  = start & (stage_flag == 1'b1);
-    wire start_a11_k0 = start & (stage_flag == 1'b1);
-
-    wire start_a5_k1  = start & (stage_flag == 1'b0) & b;
-    wire start_a7_k1  = start & (stage_flag == 1'b0) & b;
-    wire start_a9_k1  = start & (stage_flag == 1'b1) & b;
-    wire start_a11_k1 = start & (stage_flag == 1'b1) & b;
+    wire en_a5_k1  = run_active & (stage_flag == 1'b0) & b;
+    wire en_a7_k1  = run_active & (stage_flag == 1'b0) & b;
+    wire en_a9_k1  = run_active & (stage_flag == 1'b1) & b;
+    wire en_a11_k1 = run_active & (stage_flag == 1'b1) & b;
 
     //----------------------------------------------------------------
     // 8 Horner instances
     //----------------------------------------------------------------
     wire [5:0] S_5_k0,  S_7_k0,  S_9_k0,  S_11_k0;
     wire [5:0] S_5_k1,  S_7_k1,  S_9_k1,  S_11_k1;
-    wire       d_5_k0,  d_7_k0,  d_9_k0,  d_11_k0;
-    wire       d_5_k1,  d_7_k1,  d_9_k1,  d_11_k1;
 
     // Stage 0 done: alpha^5
     horner_a5 u_a5_k0 (
         .clk(clk), .rst(rst),
-        .enable(en_a5_k0), .start(start_a5_k0),
-        .data(data_xor),   .state(S_5_k0),  .done(d_5_k0)
+        .enable(en_a5_k0), .start(start),
+        .data(data_xor),   .state(S_out_0),  .next_state(S_5_k0)
     );
     horner_a5 u_a5_k1 (
         .clk(clk), .rst(rst),
-        .enable(en_a5_k1), .start(start_a5_k1),
-        .data(data_shift), .state(S_5_k1),  .done(d_5_k1)
+        .enable(en_a5_k1), .start(start),
+        .data(data_shift), .state(S_out_2),  .next_state(S_5_k1)
     );
 
     // Stage 0 done: alpha^7
     horner_a7 u_a7_k0 (
         .clk(clk), .rst(rst),
-        .enable(en_a7_k0), .start(start_a7_k0),
-        .data(data_xor),   .state(S_7_k0),  .done(d_7_k0)
+        .enable(en_a7_k0), .start(start),
+        .data(data_xor),   .state(S_out_1),  .next_state(S_7_k0)
     );
     horner_a7 u_a7_k1 (
         .clk(clk), .rst(rst),
-        .enable(en_a7_k1), .start(start_a7_k1),
-        .data(data_shift), .state(S_7_k1),  .done(d_7_k1)
+        .enable(en_a7_k1), .start(start),
+        .data(data_shift), .state(S_out_3),  .next_state(S_7_k1)
     );
 
     // Stage 1 done: alpha^9
     horner_a9 u_a9_k0 (
         .clk(clk), .rst(rst),
-        .enable(en_a9_k0), .start(start_a9_k0),
-        .data(data_xor),   .state(S_9_k0),  .done(d_9_k0)
+        .enable(en_a9_k0), .start(start),
+        .data(data_xor),   .state(S_out_0),  .next_state(S_9_k0)
     );
     horner_a9 u_a9_k1 (
         .clk(clk), .rst(rst),
-        .enable(en_a9_k1), .start(start_a9_k1),
-        .data(data_shift), .state(S_9_k1),  .done(d_9_k1)
+        .enable(en_a9_k1), .start(start),
+        .data(data_shift), .state(S_out_2),  .next_state(S_9_k1)
     );
 
     // Stage 1 done: alpha^11
     horner_a11 u_a11_k0 (
         .clk(clk), .rst(rst),
-        .enable(en_a11_k0), .start(start_a11_k0),
-        .data(data_xor),    .state(S_11_k0), .done(d_11_k0)
+        .enable(en_a11_k0), .start(start),
+        .data(data_xor),    .state(S_out_1), .next_state(S_11_k0)
     );
     horner_a11 u_a11_k1 (
         .clk(clk), .rst(rst),
-        .enable(en_a11_k1), .start(start_a11_k1),
-        .data(data_shift),  .state(S_11_k1), .done(d_11_k1)
+        .enable(en_a11_k1), .start(start),
+        .data(data_shift),  .state(S_out_3), .next_state(S_11_k1)
     );
 
     //----------------------------------------------------------------
-    // Output mux (based on latched_stage / latched_b)
+    // Output mux (based on stage_flag / b)
     //----------------------------------------------------------------
-    assign S_out_0 = (latched_stage == 1'b0) ? S_5_k0 : S_9_k0;
-    assign S_out_1 = (latched_stage == 1'b0) ? S_7_k0 : S_11_k0;
-    assign S_out_2 = (latched_b == 1'b0) ? 6'b0 :
-                     ((latched_stage == 1'b0) ? S_5_k1 : S_9_k1);
-    assign S_out_3 = (latched_b == 1'b0) ? 6'b0 :
-                     ((latched_stage == 1'b0) ? S_7_k1 : S_11_k1);
+    wire [5:0]  S_out_0_next, S_out_1_next, S_out_2_next, S_out_3_next;
+    assign S_out_0_next = (stage_flag == 1'b0) ? S_5_k0 : S_9_k0;
+    assign S_out_1_next = (stage_flag == 1'b0) ? S_7_k0 : S_11_k0;
+    assign S_out_2_next = (stage_flag == 1'b0) ? S_5_k1 : S_9_k1;
+    assign S_out_3_next = (stage_flag == 1'b0) ? S_7_k1 : S_11_k1;
 
-    // valid: pulse when the k=0 path's done goes high
-    assign valid = (latched_stage == 1'b0) ? d_5_k0 : d_9_k0;
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            S_out_0 <= 0;
+            S_out_1 <= 0;
+            S_out_2 <= 0;
+            S_out_3 <= 0;
+        end
+        else begin
+            S_out_0 <= S_out_0_next;
+            S_out_1 <= S_out_1_next;
+            S_out_2 <= S_out_2_next;
+            S_out_3 <= S_out_3_next;
+        end
+    end
 
 endmodule

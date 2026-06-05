@@ -10,52 +10,23 @@ module horner_a7 (
     input  wire              rst,
     input  wire              enable,
     input  wire              start,
-    input  wire [31:0]         data,
-    output reg  [5:0]          state,
-    output reg               done
+    input  wire [31:0]       data,
+    input  wire [5:0]        state,
+    output wire [5:0]        next_state
 );
 
     wire [5:0] eff_state;
-    assign eff_state = start ? 6'b0 : state;
+    assign eff_state = enable ? (start ? 6'b0 : state) : 6'b0;
 
-    wire [5:0] next_state;
-    assign next_state[0] = eff_state[0] ^ eff_state[3] ^ eff_state[5] ^ data[0] ^ data[3] ^ data[5] ^ data[8] ^ data[9] ^ data[12] ^ data[14] ^ data[17] ^ data[18] ^ data[21] ^ data[23] ^ data[26] ^ data[27] ^ data[30];
-    assign next_state[1] = eff_state[0] ^ eff_state[1] ^ eff_state[3] ^ eff_state[4] ^ eff_state[5] ^ data[1] ^ data[3] ^ data[5] ^ data[6] ^ data[7] ^ data[8] ^ data[10] ^ data[12] ^ data[14] ^ data[15] ^ data[16] ^ data[17] ^ data[19] ^ data[21] ^ data[23] ^ data[24] ^ data[25] ^ data[26] ^ data[28] ^ data[30];
-    assign next_state[2] = eff_state[1] ^ eff_state[2] ^ eff_state[4] ^ eff_state[5] ^ data[1] ^ data[2] ^ data[4] ^ data[8] ^ data[10] ^ data[11] ^ data[13] ^ data[17] ^ data[19] ^ data[20] ^ data[22] ^ data[26] ^ data[28] ^ data[29] ^ data[31];
-    assign next_state[3] = eff_state[0] ^ eff_state[2] ^ eff_state[3] ^ eff_state[5] ^ data[3] ^ data[4] ^ data[5] ^ data[6] ^ data[7] ^ data[8] ^ data[12] ^ data[13] ^ data[14] ^ data[15] ^ data[16] ^ data[17] ^ data[21] ^ data[22] ^ data[23] ^ data[24] ^ data[25] ^ data[26] ^ data[30] ^ data[31];
-    assign next_state[4] = eff_state[1] ^ eff_state[3] ^ eff_state[4] ^ data[2] ^ data[3] ^ data[4] ^ data[6] ^ data[7] ^ data[8] ^ data[11] ^ data[12] ^ data[13] ^ data[15] ^ data[16] ^ data[17] ^ data[20] ^ data[21] ^ data[22] ^ data[24] ^ data[25] ^ data[26] ^ data[29] ^ data[30] ^ data[31];
-    assign next_state[5] = eff_state[2] ^ eff_state[4] ^ eff_state[5] ^ data[3] ^ data[6] ^ data[12] ^ data[15] ^ data[21] ^ data[24] ^ data[30];
+    wire [31:0] eff_data;
+    assign eff_data = enable ? data : 32'b0;
 
-    reg [0:0] cyc_cnt;
-    reg              running;
-
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            state    <= 6'b0;
-            cyc_cnt  <= 1'b0;
-            running  <= 1'b0;
-            done     <= 1'b0;
-        end else if (!enable) begin
-            done <= 1'b0;
-        end else if (start) begin
-            state    <= next_state;
-            cyc_cnt  <= 1'd1;
-            running  <= 1'b1;
-            done     <= 1'b0;
-        end else if (running) begin
-            state   <= next_state;
-            if (cyc_cnt == 1'd1) begin
-                running <= 1'b0;
-                done    <= 1'b1;
-                cyc_cnt <= 1'b0;
-            end else begin
-                cyc_cnt <= cyc_cnt + 1'd1;
-                done    <= 1'b0;
-            end
-        end else begin
-            done <= 1'b0;
-        end
-    end
+    assign next_state[0] = eff_state[0] ^ eff_state[3] ^ eff_state[5] ^ eff_data[0] ^ eff_data[3] ^ eff_data[5] ^ eff_data[8] ^ eff_data[9] ^ eff_data[12] ^ eff_data[14] ^ eff_data[17] ^ eff_data[18] ^ eff_data[21] ^ eff_data[23] ^ eff_data[26] ^ eff_data[27] ^ eff_data[30];
+    assign next_state[1] = eff_state[0] ^ eff_state[1] ^ eff_state[3] ^ eff_state[4] ^ eff_state[5] ^ eff_data[1] ^ eff_data[3] ^ eff_data[5] ^ eff_data[6] ^ eff_data[7] ^ eff_data[8] ^ eff_data[10] ^ eff_data[12] ^ eff_data[14] ^ eff_data[15] ^ eff_data[16] ^ eff_data[17] ^ eff_data[19] ^ eff_data[21] ^ eff_data[23] ^ eff_data[24] ^ eff_data[25] ^ eff_data[26] ^ eff_data[28] ^ eff_data[30];
+    assign next_state[2] = eff_state[1] ^ eff_state[2] ^ eff_state[4] ^ eff_state[5] ^ eff_data[1] ^ eff_data[2] ^ eff_data[4] ^ eff_data[8] ^ eff_data[10] ^ eff_data[11] ^ eff_data[13] ^ eff_data[17] ^ eff_data[19] ^ eff_data[20] ^ eff_data[22] ^ eff_data[26] ^ eff_data[28] ^ eff_data[29] ^ eff_data[31];
+    assign next_state[3] = eff_state[0] ^ eff_state[2] ^ eff_state[3] ^ eff_state[5] ^ eff_data[3] ^ eff_data[4] ^ eff_data[5] ^ eff_data[6] ^ eff_data[7] ^ eff_data[8] ^ eff_data[12] ^ eff_data[13] ^ eff_data[14] ^ eff_data[15] ^ eff_data[16] ^ eff_data[17] ^ eff_data[21] ^ eff_data[22] ^ eff_data[23] ^ eff_data[24] ^ eff_data[25] ^ eff_data[26] ^ eff_data[30] ^ eff_data[31];
+    assign next_state[4] = eff_state[1] ^ eff_state[3] ^ eff_state[4] ^ eff_data[2] ^ eff_data[3] ^ eff_data[4] ^ eff_data[6] ^ eff_data[7] ^ eff_data[8] ^ eff_data[11] ^ eff_data[12] ^ eff_data[13] ^ eff_data[15] ^ eff_data[16] ^ eff_data[17] ^ eff_data[20] ^ eff_data[21] ^ eff_data[22] ^ eff_data[24] ^ eff_data[25] ^ eff_data[26] ^ eff_data[29] ^ eff_data[30] ^ eff_data[31];
+    assign next_state[5] = eff_state[2] ^ eff_state[4] ^ eff_state[5] ^ eff_data[3] ^ eff_data[6] ^ eff_data[12] ^ eff_data[15] ^ eff_data[21] ^ eff_data[24] ^ eff_data[30];
 
     // Total XOR gates (combinational): 113
 endmodule

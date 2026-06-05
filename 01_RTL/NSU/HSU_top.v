@@ -8,6 +8,7 @@ module HSU_top (
     input  wire [62:0] r2,
     input  wire [62:0] r3,
 
+    input  wire        b,
     input  wire        flag0, flag1, flag2, flag3,      // flags for whether each interleave is undecoded (1 = undecoded, 0 = decoded)
     input  wire        stage_flag,
 
@@ -108,7 +109,7 @@ module HSU_top (
 
     //   - b        : 0 -> 1 interleave undecoded (only Ŝ_0 needed)
     //                1 -> 2 interleaves undecoded (need both Ŝ_0 and Ŝ_1)
-    wire b = ~(flag0 ^ flag1 ^ flag2 ^ flag3); // b is 1 if an odd number of flags are 1, else 0
+    // wire b = ~(flag0 ^ flag1 ^ flag2 ^ flag3); // b is 1 if an odd number of flags are 1, else 0
     reg  b_reg;
     always @(posedge clk or posedge rst) begin
         if (rst) begin
@@ -334,7 +335,6 @@ module HSU_top (
         .S_out_1(S_out_1),
         .S_out_2(S_out_2),
         .S_out_3(S_out_3),
-        .b_out(),
         .valid(valid)
     );
 
