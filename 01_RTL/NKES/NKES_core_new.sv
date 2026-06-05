@@ -7,6 +7,7 @@ module NKES_core_new(
     input [5:0]     gamma_time,
     input [5:0]     dis_time,
     input           branch_time,
+
     input [5:0]     gamma_out,
     input [5:0]     dis_out,
     input           branch_out,
@@ -128,13 +129,21 @@ NKES_PE_array_new u_pe_arr_n(
     .pe_cnt(pe_cnt),
     .start(start),
 
-    .gamma_time(pe_cnt ? gamma_time_rec : gamma_time),
-    .dis_time(pe_cnt ? dis_time_rec : dis_time),
-    .branch_time(pe_cnt ? branch_time_rec : branch_time),
+    // .gamma_time(pe_cnt ? gamma_time_rec : gamma_time),
+    // .dis_time(pe_cnt ? dis_time_rec : dis_time),
+    // .branch_time(pe_cnt ? branch_time_rec : branch_time),
 
-    .gamma_out(pe_cnt ? gamma_out_rec : gamma_out),
-    .dis_out(pe_cnt ? dis_out_rec : dis_out),
-    .branch_out(pe_cnt ? branch_out_rec : branch_out),
+    // .gamma_out(pe_cnt ? gamma_out_rec : gamma_out),
+    // .dis_out(pe_cnt ? dis_out_rec : dis_out),
+    // .branch_out(pe_cnt ? branch_out_rec : branch_out),
+
+    .gamma_time(gamma_time),
+    .dis_time(dis_time),
+    .branch_time(branch_time),
+
+    .gamma_out(gamma_out),
+    .dis_out(dis_out),
+    .branch_out(branch_out),
 
     .Hsyn_even(pe_cnt ? Hsyn_even_rec : Hsyn_even),
     .Hsyn_odd(pe_cnt ? Hsyn_odd_rec : Hsyn_odd), 

@@ -26,55 +26,23 @@ wire [3:0]  Lk_out;
 
 wire        start;
 
-wire [5:0]  discrepancy_in;
+wire [5:0]  dis_in;
 
 wire        pe_cnt;
 
-wire [5:0]  gamma_out, discrepancy_out;
+wire [5:0]  gamma_time;
+wire [5:0]  dis_time;
+wire        branch_time;
+
+wire [5:0]  gamma_out;
+wire [5:0]  dis_out;
 wire        branch_out;
 
 wire [5:0]  gamma_init;
 wire [3:0]  k_init;
 
-reg [5:0]   gamma_time, gamma_time_next;
-reg [5:0]   dis_time, dis_time_next;
-reg         branch_time, branch_time_next;
-
 assign gamma_init = Lgamma_out;
 assign k_init = Lk_out;
-
-// =========== retime registers =============
-always @(posedge clk or posedge rst) begin
-    if (rst) begin
-        gamma_time  <= 6'b0;
-        dis_time    <= 6'b0;
-        branch_time <= 0;
-    end
-    else begin
-        gamma_time  <= gamma_time_next;
-        dis_time    <= dis_time_next;
-        branch_time <= branch_time_next;
-    end
-end
-
-always @(*) begin 
-    if (start) begin
-        gamma_time_next = 6'b1;
-        dis_time_next = 6'b0;
-        branch_time_next = 1'b0;
-    end
-    else if (pe_cnt) begin
-        gamma_time_next = gamma_out;
-        dis_time_next = discrepancy_out;
-        branch_time_next = branch_out;        
-    end
-    else begin
-        gamma_time_next = gamma_time;
-        dis_time_next = dis_time;
-        branch_time_next = branch_time; 
-    end
-end
-// ==========================================
 
 NKES_ctrl_new u_ctrl_n(
     .clk(clk),
@@ -84,14 +52,18 @@ NKES_ctrl_new u_ctrl_n(
 
     .pe_cnt(pe_cnt),
 
-    .discrepancy_in(discrepancy_in),
+    .dis_in(dis_in),
     .gamma_init(gamma_init),
     .k_init(k_init),
 
     .start(start),
 
+    .gamma_time(gamma_time),
+    .dis_time(dis_time),
+    .branch_time(branch_time),
+
     .gamma_out(gamma_out),
-    .discrepancy_out(discrepancy_out),
+    .dis_out(dis_out),
     .branch_out(branch_out)
 );
 
@@ -140,7 +112,7 @@ NKES_core_new u_core_n(
     .branch_time(branch_time),
 
     .gamma_out(gamma_out),
-    .dis_out(discrepancy_out),
+    .dis_out(dis_out),
     .branch_out(branch_out),
 
     .Lsigma_out(Lsigma_out),
@@ -151,7 +123,7 @@ NKES_core_new u_core_n(
     .HO_syn(HO_syn),
 
     .pe_cnt(pe_cnt),
-    .discrepancy(discrepancy_in),
+    .discrepancy(dis_in),
     .sigma_done(),
     .sigma()
 );
