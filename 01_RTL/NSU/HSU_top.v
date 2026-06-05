@@ -104,18 +104,6 @@ module HSU_top (
     end
 
     reg [5:0] Syndrome_12_i0_reg, Syndrome_12_i1_reg;
-    
-
-    //   - b        : 0 -> 1 interleave undecoded (only Ŝ_0 needed)
-    //                1 -> 2 interleaves undecoded (need both Ŝ_0 and Ŝ_1)
-    reg  b_reg;
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            b_reg <= 1'b0;
-        end else if (start) begin
-            b_reg <= b; // Latch b at the start of processing
-        end
-    end
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
@@ -183,9 +171,9 @@ module HSU_top (
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             o_HS_2_reg <= 6'd0;
-        end else if (counter == 3'd2 && b_reg) begin
+        end else if (counter == 3'd2 && b) begin
             o_HS_2_reg <= o_HS_2;   // second S5
-        end else if (counter == 3'd4 && b_reg) begin
+        end else if (counter == 3'd4 && b) begin
             o_HS_2_reg <= o_HS_2;   // second S7
         end
     end
@@ -208,7 +196,7 @@ module HSU_top (
             S_out_ch2 <= 6'd0;
         end else if (counter == 3'd2) begin
             if (~stage_flag) begin      // Stage 1
-                if (b_reg) begin                // 2 undercoded interleaves
+                if (b) begin                // 2 undercoded interleaves
                     S_out_ch1 <= o_HS_1;            // Output first S5
                     S_out_ch2 <= Syndrome_6_i0_reg; // Output first S6
                 end else begin                  // 1 undercoded interleave
@@ -221,7 +209,7 @@ module HSU_top (
             end
         end else if (counter == 3'd3) begin
             if (~stage_flag) begin      // Stage 1
-                if (b_reg) begin                // 2 undercoded interleaves
+                if (b) begin                // 2 undercoded interleaves
                     S_out_ch1 <= o_HS_2_reg;        // Output second S5
                     S_out_ch2 <= Syndrome_6_i1_reg; // Output second S6
                 end else begin                  // 1 undercoded interleave
@@ -234,7 +222,7 @@ module HSU_top (
             end
         end else if (counter == 3'd4) begin
             if (~stage_flag) begin      // Stage 1
-                if (b_reg) begin                // 2 undercoded interleaves
+                if (b) begin                // 2 undercoded interleaves
                     S_out_ch1 <= o_HS_1;            // Output first S7
                     S_out_ch2 <= Syndrome_8_i0_reg; // Output first S8
                 end else begin                  // 1 undercoded interleave
@@ -247,7 +235,7 @@ module HSU_top (
             end
         end else if (counter == 3'd5) begin
             if (~stage_flag) begin      // Stage 1
-                if (b_reg) begin                // 2 undercoded interleaves
+                if (b) begin                // 2 undercoded interleaves
                     S_out_ch1 <= o_HS_2_reg;        // Output second S7
                     S_out_ch2 <= Syndrome_8_i1_reg; // Output second S8
                 end else begin                  // 1 undercoded interleave
@@ -264,11 +252,11 @@ module HSU_top (
     reg [5:0] mul0, mul1;
     reg i_4or6; // 0: S_4; 1: S_6
     always @(*) begin
-        if (counter == 3'd2 && b_reg) begin // S5
+        if (counter == 3'd2 && b) begin // S5
             mul0 = S_out_0;
             mul1 = S_out_2;
             i_4or6 = 1'b0;
-        end else if (counter == 3'd4 && b_reg) begin // S7
+        end else if (counter == 3'd4 && b) begin // S7
             mul0 = S_out_1;
             mul1 = S_out_3;
             i_4or6 = 1'b1;
@@ -285,7 +273,7 @@ module HSU_top (
             Syndrome_5_i0_reg <= 6'd0;
             Syndrome_5_i1_reg <= 6'd0;
         end else if (counter == 3'd2 && ~stage_flag) begin
-            if (b_reg) begin
+            if (b) begin
                 Syndrome_5_i0_reg <= o_HS_1; // First S5
                 Syndrome_5_i1_reg <= o_HS_2; // Second S5 (if exists)
             end else begin
