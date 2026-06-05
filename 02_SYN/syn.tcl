@@ -8,6 +8,8 @@ uniquify
 link
 
 #source -echo -verbose ./your_design.sdc
+sh mkdir -p Netlist
+sh mkdir -p Report
 
 ############ 修正後的 SDC 段落 ############
 # Set the Optimization Constraints 
