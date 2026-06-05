@@ -44,28 +44,46 @@ BM_control bm_ctrl( .clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .discrepa
 
 
 // ============ PE0 array ==============
+<<<<<<< HEAD
 NKES_PE0_unified u_PE00(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(1'b0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+=======
+NKES_PE0_unified u_PE00(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+>>>>>>> c1011cc (add unified PE)
     .H_syn(6'b0),
     .b_poly_in(6'b0),
     .sigma_init(6'b1),
     .b_init(6'b0),
 
+<<<<<<< HEAD
     .sigma_syn(),
     .b_syn(),
+=======
+    .sigma_syn(6'b0),
+    .b_syn(6'b0),
+>>>>>>> c1011cc (add unified PE)
     .b_poly_out(b_out[0]),
     .sigma_poly_out(sigma_out[0]),
     .sigma_delay_out(),
     .b_delay_out()
 );
 
+<<<<<<< HEAD
 NKES_PE0_unified u_PE01(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(1'b0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+=======
+NKES_PE0_unified u_PE01(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+>>>>>>> c1011cc (add unified PE)
     .H_syn(6'b0),
     .b_poly_in(first_iter? 6'b1 : 6'b0),
     .sigma_init(6'b0),
     .b_init(6'b0),
 
+<<<<<<< HEAD
     .sigma_syn(),
     .b_syn(),
+=======
+    .sigma_syn(6'b0),
+    .b_syn(6'b0),
+>>>>>>> c1011cc (add unified PE)
     .b_poly_out(b_out[1]),
     .sigma_poly_out(sigma_out[1]),
     .sigma_delay_out(),
