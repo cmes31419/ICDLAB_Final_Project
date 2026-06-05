@@ -32,11 +32,7 @@ module TOP (
 
     wire [2:0]  syn_cnt;
     wire [5:0]  LO_syn[3:0];
-<<<<<<< HEAD:01_RTL/TOP.sv
     wire        LKES_done, NKES_done, LKES_fail;
-=======
-    wire        LKES_done, NKES_done;
->>>>>>> fdb6577ed3f87351cdcb16dfaf602632a5dcacad:01_RTL/CHIP.sv
     wire [5:0]  cs_sigma_in[6:0], LKES_sigma_out[3:0], NKES_sigma_out[6:0];
 
     wire        nsu_start, nsu_b, nsu_stage_flag;
@@ -73,10 +69,7 @@ module TOP (
         .ovalid(ovalid),
         .sdone(sdone),
         .LKES_done(LKES_done),
-<<<<<<< HEAD:01_RTL/TOP.sv
         .LKES_fail(LKES_fail),
-=======
->>>>>>> fdb6577ed3f87351cdcb16dfaf602632a5dcacad:01_RTL/CHIP.sv
         .cdone(cdone),
         .cfail(cfail),
         .nflag(nflag),
