@@ -164,12 +164,18 @@ always @(*) begin
     if (syndrome_rdy) begin
         k_next = 2'd0;
     end
+    else if (hold) begin
+        k_next = k;
+    end
     else begin
         k_next = (branch)? -k : k - 1'b1; 
     end
 
     if (syndrome_rdy) begin
         gamma_next = 6'b1;
+    end
+    else if (hold) begin
+        gamma_next = gamma;
     end
     else begin
         gamma_next = (branch)? discrepancy : gamma;
