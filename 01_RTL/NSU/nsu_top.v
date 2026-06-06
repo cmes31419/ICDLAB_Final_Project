@@ -143,14 +143,14 @@ module nsu_top (
     horner_a5 u_a5_k1 (
         .clk(clk), .rst(rst),
         .enable(en_a5_k1), .start(start),
-        .data(data_shift), .state(S_out_2),  .next_state(S_5_k1)
+        .data(data_shift), .state(S_out_1),  .next_state(S_5_k1)
     );
 
     // Stage 0 done: alpha^7
     horner_a7 u_a7_k0 (
         .clk(clk), .rst(rst),
         .enable(en_a7_k0), .start(start),
-        .data(data_xor),   .state(S_out_1),  .next_state(S_7_k0)
+        .data(data_xor),   .state(S_out_2),  .next_state(S_7_k0)
     );
     horner_a7 u_a7_k1 (
         .clk(clk), .rst(rst),
@@ -167,14 +167,14 @@ module nsu_top (
     horner_a9 u_a9_k1 (
         .clk(clk), .rst(rst),
         .enable(en_a9_k1), .start(start),
-        .data(data_shift), .state(S_out_2),  .next_state(S_9_k1)
+        .data(data_shift), .state(S_out_1),  .next_state(S_9_k1)
     );
 
     // Stage 1 done: alpha^11
     horner_a11 u_a11_k0 (
         .clk(clk), .rst(rst),
         .enable(en_a11_k0), .start(start),
-        .data(data_xor),    .state(S_out_1), .next_state(S_11_k0)
+        .data(data_xor),    .state(S_out_2), .next_state(S_11_k0)
     );
     horner_a11 u_a11_k1 (
         .clk(clk), .rst(rst),
@@ -187,8 +187,8 @@ module nsu_top (
     //----------------------------------------------------------------
     wire [5:0]  S_out_0_next, S_out_1_next, S_out_2_next, S_out_3_next;
     assign S_out_0_next = run_active ? ((stage_flag == 1'b0) ? S_5_k0 : S_9_k0) : S_out_0;
-    assign S_out_1_next = run_active ? ((stage_flag == 1'b0) ? S_7_k0 : S_11_k0) : S_out_1;
-    assign S_out_2_next = run_active ? ((stage_flag == 1'b0) ? S_5_k1 : S_9_k1) : S_out_2;
+    assign S_out_1_next = run_active ? ((stage_flag == 1'b0) ? S_5_k1 : S_9_k1) : S_out_1;
+    assign S_out_2_next = run_active ? ((stage_flag == 1'b0) ? S_7_k0 : S_11_k0) : S_out_2;
     assign S_out_3_next = run_active ? ((stage_flag == 1'b0) ? S_7_k1 : S_11_k1) : S_out_3;
 
     always @(posedge clk or posedge rst) begin

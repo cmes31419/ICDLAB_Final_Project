@@ -28,7 +28,6 @@ module HSU_top (
     reg [5:0] Syndrome_6_i0_reg, Syndrome_8_i0_reg, Syndrome_6_i1_reg, Syndrome_8_i1_reg;
 
     reg [5:0] square_S3_S5, square_S3_S6;
-    reg i2_valid;
     reg [5:0] Syndrome_5_i0_reg, Syndrome_5_i1_reg;
 
     always @(*) begin
@@ -86,19 +85,6 @@ module HSU_top (
     end
 
     reg [5:0] Syndrome_12_i0_reg, Syndrome_12_i1_reg;
-
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            i2_valid <= 1'b0;
-        end
-        else if (start && ~stage_flag) begin
-            if (b) begin
-                i2_valid <= 1'b1;
-            end else begin
-                i2_valid <= 1'b0;
-            end
-        end
-    end
 
     wire [5:0] S_out_0, S_out_1, S_out_2, S_out_3; // Final syndrome outputs from HSU
     wire valid; // Signal from HSU indicating that S_out_0..3 are valid and can be registered
@@ -224,8 +210,8 @@ module HSU_top (
         .b(b),
         .stage_flag(stage_flag),
         .S_out_0(S_out_0),
-        .S_out_1(S_out_1),
-        .S_out_2(S_out_2),
+        .S_out_1(S_out_2),
+        .S_out_2(S_out_1),
         .S_out_3(S_out_3),
         .valid(valid)
     );

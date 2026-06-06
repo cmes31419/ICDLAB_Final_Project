@@ -1,14 +1,18 @@
 module memory(
     input           clk,
     input           rst,
+    input           forward,
     // input write interface
     input [5:0]     iaddr,
     input [7:0]     idata,
     input           iwen,
     // low-level syndrome interface
-    input [11:0]    sdata,
-    input           ssel,
-    input           swen,
+    input [11:0]    Lsdata,
+    input           Lssel,
+    input           Lswen,
+    // nested syndrome interface
+    input [11:0]    Nsdata,
+    input           Nswen,
     // Chien search correction interface
     input [2:0]     caddr,
     input [62:0]    cdata,
@@ -28,7 +32,8 @@ module memory(
     reg [63:0]  data[1:0][3:0], data_next[1:0][3:0];  // bit 63: fail flag, bits 62:0: codeword
     reg         done[1:0][3:0], done_next[1:0][3:0];  // decoding done flag
 
-    reg [11:0]  syn[1:0], syn_next[1:0];    // buffered S3 and S4 for 2 undecoded sub-codewords
+    reg [11:0]  syn[1:0][1:0], syn_next[1:0][1:0];    // buffered S3 and S4 for 2 undecoded sub-codewords
+    reg [11:0]  syn_no_forward[1:0][1:0];
 
     integer h, i, j;
 
@@ -44,7 +49,7 @@ module memory(
             assign ndata[gi] = data[naddr][gi];
         end
         for (gi=0;gi<2;gi=gi+1) begin
-            assign nsyn[gi] = syn[gi];
+            assign nsyn[gi] = syn[0][gi];
         end
     endgenerate
 
@@ -76,13 +81,17 @@ module memory(
     end
 
     always @(*) begin
+        syn_no_forward[0][0] = Nswen ? Nsdata : syn[0][0];
+        syn_no_forward[0][1] = syn[0][1];
         for (i=0;i<2;i=i+1) begin
-            if (swen && ssel == i) begin
-                syn_next[i] = sdata;
-            end
-            else begin
-                syn_next[i] = syn[i];
-            end
+            syn_no_forward[1][i] = (Lswen && Lssel == i) ? Lsdata : syn[1][i];
+        end
+    end
+
+    always @(*) begin
+        for (i=0;i<2;i=i+1) begin
+            syn_next[0][i] = forward ? syn_no_forward[1][i] : syn_no_forward[0][i];
+            syn_next[1][i] = forward ? 12'b0 : syn_no_forward[1][i];
         end
     end
 
@@ -93,9 +102,9 @@ module memory(
                     data[h][i] <= 0;
                     done[h][i] <= 0;
                 end
-            end
-            for (i=0;i<2;i=i+1) begin
-                syn[i]  <= 0;
+                for (i=0;i<2;i=i+1) begin
+                    syn[h][i]  <= 0;
+                end
             end
         end
         else begin
@@ -104,9 +113,9 @@ module memory(
                     data[h][i] <= data_next[h][i];
                     done[h][i] <= done_next[h][i];
                 end
-            end
-            for (i=0;i<2;i=i+1) begin
-                syn[i]  <= syn_next[i];
+                for (i=0;i<2;i=i+1) begin
+                    syn[h][i]  <= syn_next[h][i];
+                end
             end
         end
     end

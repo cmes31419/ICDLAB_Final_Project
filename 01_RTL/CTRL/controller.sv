@@ -28,7 +28,8 @@ module controller(
     output          nsu_stage_flag,
     output [1:0]    nsu_undecoded_idx_1,
     output [1:0]    nsu_undecoded_idx_2,
-    output          nsu_stage2_match_idx
+    output          nsu_stage2_match_idx,
+    output          nsu_sel_idx
 );
 
     localparam S_IDLE       = 3'd0;
@@ -82,6 +83,7 @@ module controller(
     assign nsu_undecoded_idx_1 = npos1;
     assign nsu_undecoded_idx_2 = npos2;
     assign nsu_stage2_match_idx = (npos == npos2) ? 1 : 0;
+    assign nsu_sel_idx = (nstate == S_STAGE1B) ? 1 : 0;  // TODO: fix
 
     // FIFO-style full check
     assign iready = ((icnt[6] != ocnt[6] && icnt[5:3] == ocnt[5:3]) || (icnt[6] != ncnt[1] && icnt[5] == ncnt[0])) ? 0 : 1;

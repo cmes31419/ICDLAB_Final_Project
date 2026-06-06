@@ -37,6 +37,7 @@ module TOP (
 
     wire        nsu_start, nsu_b, nsu_stage_flag;
     wire [1:0]  nsu_undecoded_idx_1, nsu_undecoded_idx_2;
+    wire        nsu_stage2_match_idx, nsu_sel_idx;
 
     wire [5:0]  LKES_b_out[3:0], LKES_delta_even_out[1:0], LKES_theta_even_out[1:0], LKES_gamma_out;
     wire [1:0]  LKES_k_out;
@@ -92,18 +93,22 @@ module TOP (
         .nsu_stage_flag(nsu_stage_flag),
         .nsu_undecoded_idx_1(nsu_undecoded_idx_1),
         .nsu_undecoded_idx_2(nsu_undecoded_idx_2),
-        .nsu_stage2_match_idx(nsu_stage2_match_idx)
+        .nsu_stage2_match_idx(nsu_stage2_match_idx),
+        .nsu_sel_idx(nsu_sel_idx)
     );
 
     memory mem0(
         .clk(clk),
         .rst(rst),
+        .forward(forward),
         .iaddr(iaddr),
         .idata(idata),
         .iwen(ivalid & iready),
-        .sdata({LO_syn[3], LO_syn[2]}),
-        .ssel(ssel),
-        .swen(swen),
+        .Lsdata({LO_syn[3], LO_syn[2]}),
+        .Lssel(ssel),
+        .Lswen(swen),
+        .Nsdata(),
+        .Nswen(1'b0),
         .caddr(cwaddr),
         .cdata(cdata),
         .cwen(cwen),
@@ -250,6 +255,7 @@ module TOP (
         .undecoded_idx_1(nsu_undecoded_idx_1),
         .undecoded_idx_2(nsu_undecoded_idx_2),
         .stage2_match_idx(nsu_stage2_match_idx),
+        .sel_idx(nsu_sel_idx),
         .Syndrome_3_i0(nsyn[0][5:0]), 
         .Syndrome_4_i0(nsyn[0][11:6]), 
         .Syndrome_3_i1(nsyn[1][5:0]), 
