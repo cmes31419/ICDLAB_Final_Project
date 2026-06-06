@@ -12,7 +12,6 @@ module HSU_top (
     input  wire        flag0, flag1, flag2, flag3,      // flags for whether each interleave is undecoded (1 = undecoded, 0 = decoded)
     input  wire        stage_flag,
 
-    
     input  wire [1:0]  undecoded_idx_1, undecoded_idx_2,
 
     // Used to calculate S6 (S3^2) and S8 (S4^2), which are needed for the final output S_out_0..3
@@ -158,62 +157,42 @@ module HSU_top (
         end
     end
 
+    reg [5:0]   S_out_ch1_next;
+    reg [5:0]   S_out_ch2_next;
+
+    always @(*) begin
+        case (counter)
+        3'd2: begin
+            S_out_ch1_next = stage_flag ? S_out_0 : (b ? o_HS_1 : S_out_0);
+            S_out_ch2_next = stage_flag ? Syndrome_6_i0 : Syndrome_6_i0_reg;
+        end
+        3'd3: begin
+            S_out_ch1_next = stage_flag ? 6'd0 : (b ? o_HS_2_reg : 6'd0);
+            S_out_ch2_next = stage_flag ? 6'd0 : (b ? Syndrome_6_i1_reg : 6'd0);
+        end
+        3'd4: begin
+            S_out_ch1_next = stage_flag ? S_out_1 : (b ? o_HS_1 : S_out_1);
+            S_out_ch2_next = stage_flag ? Syndrome_6_i1 : Syndrome_8_i0_reg;
+        end
+        3'd5: begin
+            S_out_ch1_next = stage_flag ? 6'd0 : (b ? o_HS_2_reg : 6'd0);
+            S_out_ch2_next = stage_flag ? 6'd0 : (b ? Syndrome_8_i1_reg : 6'd0);
+        end
+        default: begin
+            S_out_ch1_next = 6'd0;
+            S_out_ch2_next = 6'd0;
+        end
+        endcase
+    end
+
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            S_out_ch1 <= 6'd0;
-            S_out_ch2 <= 6'd0;
-        end else if (counter == 3'd2) begin
-            if (~stage_flag) begin      // Stage 1
-                if (b) begin                // 2 undercoded interleaves
-                    S_out_ch1 <= o_HS_1;            // Output first S5
-                    S_out_ch2 <= Syndrome_6_i0_reg; // Output first S6
-                end else begin                  // 1 undercoded interleave
-                    S_out_ch1 <= S_out_0;       // Output the only S5
-                    S_out_ch2 <= Syndrome_6_i0_reg; // Output the only S6
-                end
-            end else begin                  // Stage 2
-                S_out_ch1 <= S_out_0; // Output S9
-                S_out_ch2 <= Syndrome_6_i0; // Output S10
-            end
-        end else if (counter == 3'd3) begin
-            if (~stage_flag) begin      // Stage 1
-                if (b) begin                // 2 undercoded interleaves
-                    S_out_ch1 <= o_HS_2_reg;        // Output second S5
-                    S_out_ch2 <= Syndrome_6_i1_reg; // Output second S6
-                end else begin                  // 1 undercoded interleave
-                    S_out_ch1 <= 6'd0;
-                    S_out_ch2 <= 6'd0;
-                end
-            end else begin                  // Stage 2
-                S_out_ch1 <= 6'd0;
-                S_out_ch2 <= 6'd0;
-            end
-        end else if (counter == 3'd4) begin
-            if (~stage_flag) begin      // Stage 1
-                if (b) begin                // 2 undercoded interleaves
-                    S_out_ch1 <= o_HS_1;            // Output first S7
-                    S_out_ch2 <= Syndrome_8_i0_reg; // Output first S8
-                end else begin                  // 1 undercoded interleave
-                    S_out_ch1 <= S_out_1;       // Output the only S7    
-                    S_out_ch2 <= Syndrome_8_i0_reg; // Output the only S8
-                end
-            end else begin                  // Stage 2
-                S_out_ch1 <= S_out_1; // Output S11
-                S_out_ch2 <= Syndrome_6_i1; // Output S12
-            end
-        end else if (counter == 3'd5) begin
-            if (~stage_flag) begin      // Stage 1
-                if (b) begin                // 2 undercoded interleaves
-                    S_out_ch1 <= o_HS_2_reg;        // Output second S7
-                    S_out_ch2 <= Syndrome_8_i1_reg; // Output second S8
-                end else begin                  // 1 undercoded interleave
-                    S_out_ch1 <= 6'd0;
-                    S_out_ch2 <= 6'd0;
-                end
-            end else begin                  // Stage 2
-                S_out_ch1 <= 6'd0;
-                S_out_ch2 <= 6'd0;
-            end
+            S_out_ch1   <= 6'd0;
+            S_out_ch2   <= 6'd0;
+        end
+        else begin
+            S_out_ch1   <= S_out_ch1_next;
+            S_out_ch2   <= S_out_ch2_next;
         end
     end
 
