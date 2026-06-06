@@ -217,7 +217,6 @@ module HSU_top (
     A_inv inv_inst (
         .i_clk(clk),
         .i_rst(rst),
-        .i_mode(1'b1),
         .i_4or6(i_4or6),                   // 0: S_4; 1: S_6
         .i_gf_mul0_in1(mul0),              // S_4_0 or S_6_0
         .i_gf_mul1_in1(mul1),              // S_4_1 or S_6_1

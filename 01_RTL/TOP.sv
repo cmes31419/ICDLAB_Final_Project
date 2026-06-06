@@ -244,7 +244,8 @@ module TOP (
     HSU_top_new hsu_n0(
         .clk(clk),
         .rst(rst),
-        .start(nsu_start_new),
+        .start(nsu_start),
+        .start_new(nsu_start_new),
         .r0(ndata[0]),
         .r1(ndata[1]),
         .r2(ndata[2]),

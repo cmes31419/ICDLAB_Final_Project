@@ -2,7 +2,6 @@ module A_inv (
     input i_clk,
     input i_rst,
 
-    input i_mode, // 0: square; 1: A inverse
     input i_4or6, // 0: S_4; 1: S_6
 
     input [5:0] i_gf_mul0_in1,

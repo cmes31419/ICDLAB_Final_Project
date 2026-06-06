@@ -2,6 +2,7 @@ module A_inv_new (
     input i_clk,
     input i_rst,
 
+    input i_sel,  // 0: i0, 1: i1
     input i_4or6, // 0: S_4; 1: S_6
 
     input [5:0] i_gf_mul0_in1,
@@ -41,64 +42,130 @@ module A_inv_new (
         gf_mul0_in2 = 6'd0;
         gf_mul1_in2 = 6'd0;
         case (i_4or6)
+        1'b0: begin
+            case (i_sel)
             1'b0: begin
                 // S_4^b1
                 case ({i_undecoded_idx_1, i_undecoded_idx_2})
-                    {2'd0, 2'd1}: begin
-                        gf_mul0_in2 = 6'b000011; // a+1
-                        gf_mul1_in2 = 6'b000010; // a
-                    end
-                    {2'd0, 2'd2}: begin 
-                        gf_mul0_in2 = 6'b000101; // a^2+1
-                        gf_mul1_in2 = 6'b000100; // a^2
-                    end
-                    {2'd0, 2'd3}: begin 
-                        gf_mul0_in2 = 6'b101110; // a^5+a^3+a^2+a
-                        gf_mul1_in2 = 6'b101111; // a^5+a^3+a^2+a+1
-                    end
-                    {2'd1, 2'd2}: begin 
-                        gf_mul0_in2 = 6'b000011; // a+1
-                        gf_mul1_in2 = 6'b111101; // a^5+a^4+a^3+a^2+1
-                    end
-                    {2'd1, 2'd3}: begin 
-                        gf_mul0_in2 = 6'b000101; // a^2+1
-                        gf_mul1_in2 = 6'b111001; // a^5+a^4+a^3+1
-                    end
-                    {2'd2, 2'd3}: begin 
-                        gf_mul0_in2 = 6'b000011; // a+1
-                        gf_mul1_in2 = 6'b010111; // a^4+a^2+a+1
-                    end
+                {2'd0, 2'd1}: begin
+                    gf_mul0_in2 = 6'b000011; // a+1
+                    gf_mul1_in2 = 6'b000010; // a
+                end
+                {2'd0, 2'd2}: begin 
+                    gf_mul0_in2 = 6'b000101; // a^2+1
+                    gf_mul1_in2 = 6'b000100; // a^2
+                end
+                {2'd0, 2'd3}: begin 
+                    gf_mul0_in2 = 6'b101110; // a^5+a^3+a^2+a
+                    gf_mul1_in2 = 6'b101111; // a^5+a^3+a^2+a+1
+                end
+                {2'd1, 2'd2}: begin 
+                    gf_mul0_in2 = 6'b000011; // a+1
+                    gf_mul1_in2 = 6'b111101; // a^5+a^4+a^3+a^2+1
+                end
+                {2'd1, 2'd3}: begin 
+                    gf_mul0_in2 = 6'b000101; // a^2+1
+                    gf_mul1_in2 = 6'b111001; // a^5+a^4+a^3+1
+                end
+                {2'd2, 2'd3}: begin 
+                    gf_mul0_in2 = 6'b000011; // a+1
+                    gf_mul1_in2 = 6'b010111; // a^4+a^2+a+1
+                end
                 endcase
             end
             1'b1: begin
-                // S_6^b1
+                // S_4^b2
                 case ({i_undecoded_idx_1, i_undecoded_idx_2})
-                    {2'd0, 2'd1}: begin
-                        gf_mul0_in2 = 6'b101101; // a^5+a^3+a^2+1
-                        gf_mul1_in2 = 6'b101100;// a^5+a^3+a^2
-                    end 
-                    {2'd0, 2'd2}: begin 
-                        gf_mul0_in2 = 6'b100010; // a^5+a
-                        gf_mul1_in2 = 6'b100011; // a^5+a+1
-                    end
-                    {2'd0, 2'd3}: begin 
-                        gf_mul0_in2 = 6'b111010; // a^5+a^4+a^3+a
-                        gf_mul1_in2 = 6'b111011; // a^5+a^4+a^3+a+1
-                    end
-                    {2'd1, 2'd2}: begin 
-                        gf_mul0_in2 = 6'b101101; // a^5+a^3+a^2+1
-                        gf_mul1_in2 = 6'b110011; // a^5+a^4+a+1
-                    end
-                    {2'd1, 2'd3}: begin 
-                        gf_mul0_in2 = 6'b100010; // a^5+a
-                        gf_mul1_in2 = 6'b010000; // a^4
-                    end
-                    {2'd2, 2'd3}: begin 
-                        gf_mul0_in2 = 6'b101101; // a^5+a^3+a^2+1
-                        gf_mul1_in2 = 6'b101001; // a^5+a^3+1
-                    end
+                {2'd0, 2'd1}: begin
+                    gf_mul0_in2 = 6'b000010; // a
+                    gf_mul1_in2 = 6'b000010;// a
+                end 
+                {2'd0, 2'd2}: begin 
+                    gf_mul0_in2 = 6'b000100; // a^2
+                    gf_mul1_in2 = 6'b000100; // a^2
+                end
+                {2'd0, 2'd3}: begin 
+                    gf_mul0_in2 = 6'b101111; // a^5+a^3+a^2+a+1
+                    gf_mul1_in2 = 6'b101111; // a^5+a^3+a^2+a+1
+                end
+                {2'd1, 2'd2}: begin 
+                    gf_mul0_in2 = 6'b000010; // a
+                    gf_mul1_in2 = 6'b111101; // a^5+a^4+a^3+a^2+1
+                end
+                {2'd1, 2'd3}: begin 
+                    gf_mul0_in2 = 6'b000100; // a^2
+                    gf_mul1_in2 = 6'b111001; // a^5+a^4+a^3+1
+                end
+                {2'd2, 2'd3}: begin 
+                    gf_mul0_in2 = 6'b000010; // a
+                    gf_mul1_in2 = 6'b010111; // a^4+a^2+a+1
+                end
                 endcase
             end
+            endcase
+        end
+        1'b1: begin
+            case (i_sel)
+            1'b0: begin
+                // S_6^b1
+                case ({i_undecoded_idx_1, i_undecoded_idx_2})
+                {2'd0, 2'd1}: begin
+                    gf_mul0_in2 = 6'b101101; // a^5+a^3+a^2+1
+                    gf_mul1_in2 = 6'b101100;// a^5+a^3+a^2
+                end 
+                {2'd0, 2'd2}: begin 
+                    gf_mul0_in2 = 6'b100010; // a^5+a
+                    gf_mul1_in2 = 6'b100011; // a^5+a+1
+                end
+                {2'd0, 2'd3}: begin 
+                    gf_mul0_in2 = 6'b111010; // a^5+a^4+a^3+a
+                    gf_mul1_in2 = 6'b111011; // a^5+a^4+a^3+a+1
+                end
+                {2'd1, 2'd2}: begin 
+                    gf_mul0_in2 = 6'b101101; // a^5+a^3+a^2+1
+                    gf_mul1_in2 = 6'b110011; // a^5+a^4+a+1
+                end
+                {2'd1, 2'd3}: begin 
+                    gf_mul0_in2 = 6'b100010; // a^5+a
+                    gf_mul1_in2 = 6'b010000; // a^4
+                end
+                {2'd2, 2'd3}: begin 
+                    gf_mul0_in2 = 6'b101101; // a^5+a^3+a^2+1
+                    gf_mul1_in2 = 6'b101001; // a^5+a^3+1
+                end
+                endcase
+            end
+            1'b1: begin
+                // S_6^b2
+                case ({i_undecoded_idx_1, i_undecoded_idx_2})
+                {2'd0, 2'd1}: begin
+                    gf_mul0_in2 = 6'b101100; // a^5+a^3+a^2
+                    gf_mul1_in2 = 6'b101100;// a^5+a^3+a^2
+                end 
+                {2'd0, 2'd2}: begin 
+                    gf_mul0_in2 = 6'b100011; // a^5+a+1
+                    gf_mul1_in2 = 6'b100011; // a^5+a+1
+                end
+                {2'd0, 2'd3}: begin 
+                    gf_mul0_in2 = 6'b111011; // a^5+a^4+a^3+a+1
+                    gf_mul1_in2 = 6'b111011; // a^5+a^4+a^3+a+1
+                end
+                {2'd1, 2'd2}: begin 
+                    gf_mul0_in2 = 6'b101100; // a^5+a^3+a^2
+                    gf_mul1_in2 = 6'b110011; // a^5+a^4+a+1
+                end
+                {2'd1, 2'd3}: begin 
+                    gf_mul0_in2 = 6'b100011; // a^5+a+1
+                    gf_mul1_in2 = 6'b010000; // a^4
+                end
+                {2'd2, 2'd3}: begin 
+                    gf_mul0_in2 = 6'b101100; // a^5+a^3+a^2
+                    gf_mul1_in2 = 6'b101001; // a^5+a^3+1
+                end
+                endcase
+            end
+            endcase
+        end
         endcase
         o_HS_w = gf_mul0_prod ^ gf_mul1_prod;
     end
