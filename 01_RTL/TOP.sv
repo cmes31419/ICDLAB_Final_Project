@@ -183,6 +183,7 @@ module TOP (
         .HO_syn(HO_syn_new),
 
         .forward(forward),
+        .sel_idx(nsu_sel_idx),
         .Lwaddr(Lsel),
         .Lwen(Lwen & LKES_done),
         .Lsigma(LKES_sigma_out),

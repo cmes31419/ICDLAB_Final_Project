@@ -6,6 +6,7 @@ module NKES_new(
     input [5:0] HO_syn[1:0],
 
     input forward,
+    input sel_idx,
 
     // from low order riBM
     input Lwaddr,
@@ -81,7 +82,7 @@ state_buff_new u_state_buff_n(
     .forward(forward),
     .pe_cnt(pe_cnt),
 
-    .raddr(1'b0),
+    .raddr(sel_idx),
 
     .Lwaddr(Lwaddr),
     .Lwen(Lwen),
