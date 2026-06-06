@@ -18,6 +18,8 @@ TOP.sv
 ./LSU/syndrome_pow.sv
 
 // NSU
+./NSU/Ainv.sv
+./NSU/Ainv_new.sv
 ./NSU/nsu_top.v
 ./NSU/horner_a5.v
 ./NSU/horner_a7.v
@@ -25,9 +27,6 @@ TOP.sv
 ./NSU/horner_a11.v
 ./NSU/HSU_top.v
 ./NSU/HSU_top_new.v
-
-// HSU
-./HSU/Ainv.sv
 
 // KES
 ./KES/BM.sv

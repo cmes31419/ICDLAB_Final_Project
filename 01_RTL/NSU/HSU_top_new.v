@@ -70,7 +70,7 @@ module HSU_top_new (
     assign mul1 = b ? ((counter == 3'd2) ? S_out_1 : ((counter == 3'd4) ? S_out_3 : 6'd0)) : 6'd0;
     assign i_4or6 = (b && counter == 3'd4) ? 1'b1 : 1'b0;
 
-    wire [5:0] o_HS_1;
+    wire [5:0] o_HS;
 
     nsu_top nsu_inst (
         .clk(clk),
@@ -89,19 +89,15 @@ module HSU_top_new (
         .valid(valid)
     );
 
-    A_inv inv_inst (
+    A_inv_new inv_inst (
         .i_clk(clk),
         .i_rst(rst),
-        .i_mode(1'b1),
         .i_4or6(i_4or6),                   // 0: S_4; 1: S_6
         .i_gf_mul0_in1(mul0),              // S_4_0 or S_6_0
         .i_gf_mul1_in1(mul1),              // S_4_1 or S_6_1
-        .i_gf_mul2_in1(mul0),              // S_4_0 or S_6_0
-        .i_gf_mul3_in1(mul1),              // S_4_1 or S_6_1
         .i_undecoded_idx_1(undecoded_idx_1),  // Index of the first undecoded interleave (0 to 3)      
         .i_undecoded_idx_2(undecoded_idx_2),  // Index of the second undecoded interleave (0 to 3, or 0 if only 1 undecoded interleave)
-        .o_HS_1(o_HS_1),
-        .o_HS_2()
+        .o_HS(o_HS)
     );
 
     reg [5:0]   S_out_ch1_next;
@@ -111,11 +107,11 @@ module HSU_top_new (
         case (counter)
         3'd2: begin
             S_out_ch1_next = 6'd0;
-            S_out_ch2_next = stage_flag ? S_out_0 : (b ? o_HS_1 : S_out_0);
+            S_out_ch2_next = stage_flag ? S_out_0 : (b ? o_HS : S_out_0);
         end
         3'd4: begin
             S_out_ch1_next = square_out;
-            S_out_ch2_next = stage_flag ? S_out_2 : (b ? o_HS_1 : S_out_2);
+            S_out_ch2_next = stage_flag ? S_out_2 : (b ? o_HS : S_out_2);
         end
         3'd6: begin
             S_out_ch1_next = square_out;
