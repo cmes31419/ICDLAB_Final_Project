@@ -92,7 +92,8 @@ module TOP (
         .nsu_b(nsu_b),
         .nsu_stage_flag(nsu_stage_flag),
         .nsu_undecoded_idx_1(nsu_undecoded_idx_1),
-        .nsu_undecoded_idx_2(nsu_undecoded_idx_2)
+        .nsu_undecoded_idx_2(nsu_undecoded_idx_2),
+        .nsu_stage2_match_idx(nsu_stage2_match_idx)
     );
 
     memory mem0(
@@ -221,6 +222,7 @@ module TOP (
         .stage_flag(nsu_stage_flag),
         .undecoded_idx_1(nsu_undecoded_idx_1),
         .undecoded_idx_2(nsu_undecoded_idx_2),
+        .stage2_match_idx(nsu_stage2_match_idx),
         .Syndrome_3_i0(nsyn[0][5:0]), 
         .Syndrome_4_i0(nsyn[0][11:6]), 
         .Syndrome_3_i1(nsyn[1][5:0]), 

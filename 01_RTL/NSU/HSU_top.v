@@ -13,6 +13,7 @@ module HSU_top (
     input  wire        stage_flag,
 
     input  wire [1:0]  undecoded_idx_1, undecoded_idx_2,
+    input  wire        stage2_match_idx,
 
     // Used to calculate S6 (S3^2) and S8 (S4^2), which are needed for the final output S_out_0..3
     input  wire [5:0]  Syndrome_3_i0, Syndrome_4_i0, Syndrome_3_i1, Syndrome_4_i1,   
@@ -30,37 +31,19 @@ module HSU_top (
     reg i2_valid;
     reg [5:0] Syndrome_5_i0_reg, Syndrome_5_i1_reg;
 
-    reg [1:0] stage2_match_idx;
-
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            stage2_match_idx <= 2'd0;
-        end else if (start && stage_flag) begin
-            // During stage 2, determine which S3/S4 pair corresponds to the undecoded interleave(s) based on the flags
-            if (flag0) begin
-                stage2_match_idx <= 2'd0;
-            end else if (flag1) begin
-                stage2_match_idx <= 2'd1;
-            end else if (flag2) begin
-                stage2_match_idx <= 2'd2;
-            end else if (flag3) begin
-                stage2_match_idx <= 2'd3;
-            end
-        end
-    end
-
     always @(*) begin
         if (valid_S3_S4 && ~stage_flag) begin
             square_S3_S5 = Syndrome_3_i0; // S3_i0 for S6 calculation
             square_S3_S6 = Syndrome_3_i1; // S3_i1 for S6 calculation
         end else begin
-            if (~i2_valid || (i2_valid && stage2_match_idx == undecoded_idx_1)) begin
-                square_S3_S5 = Syndrome_5_i0_reg;
-                square_S3_S6 = Syndrome_6_i0_reg;
-            end else begin
+            if (stage2_match_idx) begin
                 square_S3_S5 = Syndrome_5_i1_reg; // S4_i0 for S8 calculation
                 square_S3_S6 = Syndrome_6_i1_reg; // S4_i1 for S8 calculation
             end
+            else begin
+                square_S3_S5 = Syndrome_5_i0_reg;
+                square_S3_S6 = Syndrome_6_i0_reg;
+            end 
         end
     end
 

@@ -27,7 +27,8 @@ module controller(
     output          nsu_b,
     output          nsu_stage_flag,
     output [1:0]    nsu_undecoded_idx_1,
-    output [1:0]    nsu_undecoded_idx_2
+    output [1:0]    nsu_undecoded_idx_2,
+    output          nsu_stage2_match_idx
 );
 
     localparam S_IDLE       = 3'd0;
@@ -54,8 +55,10 @@ module controller(
     reg         b, b_next;
 
     wire [2:0]  npending;
+    wire        npos_test;
 
     assign npending = nflag[0] + nflag[1] + nflag[2] + nflag[3];
+    assign npos_test = (nstate == S_STAGE1B) ? npos2 : npos1;
 
     // Address mapping: input/output bytes are stored and read in reverse byte order
     assign iaddr = {icnt[5:3], 3'h7 - icnt[2:0]};
@@ -78,6 +81,7 @@ module controller(
     assign nsu_stage_flag = (nstate == S_START2 || nstate == S_STAGE2) ? 1 : 0;
     assign nsu_undecoded_idx_1 = npos1;
     assign nsu_undecoded_idx_2 = npos2;
+    assign nsu_stage2_match_idx = (npos == npos2) ? 1 : 0;
 
     // FIFO-style full check
     assign iready = ((icnt[6] != ocnt[6] && icnt[5:3] == ocnt[5:3]) || (icnt[6] != ncnt[1] && icnt[5] == ncnt[0])) ? 0 : 1;
