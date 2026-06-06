@@ -48,8 +48,7 @@ module nsu_top (
     output reg [5:0]   S_out_0,
     output reg [5:0]   S_out_1,
     output reg [5:0]   S_out_2,
-    output reg [5:0]   S_out_3,
-    output wire        valid
+    output reg [5:0]   S_out_3
 );
 
     //----------------------------------------------------------------

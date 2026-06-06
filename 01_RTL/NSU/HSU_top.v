@@ -87,7 +87,6 @@ module HSU_top (
     reg [5:0] Syndrome_12_i0_reg, Syndrome_12_i1_reg;
 
     wire [5:0] S_out_0, S_out_1, S_out_2, S_out_3; // Final syndrome outputs from HSU
-    wire valid; // Signal from HSU indicating that S_out_0..3 are valid and can be registered
 
     // state controller for HSU_top
     reg [2:0] counter;
@@ -212,8 +211,7 @@ module HSU_top (
         .S_out_0(S_out_0),
         .S_out_1(S_out_2),
         .S_out_2(S_out_1),
-        .S_out_3(S_out_3),
-        .valid(valid)
+        .S_out_3(S_out_3)
     );
 
     A_inv inv_inst (

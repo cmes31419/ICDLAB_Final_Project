@@ -17,11 +17,14 @@ module HSU_top_new (
     input  wire        sel_idx,
 
     // Used to calculate S6 (S3^2) and S8 (S4^2), which are needed for the final output S_out_0..3
-    input  wire [5:0]  Syndrome_3_i0, Syndrome_4_i0, Syndrome_3_i1, Syndrome_4_i1,   
-    input  wire        valid_S3_S4,                     // Signal to enable input of S3 and S4
+    input  wire [5:0]  Syndrome_3_i0, Syndrome_4_i0, Syndrome_3_i1, Syndrome_4_i1,
 
     output reg         syn_rdy,                            // Signal to indicate that the syndrome outputs are ready
-    output reg  [5:0]  S_out_ch1, S_out_ch2
+    output reg  [5:0]  S_out_ch1, S_out_ch2,
+
+    output [6:0]       Ndata,
+    output             Nsel,
+    output             Nwen
 );
 
     // State controller for HSU_top
@@ -53,7 +56,7 @@ module HSU_top_new (
     assign Syndrome_4_sel = sel_idx ? Syndrome_4_i1 : Syndrome_4_i0;
 
     wire [5:0]  square_in, square_out;
-    assign square_in = (counter == 4'd4) ? Syndrome_3_sel : ((counter == 4'd6) ? Syndrome_4_sel : 6'd0);
+    assign square_in = (counter == 4'd2) ? Syndrome_3_sel : ((counter == 4'd4) ? Syndrome_4_sel : 6'd0);
 
     gf_mul square_inst (
         .in1(square_in),
@@ -62,7 +65,6 @@ module HSU_top_new (
     );
 
     wire [5:0] S_out_0, S_out_1, S_out_2, S_out_3; // Final syndrome outputs from HSU
-    wire valid; // Signal from HSU indicating that S_out_0..3 are valid and can be registered
 
     wire [5:0] mul0, mul1;
     wire i_4or6; // 0: S_4; 1: S_6
@@ -85,8 +87,7 @@ module HSU_top_new (
         .S_out_0(S_out_0),  // S5_0 or S9_0
         .S_out_1(S_out_1),  // S5_1 or S9_1
         .S_out_2(S_out_2),  // S7_0 or S11_0
-        .S_out_3(S_out_3),  // S7_1 or S11_1
-        .valid(valid)
+        .S_out_3(S_out_3)   // S7_1 or S11_1
     );
 
     A_inv_new inv_inst (
@@ -100,28 +101,34 @@ module HSU_top_new (
         .o_HS(o_HS)
     );
 
+    reg [5:0]   S_out_ch1_delay, S_out_ch1_delay_next;
     reg [5:0]   S_out_ch1_next;
     reg [5:0]   S_out_ch2_next;
 
     always @(*) begin
         case (counter)
         3'd2: begin
+            S_out_ch1_delay_next = square_out;
             S_out_ch1_next = 6'd0;
             S_out_ch2_next = stage_flag ? S_out_0 : (b ? o_HS : S_out_0);
         end
         3'd4: begin
-            S_out_ch1_next = square_out;
+            S_out_ch1_delay_next = square_out;
+            S_out_ch1_next = S_out_ch1_delay;
             S_out_ch2_next = stage_flag ? S_out_2 : (b ? o_HS : S_out_2);
         end
         3'd6: begin
-            S_out_ch1_next = square_out;
+            S_out_ch1_delay_next = 6'd0;
+            S_out_ch1_next = S_out_ch1_delay;
             S_out_ch2_next = 6'd0;
         end
         3'd3, 3'd5, 3'd7: begin
+            S_out_ch1_delay_next = S_out_ch1_delay;
             S_out_ch1_next = S_out_ch1;
             S_out_ch2_next = S_out_ch2;
         end
         default: begin
+            S_out_ch1_delay_next = 6'd0;
             S_out_ch1_next = 6'd0;
             S_out_ch2_next = 6'd0;
         end
@@ -130,13 +137,19 @@ module HSU_top_new (
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            S_out_ch1   <= 6'd0;
-            S_out_ch2   <= 6'd0;
+            S_out_ch1_delay <= 6'd0;
+            S_out_ch1       <= 6'd0;
+            S_out_ch2       <= 6'd0;
         end
         else begin
-            S_out_ch1   <= S_out_ch1_next;
-            S_out_ch2   <= S_out_ch2_next;
+            S_out_ch1_delay <= S_out_ch1_delay_next;
+            S_out_ch1       <= S_out_ch1_next;
+            S_out_ch2       <= S_out_ch2_next;
         end
     end
+
+    assign Nwen = (counter == 3'd4 || counter == 3'd6) ? 1 : 0;
+    assign Nsel = (counter == 3'd6) ? 1 : 0;
+    assign Ndata = Nsel ? S_out_ch1 : S_out_ch2;
 
 endmodule

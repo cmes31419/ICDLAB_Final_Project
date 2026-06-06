@@ -25,17 +25,19 @@ module TOP (
     wire [2:0]  cwaddr;
     wire        cwen;
 
-    wire        sdone;
-    wire        swen, ssel;
-    wire        Lwen, Nwen;
     wire        forward;
+    wire        sdone;
+    wire        Lsel, Lwen, Nwen;
+    wire [6:0]  Ndata_nsu;
+    wire        Nsel_nsu, Nwen_nsu;
 
     wire [2:0]  syn_cnt;
     wire [5:0]  LO_syn[3:0];
     wire        LKES_done, NKES_done, LKES_fail;
     wire [5:0]  cs_sigma_in[6:0], LKES_sigma_out[3:0], NKES_sigma_out[6:0];
 
-    wire        nsu_start, nsu_b, nsu_stage_flag;
+    wire        nsu_start, nsu_start_new;
+    wire        nsu_b, nsu_stage_flag;
     wire [1:0]  nsu_undecoded_idx_1, nsu_undecoded_idx_2;
     wire        nsu_stage2_match_idx, nsu_sel_idx;
 
@@ -82,13 +84,13 @@ module TOP (
         .caddr(caddr),
         .naddr(naddr),
         .nkill(nkill),
-        .ssel(ssel),
-        .swen(swen),
+        .Lsel(Lsel),
         .Lwen(Lwen),
         .Nwen(Nwen),
         .forward(forward),
         .syn_cnt(syn_cnt),
         .nsu_start(nsu_start),
+        .nsu_start_new(nsu_start_new),
         .nsu_b(nsu_b),
         .nsu_stage_flag(nsu_stage_flag),
         .nsu_undecoded_idx_1(nsu_undecoded_idx_1),
@@ -105,10 +107,11 @@ module TOP (
         .idata(idata),
         .iwen(ivalid & iready),
         .Lsdata({LO_syn[3], LO_syn[2]}),
-        .Lssel(ssel),
-        .Lswen(swen),
-        .Nsdata(),
-        .Nswen(1'b0),
+        .Lssel(Lsel),
+        .Lswen(Lwen & sdone),
+        .Nsdata(Ndata_nsu),
+        .Nssel(Nsel_nsu),
+        .Nswen(Nwen & Nwen_nsu),
         .caddr(cwaddr),
         .cdata(cdata),
         .cwen(cwen),
@@ -180,8 +183,8 @@ module TOP (
         .HO_syn(HO_syn_new),
 
         .forward(forward),
-        .Lwaddr(ssel),
-        .Lwen(Lwen),
+        .Lwaddr(Lsel),
+        .Lwen(Lwen & LKES_done),
         .Lsigma(LKES_sigma_out),
         .Lb(LKES_b_out),
         .Ldelta_even(LKES_delta_even_out),
@@ -241,7 +244,7 @@ module TOP (
     HSU_top_new hsu_n0(
         .clk(clk),
         .rst(rst),
-        .start(nsu_start),
+        .start(nsu_start_new),
         .r0(ndata[0]),
         .r1(ndata[1]),
         .r2(ndata[2]),
@@ -259,12 +262,14 @@ module TOP (
         .Syndrome_3_i0(nsyn[0][5:0]), 
         .Syndrome_4_i0(nsyn[0][11:6]), 
         .Syndrome_3_i1(nsyn[1][5:0]), 
-        .Syndrome_4_i1(nsyn[1][11:6]),   
-        .valid_S3_S4(nsu_start),
+        .Syndrome_4_i1(nsyn[1][11:6]),
 
         .syn_rdy(syn_rdy_new),
         .S_out_ch1(HO_syn_new[0]),
-        .S_out_ch2(HO_syn_new[1])
+        .S_out_ch2(HO_syn_new[1]),
+        .Ndata(Ndata_nsu),
+        .Nsel(Nsel_nsu),
+        .Nwen(Nwen_nsu)
     );
 
 endmodule

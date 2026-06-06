@@ -11,7 +11,8 @@ module memory(
     input           Lssel,
     input           Lswen,
     // nested syndrome interface
-    input [11:0]    Nsdata,
+    input [6:0]     Nsdata,
+    input           Nssel,
     input           Nswen,
     // Chien search correction interface
     input [2:0]     caddr,
@@ -81,7 +82,7 @@ module memory(
     end
 
     always @(*) begin
-        syn_no_forward[0][0] = Nswen ? Nsdata : syn[0][0];
+        syn_no_forward[0][0] = Nswen ? (Nssel ? {Nsdata, syn[0][0][5:0]} : {syn[0][0][11:6], Nsdata}) : syn[0][0];
         syn_no_forward[0][1] = syn[0][1];
         for (i=0;i<2;i=i+1) begin
             syn_no_forward[1][i] = (Lswen && Lssel == i) ? Lsdata : syn[1][i];
