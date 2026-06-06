@@ -24,6 +24,7 @@ TOP.sv
 ./NSU/horner_a9.v
 ./NSU/horner_a11.v
 ./NSU/HSU_top.v
+./NSU/HSU_top_new.v
 
 // HSU
 ./HSU/Ainv.sv

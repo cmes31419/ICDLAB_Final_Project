@@ -38,15 +38,14 @@ module TOP (
     wire        nsu_start, nsu_b, nsu_stage_flag;
     wire [1:0]  nsu_undecoded_idx_1, nsu_undecoded_idx_2;
 
-    wire [5:0] LKES_b_out[3:0], LKES_delta_even_out[1:0], LKES_theta_even_out[1:0], LKES_gamma_out;
-    wire [1:0] LKES_k_out;
-    wire [5:0] HO_syn[1:0];
+    wire [5:0]  LKES_b_out[3:0], LKES_delta_even_out[1:0], LKES_theta_even_out[1:0], LKES_gamma_out;
+    wire [1:0]  LKES_k_out;
+    wire [5:0]  HO_syn[1:0];
+    wire        syn_rdy;
 
-    wire syn_rdy;
-    wire [5:0] S_out_ch1, S_out_ch2;
+    wire [5:0]  HO_syn_new[1:0];
+    wire        syn_rdy_new;
 
-    assign HO_syn[0] = S_out_ch1;
-    assign HO_syn[1] = S_out_ch2;
 
     assign cwen = (cdone & ~cfail) | (nested_cdone & ~nested_cfail);
     assign cwaddr = (cdone & ~cfail) ? caddr : naddr;
@@ -172,8 +171,8 @@ module TOP (
     NKES_new nkes_n0(
         .clk(clk),
         .rst(rst),
-        .syn_rdy(syn_rdy),
-        .HO_syn(HO_syn),
+        .syn_rdy(syn_rdy_new),
+        .HO_syn(HO_syn_new),
 
         .forward(forward),
         .Lwaddr(ssel),
@@ -230,8 +229,36 @@ module TOP (
         .valid_S3_S4(nsu_start),
 
         .syn_rdy(syn_rdy),
-        .S_out_ch1(S_out_ch1),
-        .S_out_ch2(S_out_ch2)
+        .S_out_ch1(HO_syn[0]),
+        .S_out_ch2(HO_syn[1])
+    );
+
+    HSU_top_new hsu_n0(
+        .clk(clk),
+        .rst(rst),
+        .start(nsu_start),
+        .r0(ndata[0]),
+        .r1(ndata[1]),
+        .r2(ndata[2]),
+        .r3(ndata[3]),
+        .b(nsu_b),
+        .flag0(nflag[0]), 
+        .flag1(nflag[1]), 
+        .flag2(nflag[2]), 
+        .flag3(nflag[3]),
+        .stage_flag(nsu_stage_flag),
+        .undecoded_idx_1(nsu_undecoded_idx_1),
+        .undecoded_idx_2(nsu_undecoded_idx_2),
+        .stage2_match_idx(nsu_stage2_match_idx),
+        .Syndrome_3_i0(nsyn[0][5:0]), 
+        .Syndrome_4_i0(nsyn[0][11:6]), 
+        .Syndrome_3_i1(nsyn[1][5:0]), 
+        .Syndrome_4_i1(nsyn[1][11:6]),   
+        .valid_S3_S4(nsu_start),
+
+        .syn_rdy(syn_rdy_new),
+        .S_out_ch1(HO_syn_new[0]),
+        .S_out_ch2(HO_syn_new[1])
     );
 
 endmodule

@@ -42,35 +42,20 @@ reg         valid, valid_next;
 reg [5:0]   delta_poly_0_rec;
 reg [5:0]   sigma_poly_out_rec[3:0];
 
-// TODO: fix --------------------------------
-reg [5:0]   Hsyn_odd_rec;
-reg [5:0]   Hsyn_even_rec;
-reg [5:0]   HO_syn_0_rec;
-// ------------------------------------------
-
 wire [5:0]  delta_even_in[1:0], theta_even_in[1:0], sigma_even_in[1:0], b_even_in[1:0];
 wire [5:0]  delta_init[1:0], theta_init[1:0], sigma_init[3:0], b_init[3:0];
 wire [5:0]  delta_delay_out[1:0], theta_delay_out[1:0], sigma_delay_out[3:0], b_delay_out[3:0];
 wire [5:0]  delta_poly[1:0], theta_poly[1:0], sigma_poly_out[3:0], b_poly_out[3:0];
 wire [5:0]  delta_init_out[1:0], theta_init_out[1:0];
 
-wire [5:0]  Hsyn_even;
-wire [5:0]  Hsyn_odd;
-wire [5:0]  syn_buff_out;
-wire        last_iter;
-
 integer i;
 
 genvar gi;
 
 assign pe_cnt = cnt[0];
-assign last_iter = (cnt == 3'd4) || (cnt == 3'd5);
 assign discrepancy = pe_cnt ? delta_poly_0_rec : delta_poly[0];
 assign sigma_done_pre = valid_pre;
 assign sigma_done = valid;
-
-assign Hsyn_even = last_iter ? 6'b0 : HO_syn[0]; 
-assign Hsyn_odd = syn_buff_out;
 
 generate
     for (gi = 0; gi < 4; gi = gi + 1) begin
@@ -110,22 +95,12 @@ generate
     end
 endgenerate
 
-syndrome_buff u_syn_buff(
-    .clk(clk),
-    .rst(rst),
-    .write_en(cnt == 3'd0 && start || cnt == 3'd1 || cnt == 3'd2 || cnt == 3'd3),
-    .write_idx(cnt[0]),
-    .syn_in(HO_syn[1]),
-    .read_idx(cnt[0]),
-    .syn_out(syn_buff_out)
-);
-
 precompute_unit_new u_PU_n(
     .delta_even_in(delta_even_in),
     .theta_even_in(theta_even_in),
     .sigma_even_in(sigma_even_in),
     .b_even_in(b_even_in),
-    .Su(pe_cnt ? HO_syn_0_rec : HO_syn[0]),
+    .Su(HO_syn[1]),
 
     .delta_init_out(delta_init_out),
     .theta_init_out(theta_init_out)
@@ -146,8 +121,8 @@ NKES_PE_array_new u_pe_arr_n(
     .dis_out(dis_out),
     .branch_out(branch_out),
 
-    .Hsyn_even(pe_cnt ? Hsyn_even_rec : Hsyn_even),
-    .Hsyn_odd(pe_cnt ? Hsyn_odd_rec : Hsyn_odd), 
+    .Hsyn_even(HO_syn[1]),
+    .Hsyn_odd(HO_syn[0]), 
 
     .delta_init(delta_init),
     .theta_init(theta_init),
@@ -179,7 +154,6 @@ always @(*) begin
     endcase
 end
 
-// TODO: fix --------------------------------
 always @(posedge clk or posedge rst) begin
     if (rst) begin
         state               <= S_IDLE;
@@ -190,10 +164,6 @@ always @(posedge clk or posedge rst) begin
         for (i=0;i<4;i=i+1) begin
             sigma_poly_out_rec[i]   <= 0;
         end
-
-        Hsyn_odd_rec        <= 0;
-        Hsyn_even_rec       <= 0;
-        HO_syn_0_rec        <= 0;
     end
     else begin
         state               <= state_next;
@@ -204,12 +174,7 @@ always @(posedge clk or posedge rst) begin
         for (i=0;i<4;i=i+1) begin
             sigma_poly_out_rec[i]   <= sigma_poly_out[i];
         end
-
-        Hsyn_odd_rec        <= Hsyn_odd;
-        Hsyn_even_rec       <= Hsyn_even;
-        HO_syn_0_rec        <= HO_syn[0];
     end
 end
-// ------------------------------------------
 
 endmodule

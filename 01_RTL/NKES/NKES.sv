@@ -245,38 +245,38 @@ NKES_PE_array u_pe_arr(
     .b_delay_out(b_delay_out)
 );
 
-NKES_core_new u_core_n(
-    .clk(clk),
-    .rst(rst),
-    .mode(1'b1),
-    .start(start),
+// NKES_core_new u_core_n(
+//     .clk(clk),
+//     .rst(rst),
+//     .mode(1'b1),
+//     .start(start),
 
-    .gamma_time(gamma_time),
-    .dis_time(dis_time),
-    .branch_time(branch_time),
+//     .gamma_time(gamma_time),
+//     .dis_time(dis_time),
+//     .branch_time(branch_time),
 
-    .gamma_out(gamma_out),
-    .dis_out(discrepancy_out),
-    .branch_out(branch_out),
+//     .gamma_out(gamma_out),
+//     .dis_out(discrepancy_out),
+//     .branch_out(branch_out),
 
-    .Lsigma_out(Lsigma_out),
-    .Lb_out(Lb_out),
-    .Ldelta_even_out(Ldelta_even_out),
-    .Ltheta_even_out(Ltheta_even_out),
+//     .Lsigma_out(Lsigma_out),
+//     .Lb_out(Lb_out),
+//     .Ldelta_even_out(Ldelta_even_out),
+//     .Ltheta_even_out(Ltheta_even_out),
 
-    .HO_syn(HO_syn),
+//     .HO_syn(HO_syn),
 
-    .pe_cnt(),
-    .discrepancy(discrepancy_in),
-    .sigma_done_pre(),
-    .sigma_done(),
-    .sigma(),
+//     .pe_cnt(),
+//     .discrepancy(discrepancy_in),
+//     .sigma_done_pre(),
+//     .sigma_done(),
+//     .sigma(),
 
-    .Nsigma(),
-    .Nb(),
-    .Ndelta_even(),
-    .Ntheta_even()
-);
+//     .Nsigma(),
+//     .Nb(),
+//     .Ndelta_even(),
+//     .Ntheta_even()
+// );
 
 endmodule
 
