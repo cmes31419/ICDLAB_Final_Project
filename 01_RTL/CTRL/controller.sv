@@ -25,7 +25,9 @@ module controller(
     output [2:0]    syn_cnt,
     output          nsu_start,
     output          nsu_b,
-    output          nsu_stage_flag
+    output          nsu_stage_flag,
+    output [1:0]    nsu_undecoded_idx_1,
+    output [1:0]    nsu_undecoded_idx_2
 );
 
     localparam S_IDLE       = 3'd0;
@@ -44,6 +46,8 @@ module controller(
 
     reg [2:0]   nstate, nstate_next;
     reg [1:0]   npos, npos_next;
+    reg [1:0]   npos1, npos1_next;
+    reg [1:0]   npos2, npos2_next;
 
     reg [1:0]   err_num, err_num_next;
     reg         nested_err_num, nested_err_num_next;
@@ -72,6 +76,8 @@ module controller(
     assign nsu_start = (nstate == S_START1 || nstate == S_START2) ? 1 : 0;
     assign nsu_b = b;
     assign nsu_stage_flag = (nstate == S_START2 || nstate == S_STAGE2) ? 1 : 0;
+    assign nsu_undecoded_idx_1 = npos1;
+    assign nsu_undecoded_idx_2 = npos2;
 
     // FIFO-style full check
     assign iready = ((icnt[6] != ocnt[6] && icnt[5:3] == ocnt[5:3]) || (icnt[6] != ncnt[1] && icnt[5] == ncnt[0])) ? 0 : 1;
@@ -122,6 +128,23 @@ module controller(
     end
 
     always @(*) begin
+        if (nstate == S_IDLE) begin
+            if (nflag[0]) npos1_next = 0;
+            else if (nflag[1]) npos1_next = 1;
+            else if (nflag[2]) npos1_next = 2;
+            else npos1_next = 3;
+            if (nflag[3]) npos2_next = 3;
+            else if (nflag[2]) npos2_next = 2;
+            else if (nflag[1]) npos2_next = 1;
+            else npos2_next = 0;
+        end
+        else begin
+            npos1_next = npos1;
+            npos2_next = npos2;
+        end
+    end
+
+    always @(*) begin
         case (nstate)
         S_IDLE: begin
             if (ncnt != ccnt[3:2]) begin
@@ -152,6 +175,8 @@ module controller(
             ncnt            <= 0;
             nstate          <= S_IDLE;
             npos            <= 0;
+            npos1           <= 0;
+            npos2           <= 0;
             err_num         <= 0;
             nested_err_num  <= 0;
             b               <= 0;
@@ -163,6 +188,8 @@ module controller(
             ncnt            <= ncnt_next;
             nstate          <= nstate_next;
             npos            <= npos_next;
+            npos1           <= npos1_next;
+            npos2           <= npos2_next;
             err_num         <= err_num_next;
             nested_err_num  <= nested_err_num_next;
             b               <= b_next;

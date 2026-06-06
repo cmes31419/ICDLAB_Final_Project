@@ -12,6 +12,9 @@ module HSU_top (
     input  wire        flag0, flag1, flag2, flag3,      // flags for whether each interleave is undecoded (1 = undecoded, 0 = decoded)
     input  wire        stage_flag,
 
+    
+    input  wire [1:0]  undecoded_idx_1, undecoded_idx_2,
+
     // Used to calculate S6 (S3^2) and S8 (S4^2), which are needed for the final output S_out_0..3
     input  wire [5:0]  Syndrome_3_i0, Syndrome_4_i0, Syndrome_3_i1, Syndrome_4_i1,   
     input  wire        valid_S3_S4,                     // Signal to enable input of S3 and S4
@@ -27,9 +30,6 @@ module HSU_top (
     reg [5:0] square_S3_S5, square_S3_S6;
     reg i2_valid;
     reg [5:0] Syndrome_5_i0_reg, Syndrome_5_i1_reg;
-
-    reg [1:0] undecoded_idx_1_reg, undecoded_idx_2_reg; // 2-bit indices of the undecoded interleaves (0 to 3)
-    reg [1:0] undecoded_idx_1, undecoded_idx_2;
 
     reg [1:0] stage2_match_idx;
 
@@ -55,7 +55,7 @@ module HSU_top (
             square_S3_S5 = Syndrome_3_i0; // S3_i0 for S6 calculation
             square_S3_S6 = Syndrome_3_i1; // S3_i1 for S6 calculation
         end else begin
-            if (~i2_valid || (i2_valid && stage2_match_idx == undecoded_idx_1_reg)) begin
+            if (~i2_valid || (i2_valid && stage2_match_idx == undecoded_idx_1)) begin
                 square_S3_S5 = Syndrome_5_i0_reg;
                 square_S3_S6 = Syndrome_6_i0_reg;
             end else begin
@@ -114,38 +114,6 @@ module HSU_top (
                 i2_valid <= 1'b1;
             end else begin
                 i2_valid <= 1'b0;
-            end
-        end
-    end
-
-    always @(*) begin
-        if (flag0) begin
-            undecoded_idx_1 = 2'd0;
-        end else if (flag1) begin
-            undecoded_idx_1 = 2'd1;
-        end else if (flag2) begin
-            undecoded_idx_1 = 2'd2;
-        end else if (flag3) begin
-            undecoded_idx_1 = 2'd3;
-        end else begin
-            undecoded_idx_1 = 2'd0; // Default value when no interleaves are undecoded (should not be used in this case)
-        end
-    end
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            undecoded_idx_1_reg <= 2'd0;
-            undecoded_idx_2_reg <= 2'd0;
-        end else if (start && ~stage_flag) begin
-            // Capture the indices of the undecoded interleaves at the start of processing
-            undecoded_idx_1_reg <= undecoded_idx_1;
-            if (b) begin // If there are 2 undecoded interleaves, find the second one
-                if (flag1 && undecoded_idx_1 != 2'd1) begin
-                    undecoded_idx_2_reg <= 2'd1;
-                end else if (flag2 && undecoded_idx_1 != 2'd2) begin
-                    undecoded_idx_2_reg <= 2'd2;
-                end else if (flag3 && undecoded_idx_1 != 2'd3) begin
-                    undecoded_idx_2_reg <= 2'd3;
-                end
             end
         end
     end
@@ -309,8 +277,8 @@ module HSU_top (
         .i_gf_mul1_in1(mul1),              // S_4_1 or S_6_1
         .i_gf_mul2_in1(mul0),              // S_4_0 or S_6_0
         .i_gf_mul3_in1(mul1),              // S_4_1 or S_6_1
-        .i_undecoded_idx_1(undecoded_idx_1_reg),  // Index of the first undecoded interleave (0 to 3)      
-        .i_undecoded_idx_2(undecoded_idx_2_reg),  // Index of the second undecoded interleave (0 to 3, or 0 if only 1 undecoded interleave)
+        .i_undecoded_idx_1(undecoded_idx_1),  // Index of the first undecoded interleave (0 to 3)      
+        .i_undecoded_idx_2(undecoded_idx_2),  // Index of the second undecoded interleave (0 to 3, or 0 if only 1 undecoded interleave)
         .o_HS_1(o_HS_1),
         .o_HS_2(o_HS_2)
     );
