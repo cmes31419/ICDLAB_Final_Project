@@ -20,23 +20,10 @@ wire [5:0] gamma, discrepancy;
 wire       branch, first_iter;
 wire       start, hold;
 
-wire [5:0] sigma_init[3:0], b_init[3:0];
-wire [5:0] delta_init[1:0], theta_init[1:0];
+wire [5:0] HO_syndrome[1:0];
 
-genvar gi;
-
-generate
-    assign sigma_init[0] = 6'b1;
-    assign b_init[0] = 6'b0;
-    for (gi = 1; gi < 4; gi = gi + 1) begin
-        assign sigma_init[gi] = 6'b0;
-        assign b_init[gi] = 6'b0;
-    end
-    for (gi = 0; gi < 2; gi = gi + 1) begin
-        assign delta_init[gi] = LO_syndrome[gi * 2];
-        assign theta_init[gi] = LO_syndrome[gi * 2 + 1];
-    end
-endgenerate
+assign HO_syndrome[0] = 6'b0;
+assign HO_syndrome[1] = 6'b0;
 
 assign discrepancy = delta_even_out[0];
 assign gamma_out = gamma;
@@ -50,14 +37,13 @@ BM_control bm_ctrl( .clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .discrepa
     .first_iter(first_iter), .branch(branch), .sigma_done(sigma_done)
 );
 
-NKES_PE_array_new u_pe_arr_n(
+NKES_core_new u_core_n(
     .clk(clk),
     .rst(rst),
     .start(start),
     .hold(hold),
     .first_iter(first_iter),
     .mode(1'b0),
-    .pe_cnt(1'b0),
 
     .gamma_time(gamma),
     .dis_time(discrepancy),
@@ -66,23 +52,24 @@ NKES_PE_array_new u_pe_arr_n(
     .dis_out(discrepancy),
     .branch_out(branch),
 
-    .Hsyn_even(6'b0),
-    .Hsyn_odd(6'b0), 
+    .Lsigma_out(),
+    .Lb_out(),
+    .Ldelta_even_out(),
+    .Ltheta_even_out(),
 
-    .sigma_init(sigma_init),
-    .b_init(b_init),
-    .delta_init(delta_init),
-    .theta_init(theta_init),
+    .LO_syn(LO_syndrome),
+    .HO_syn(HO_syndrome),
 
-    .sigma_poly_out(sigma_out),
-    .b_poly_out(b_out),
-    .delta_poly_out(delta_even_out),
-    .theta_poly_out(theta_even_out),
+    .pe_cnt(),
+    .discrepancy(discrepancy),
+    .sigma_done_pre(),
+    .sigma_done(),
+    .sigma(),
     
-    .sigma_delay_out(),
-    .b_delay_out(),
-    .delta_delay_out(),
-    .theta_delay_out()
+    .Nsigma(sigma_out),
+    .Nb(b_out),
+    .Ndelta_even(delta_even_out),
+    .Ntheta_even(theta_even_out)
 );
 
 endmodule

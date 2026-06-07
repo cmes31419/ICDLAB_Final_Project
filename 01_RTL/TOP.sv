@@ -185,6 +185,7 @@ module TOP (
         .rst(rst),
         .syn_rdy(syn_rdy_new),
         .HO_syn(HO_syn_new),
+        .LO_syn(LO_syn),
 
         .forward(forward),
         .sel_idx(nsu_sel_idx),

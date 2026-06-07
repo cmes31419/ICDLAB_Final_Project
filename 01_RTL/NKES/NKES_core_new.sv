@@ -1,23 +1,25 @@
 module NKES_core_new(
     input           clk,
     input           rst,
-    input           mode,
     input           start,
+    input           hold,
+    input           first_iter,
+    input           mode,
 
-    input [5:0]     gamma_time,
-    input [5:0]     dis_time,
-    input           branch_time,
+    input [5:0]     gamma_time,     // gamma
+    input [5:0]     dis_time,       // discrepancy
+    input           branch_time,    // branch
+    input [5:0]     gamma_out,      // gamma
+    input [5:0]     dis_out,        // discrepancy
+    input           branch_out,     // branch
 
-    input [5:0]     gamma_out,
-    input [5:0]     dis_out,
-    input           branch_out,
+    input [5:0]     Lsigma_out[3:0],        // 0, 0, 0, 0
+    input [5:0]     Lb_out[3:0],            // 0, 0, 0, 0
+    input [5:0]     Ldelta_even_out[1:0],   // 0, 0
+    input [5:0]     Ltheta_even_out[1:0],   // 0, 0
 
-    input [5:0]     Lsigma_out[3:0],
-    input [5:0]     Lb_out[3:0],
-    input [5:0]     Ldelta_even_out[1:0],
-    input [5:0]     Ltheta_even_out[1:0], 
-
-    input [5:0]     HO_syn[1:0],
+    input [5:0]     LO_syn[3:0],    
+    input [5:0]     HO_syn[1:0],    // 0, 0
 
     output          pe_cnt,
     output [5:0]    discrepancy,
@@ -31,10 +33,11 @@ module NKES_core_new(
     output [5:0]    Ntheta_even[1:0]
 );
 
-localparam S_IDLE   = 1'd0;
-localparam S_PROC   = 1'd1;
+localparam S_IDLE   = 2'd0;
+localparam S_PROC0  = 2'd1;
+localparam S_PROC1  = 2'd2;
 
-reg         state, state_next;
+reg [1:0]   state, state_next;
 reg [2:0]   cnt, cnt_next;
 reg         valid_pre, valid_pre_next;
 reg         valid, valid_next;
@@ -52,7 +55,7 @@ integer i;
 
 genvar gi;
 
-assign pe_cnt = cnt[0];
+assign pe_cnt = mode ? cnt[0] : 1'b0;
 assign discrepancy = pe_cnt ? delta_poly_0_rec : delta_poly_out[0];
 assign sigma_done_pre = valid_pre;
 assign sigma_done = valid;
@@ -83,15 +86,17 @@ generate
     end
 
     // sigma, b init
-    for (gi=0; gi < 4; gi = gi + 1) begin
-        assign sigma_init[gi] = Lsigma_out[gi];
-        assign b_init[gi] = Lb_out[gi];
+        assign sigma_init[0] = mode ? Lsigma_out[0] : 6'b1;
+        assign b_init[0] = mode ? Lb_out[0] : 6'b0;
+    for (gi=1; gi < 4; gi = gi + 1) begin
+        assign sigma_init[gi] = mode ? Lsigma_out[gi] : 6'b0;
+        assign b_init[gi] = mode ? Lb_out[gi] : 6'b0;
     end
 
     // delta, theta init
-    for (gi=0 ; gi<2 ; gi = gi + 1) begin
-        assign delta_init[gi] = delta_init_out[gi];
-        assign theta_init[gi] = theta_init_out[gi];
+    for (gi=0; gi < 2 ; gi = gi + 1) begin
+        assign delta_init[gi] = mode ? delta_init_out[gi] : LO_syn[gi * 2];
+        assign theta_init[gi] = mode ? theta_init_out[gi] : LO_syn[gi * 2 + 1];
     end
 endgenerate
 
@@ -110,8 +115,8 @@ NKES_PE_array_new u_pe_arr_n(
     .clk(clk),
     .rst(rst),
     .start(start),
-    .hold(1'b0),
-    .first_iter(1'b0),
+    .hold(hold),
+    .first_iter(first_iter),
     .mode(mode),
     .pe_cnt(pe_cnt),
 
@@ -142,16 +147,28 @@ NKES_PE_array_new u_pe_arr_n(
 );
 
 always @(*) begin
-    if (state == S_IDLE) cnt_next = start ? cnt + 1 : 0;
-    else cnt_next = (cnt == 3'd5) ? 0 : cnt + 1;
-    valid_pre_next = (cnt == 3'd5) ? 1 : 0;
+    if (state == S_PROC0) valid_pre_next = (cnt == 3'd2) ? 1 : 0;
+    else if (state == S_PROC1) valid_pre_next = (cnt == 3'd5) ? 1 : 0;
+    else if (hold) valid_pre_next = valid_pre;
+    else valid_pre_next = 0;
     valid_next = valid_pre;
 end
 
 always @(*) begin
+    case (state) 
+    S_IDLE:     cnt_next = start ? cnt + 1 : 0;
+    S_PROC0:    cnt_next = (cnt == 3'd2) ? 0 : cnt + 1;
+    S_PROC1:    cnt_next = (cnt == 3'd5) ? 0 : cnt + 1;
+    default:    cnt_next = 0;
+    endcase
+end
+
+always @(*) begin
     case (state)
-    S_IDLE:     state_next = start ? S_PROC : S_IDLE;
-    S_PROC:     state_next = (cnt == 3'd5) ? S_IDLE : S_PROC;
+    S_IDLE:     state_next = start ? (mode ? S_PROC1 : S_PROC0) : S_IDLE;
+    S_PROC0:    state_next = (cnt == 3'd2) ? S_IDLE : S_PROC0;
+    S_PROC1:    state_next = (cnt == 3'd5) ? S_IDLE : S_PROC1;
+    default:    state_next = S_IDLE;
     endcase
 end
 

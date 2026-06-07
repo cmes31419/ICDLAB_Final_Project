@@ -4,6 +4,7 @@ module NKES_new(
 
     input syn_rdy,  // high order syndrome ready
     input [5:0] HO_syn[1:0],
+    input [5:0] LO_syn[3:0],
 
     input forward,
     input sel_idx,
@@ -113,13 +114,14 @@ state_buff_new u_state_buff_n(
 NKES_core_new u_core_n(
     .clk(clk),
     .rst(rst),
-    .mode(1'b1),
     .start(start),
+    .hold(1'b0),
+    .first_iter(1'b0),
+    .mode(1'b1),
 
     .gamma_time(gamma_time),
     .dis_time(dis_time),
     .branch_time(branch_time),
-
     .gamma_out(gamma_out),
     .dis_out(dis_out),
     .branch_out(branch_out),
@@ -129,6 +131,7 @@ NKES_core_new u_core_n(
     .Ldelta_even_out(Ldelta_even_out),
     .Ltheta_even_out(Ltheta_even_out),
 
+    .LO_syn(LO_syn),
     .HO_syn(HO_syn),
 
     .pe_cnt(pe_cnt),
