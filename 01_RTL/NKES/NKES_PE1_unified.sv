@@ -1,13 +1,13 @@
 module NKES_PE1_unified(
-    input clk,
-    input rst,
-    input start,
-    input hold,
-    input mode,
+    input       clk,
+    input       rst,
+    input       start,
+    input       hold,
+    input       mode,
     
     input [5:0] gamma,
     input [5:0] discrepancy,
-    input branch,
+    input       branch,
 
     input [5:0] delta_init,
     input [5:0] theta_init,
@@ -18,8 +18,10 @@ module NKES_PE1_unified(
     input [5:0] b_even, b_odd,
 
     output [5:0] delta_poly_pre_out,
-    output [5:0] delta_poly_out, delta_delay_out,
-    output [5:0] theta_poly_out, theta_delay_out
+    output [5:0] delta_poly_out,
+    output [5:0] theta_poly_out,
+    output [5:0] delta_delay_out,
+    output [5:0] theta_delay_out
 );
 
 reg [5:0] delta_poly, delta_poly_next, theta_poly, theta_poly_next;

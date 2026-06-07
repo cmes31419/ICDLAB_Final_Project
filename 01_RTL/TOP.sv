@@ -134,8 +134,9 @@ module TOP (
         .cnt(syn_cnt),
         .idata(idata),
         .ivalid(ivalid & iready),
+        .sget(1'b1),
         .S(LO_syn),
-        .sdone(sdone)
+        .valid(sdone)
     );
 
     BM bm0(
@@ -260,6 +261,7 @@ module TOP (
         .rst(rst),
         .start(nsu_start),
         .start_new(nsu_start_new),
+        .nsget(1'b1),
         .r0(ndata[0]),
         .r1(ndata[1]),
         .r2(ndata[2]),

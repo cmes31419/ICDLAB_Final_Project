@@ -4,31 +4,26 @@ module syndrome(
     input [2:0]         cnt,
     input [7:0]         idata,
     input               ivalid,
+    input               sget,
     output reg [5:0]    S[3:0],
-    output reg          sdone
+    output reg          valid
 );
 
     reg [5:0]   syn[1:0], syn_next[1:0];
-    reg         sdone_next;
+    reg [5:0]   syn_tmp[1:0], syn_tmp_next[1:0];
+    reg         done, done_next;
 
-    wire [5:0]  syn_now[1:0], syn_rot[1:0];
+    wire [5:0]  syn_rot[1:0];
     wire [7:0]  data;
 
     integer i;
 
-    genvar gi;
-
+    assign valid = done;
     assign data = (cnt == 0) ? {1'b0, idata[6:0]} : idata;
-
-    generate
-        for (gi=0;gi<2;gi=gi+1) begin
-            assign syn_now[gi] = (cnt == 0) ? 0 : syn[gi];
-        end
-    endgenerate
 
     syndrome_rotate_add sr0(
         .data(data),
-        .syn(syn_now),
+        .syn(syn_tmp),
         .syn_rot(syn_rot)
     );
 
@@ -39,26 +34,30 @@ module syndrome(
 
     always @(*) begin
         for (i=0;i<2;i=i+1) begin
-            syn_next[i] = ivalid ? syn_rot[i] : syn[i];
+            syn_tmp_next[i] = ivalid ? ((cnt == 7) ? 0 : syn_rot[i]) : syn_tmp[i];
+            syn_next[i] = (ivalid && cnt == 7) ? syn_rot[i] : syn[i];
         end
     end
 
     always @(*) begin
-        if (ivalid & cnt == 7) sdone_next = 1;
-        else sdone_next = 0;
+        if (ivalid && cnt == 7) done_next = 1;
+        else if (sget) done_next = 0;
+        else done_next = done;
     end
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            sdone   <= 0;
+            done    <= 0;
             for (i=0;i<2;i=i+1) begin
-                syn[i]  <= 0;
+                syn[i]      <= 0;
+                syn_tmp[i]  <= 0;
             end
         end
         else begin
-            sdone   <= sdone_next;
+            done    <= done_next;
             for (i=0;i<2;i=i+1) begin
-                syn[i]  <= syn_next[i];
+                syn[i]      <= syn_next[i];
+                syn_tmp[i]  <= syn_tmp_next[i];
             end
         end
     end

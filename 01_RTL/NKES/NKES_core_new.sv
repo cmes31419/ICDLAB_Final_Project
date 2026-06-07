@@ -45,7 +45,7 @@ reg [5:0]   sigma_poly_out_rec[3:0];
 wire [5:0]  delta_even_in[1:0], theta_even_in[1:0], sigma_even_in[1:0], b_even_in[1:0];
 wire [5:0]  delta_init[1:0], theta_init[1:0], sigma_init[3:0], b_init[3:0];
 wire [5:0]  delta_delay_out[1:0], theta_delay_out[1:0], sigma_delay_out[3:0], b_delay_out[3:0];
-wire [5:0]  delta_poly[1:0], theta_poly[1:0], sigma_poly_out[3:0], b_poly_out[3:0];
+wire [5:0]  delta_poly_out[1:0], theta_poly_out[1:0], sigma_poly_out[3:0], b_poly_out[3:0];
 wire [5:0]  delta_init_out[1:0], theta_init_out[1:0];
 
 integer i;
@@ -53,7 +53,7 @@ integer i;
 genvar gi;
 
 assign pe_cnt = cnt[0];
-assign discrepancy = pe_cnt ? delta_poly_0_rec : delta_poly[0];
+assign discrepancy = pe_cnt ? delta_poly_0_rec : delta_poly_out[0];
 assign sigma_done_pre = valid_pre;
 assign sigma_done = valid;
 
@@ -70,8 +70,8 @@ generate
         assign Nb[gi] = b_poly_out[gi];
     end
     for (gi = 0; gi < 2; gi = gi + 1) begin
-        assign Ndelta_even[gi] = delta_poly[gi];
-        assign Ntheta_even[gi] = theta_poly[gi];
+        assign Ndelta_even[gi] = delta_poly_out[gi];
+        assign Ntheta_even[gi] = theta_poly_out[gi];
     end
     
     // to precompute unit
@@ -109,14 +109,15 @@ precompute_unit_new u_PU_n(
 NKES_PE_array_new u_pe_arr_n(
     .clk(clk),
     .rst(rst),
+    .start(start),
+    .hold(1'b0),
+    .first_iter(1'b0),
     .mode(mode),
     .pe_cnt(pe_cnt),
-    .start(start),
 
     .gamma_time(gamma_time),
     .dis_time(dis_time),
     .branch_time(branch_time),
-
     .gamma_out(gamma_out),
     .dis_out(dis_out),
     .branch_out(branch_out),
@@ -124,18 +125,18 @@ NKES_PE_array_new u_pe_arr_n(
     .Hsyn_even(HO_syn[1]),
     .Hsyn_odd(HO_syn[0]), 
 
-    .delta_init(delta_init),
-    .theta_init(theta_init),
     .sigma_init(sigma_init),
     .b_init(b_init),
+    .delta_init(delta_init),
+    .theta_init(theta_init),
 
     .sigma_poly_out(sigma_poly_out),
-    .sigma_delay_out(sigma_delay_out),
     .b_poly_out(b_poly_out),
+    .delta_poly_out(delta_poly_out),
+    .theta_poly_out(theta_poly_out),
+    
+    .sigma_delay_out(sigma_delay_out),
     .b_delay_out(b_delay_out),
-
-    .delta_poly(delta_poly),
-    .theta_poly(theta_poly),
     .delta_delay_out(delta_delay_out),
     .theta_delay_out(theta_delay_out)
 );
@@ -161,7 +162,7 @@ always @(posedge clk or posedge rst) begin
         valid_pre           <= 0;
         valid               <= 0;
         delta_poly_0_rec    <= 0;
-        for (i=0;i<4;i=i+1) begin
+        for (i = 0; i < 4; i = i + 1) begin
             sigma_poly_out_rec[i]   <= 0;
         end
     end
@@ -170,8 +171,8 @@ always @(posedge clk or posedge rst) begin
         cnt                 <= cnt_next;
         valid_pre           <= valid_pre_next;
         valid               <= valid_next;
-        delta_poly_0_rec    <= delta_poly[0];
-        for (i=0;i<4;i=i+1) begin
+        delta_poly_0_rec    <= delta_poly_out[0];
+        for (i = 0; i < 4; i = i + 1) begin
             sigma_poly_out_rec[i]   <= sigma_poly_out[i];
         end
     end

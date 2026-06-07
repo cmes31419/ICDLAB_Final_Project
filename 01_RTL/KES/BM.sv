@@ -16,15 +16,29 @@ module BM(
     output [1:0] k_out
 );
 
-
-wire [5:0] b_poly0;
 wire [5:0] gamma, discrepancy;
-wire branch, first_iter;
-wire start, hold;
-wire [5:0] delta_poly2, delta_poly3;
+wire       branch, first_iter;
+wire       start, hold;
 
-assign delta_even_out[0] = discrepancy;
-assign delta_even_out[1] = delta_poly2;
+wire [5:0] sigma_init[3:0], b_init[3:0];
+wire [5:0] delta_init[1:0], theta_init[1:0];
+
+genvar gi;
+
+generate
+    assign sigma_init[0] = 6'b1;
+    assign b_init[0] = 6'b0;
+    for (gi = 1; gi < 4; gi = gi + 1) begin
+        assign sigma_init[gi] = 6'b0;
+        assign b_init[gi] = 6'b0;
+    end
+    for (gi = 0; gi < 2; gi = gi + 1) begin
+        assign delta_init[gi] = LO_syndrome[gi * 2];
+        assign theta_init[gi] = LO_syndrome[gi * 2 + 1];
+    end
+endgenerate
+
+assign discrepancy = delta_even_out[0];
 assign gamma_out = gamma;
 assign sigma_fail = sigma_done && (|sigma_out[3]);
 
@@ -36,93 +50,40 @@ BM_control bm_ctrl( .clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .discrepa
     .first_iter(first_iter), .branch(branch), .sigma_done(sigma_done)
 );
 
+NKES_PE_array_new u_pe_arr_n(
+    .clk(clk),
+    .rst(rst),
+    .start(start),
+    .hold(hold),
+    .first_iter(first_iter),
+    .mode(1'b0),
+    .pe_cnt(1'b0),
 
-// ============ PE0 array ==============
-NKES_PE0_unified u_PE00(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(1'b0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
-    .H_syn(6'b0),
-    .b_poly_in(6'b0),
-    .sigma_init(6'b1),
-    .b_init(6'b0),
+    .gamma_time(gamma),
+    .dis_time(discrepancy),
+    .branch_time(branch),
+    .gamma_out(gamma),
+    .dis_out(discrepancy),
+    .branch_out(branch),
 
-    .sigma_syn(),
-    .b_syn(),
-    .b_poly_out(b_out[0]),
-    .sigma_poly_out(sigma_out[0]),
+    .Hsyn_even(6'b0),
+    .Hsyn_odd(6'b0), 
+
+    .sigma_init(sigma_init),
+    .b_init(b_init),
+    .delta_init(delta_init),
+    .theta_init(theta_init),
+
+    .sigma_poly_out(sigma_out),
+    .b_poly_out(b_out),
+    .delta_poly_out(delta_even_out),
+    .theta_poly_out(theta_even_out),
+    
     .sigma_delay_out(),
-    .b_delay_out()
-);
-
-NKES_PE0_unified u_PE01(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(1'b0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
-    .H_syn(6'b0),
-    .b_poly_in(first_iter? 6'b1 : 6'b0),
-    .sigma_init(6'b0),
-    .b_init(6'b0),
-
-    .sigma_syn(),
-    .b_syn(),
-    .b_poly_out(b_out[1]),
-    .sigma_poly_out(sigma_out[1]),
-    .sigma_delay_out(),
-    .b_delay_out()
-);
-
-NKES_PE0_unified u_PE02(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(1'b0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
-    .H_syn(6'b0),
-    .b_poly_in(b_out[0]),
-    .sigma_init(6'b0),
-    .b_init(6'b0),
-
-    .sigma_syn(),
-    .b_syn(),
-    .b_poly_out(b_out[2]),
-    .sigma_poly_out(sigma_out[2]),
-    .sigma_delay_out(),
-    .b_delay_out()
-);
-
-BM_PE0 u_PE03(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
-    .start(start), .hold(hold),
-    .sigma_init(6'b0),
-    .b_poly_in(b_out[1]),
-
-    .b_poly_out(b_out[3]),
-    .sigma_poly_out(sigma_out[3])
-);
-
-
-// ============ PE1 array ==============
-NKES_PE1_unified u_PE10(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(1'b0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
-    .delta_init(LO_syndrome[0]),
-    .theta_init(LO_syndrome[1]),
-    .delta_poly_in(delta_poly2),
-    .nested_delta_poly_in(delta_poly2),
-
-    .sigma_even(6'b0), .sigma_odd(6'b0),
-    .b_even(6'b0), .b_odd(6'b0),
-
-    .delta_poly_pre_out(),
-    .delta_poly_out(discrepancy),
-    .theta_poly_out(theta_even_out[0]),
+    .b_delay_out(),
     .delta_delay_out(),
     .theta_delay_out()
 );
-
-NKES_PE1_unified u_PE12(.clk(clk), .rst(rst), .start(start), .hold(hold), .mode(1'b0), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
-    .delta_init(LO_syndrome[2]),
-    .theta_init(LO_syndrome[3]),
-    .delta_poly_in(6'b0),
-    .nested_delta_poly_in(6'b0),
-
-    .sigma_even(6'b0), .sigma_odd(6'b0),
-    .b_even(6'b0), .b_odd(6'b0),
-
-    .delta_poly_pre_out(),
-    .delta_poly_out(delta_poly2),
-    .theta_poly_out(theta_even_out[1]),
-    .delta_delay_out(),
-    .theta_delay_out()
-);
-
 
 endmodule
 
