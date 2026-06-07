@@ -43,11 +43,11 @@ module NKES_ctrl_new(
 
     assign gamma_time = gamma_rec;
     assign dis_time = dis_rec;
-    assign branch_time = |dis_rec && (k_rec <= 4'd0);
+    assign branch_time = |dis_rec && ($signed(k_rec) <= $signed(4'd0));
 
     assign gamma_out = gamma;
     assign dis_out = dis_in;
-    assign branch_out = |dis_in && (k <= 4'd0);
+    assign branch_out = |dis_in && ($signed(k) <= $signed(4'd0));
     assign k_out = k[2:0];
 
     always @(*) begin
@@ -84,7 +84,7 @@ module NKES_ctrl_new(
             k_delay     <= 4'b0;
             gamma_rec   <= 6'b0;
             k_rec       <= 4'b0;
-            dis_rec    <= 6'b0;
+            dis_rec     <= 6'b0;
         end
         else begin
             state       <= state_next;

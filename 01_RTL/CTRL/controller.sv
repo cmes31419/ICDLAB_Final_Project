@@ -41,13 +41,13 @@ module controller(
     localparam S_START2     = 4'd6;
     localparam S_STAGE2     = 4'd7;
     localparam S_KILL       = 4'd8;
-    localparam S_WAIT0      = 4'd9;
-    localparam S_WAIT1      = 4'd10;
-    localparam S_WAIT2      = 4'd11;
-    localparam S_WAIT3      = 4'd12;
-    localparam S_WAIT4      = 4'd13;
-    localparam S_WAIT5      = 4'd14;
-    localparam S_WAIT6      = 4'd15;
+    // localparam S_WAIT0      = 4'd9;
+    // localparam S_WAIT1      = 4'd10;
+    // localparam S_WAIT2      = 4'd11;
+    // localparam S_WAIT3      = 4'd12;
+    // localparam S_WAIT4      = 4'd13;
+    // localparam S_WAIT5      = 4'd14;
+    // localparam S_WAIT6      = 4'd15;
 
     reg [6:0]   icnt, icnt_next;    // input byte counter with wrap bit
     reg [6:0]   ocnt, ocnt_next;    // output byte counter with wrap bit
@@ -91,8 +91,8 @@ module controller(
     assign nsu_undecoded_idx_1 = npos1;
     assign nsu_undecoded_idx_2 = npos2;
     assign nsu_stage2_match_idx = (npos == npos2) ? 1 : 0;
-    assign nsu_sel_idx = (nstate == S_START1B || nstate == S_STAGE1B || nstate >= 4'd9) ? 1 : 0;
-    // assign nsu_sel_idx = (nstate == S_START1B || nstate == S_STAGE1B) ? 1 : 0;
+    // assign nsu_sel_idx = (nstate == S_START1B || nstate == S_STAGE1B || nstate >= 4'd9) ? 1 : 0;
+    assign nsu_sel_idx = (nstate == S_START1B || nstate == S_STAGE1B) ? 1 : 0;
 
     // FIFO-style full check
     assign iready = ((icnt[6] != ocnt[6] && icnt[5:3] == ocnt[5:3]) || (icnt[6] != ncnt[1] && icnt[5] == ncnt[0])) ? 0 : 1;
@@ -171,15 +171,15 @@ module controller(
         S_START1A:  nstate_next = S_STAGE1A;
         S_STAGE1A:  nstate_next = nested_cdone ? (b ? S_START1B : S_CHECK) : S_STAGE1A;
         S_START1B:  nstate_next = S_STAGE1B;
-        // S_STAGE1B:  nstate_next = nested_cdone ? S_CHECK : S_STAGE1B;
-        S_STAGE1B:  nstate_next = nested_cdone ? S_WAIT0 : S_STAGE1B;
-        S_WAIT0:    nstate_next = S_WAIT1;
-        S_WAIT1:    nstate_next = S_WAIT2;
-        S_WAIT2:    nstate_next = S_WAIT3;
-        S_WAIT3:    nstate_next = S_WAIT4;
-        S_WAIT4:    nstate_next = S_WAIT5;
-        S_WAIT5:    nstate_next = S_WAIT6;
-        S_WAIT6:    nstate_next = S_CHECK;
+        S_STAGE1B:  nstate_next = nested_cdone ? S_CHECK : S_STAGE1B;
+        // S_STAGE1B:  nstate_next = nested_cdone ? S_WAIT0 : S_STAGE1B;
+        // S_WAIT0:    nstate_next = S_WAIT1;
+        // S_WAIT1:    nstate_next = S_WAIT2;
+        // S_WAIT2:    nstate_next = S_WAIT3;
+        // S_WAIT3:    nstate_next = S_WAIT4;
+        // S_WAIT4:    nstate_next = S_WAIT5;
+        // S_WAIT5:    nstate_next = S_WAIT6;
+        // S_WAIT6:    nstate_next = S_CHECK;
         S_CHECK: begin
             if (npending == 3'd1) nstate_next = S_START2;
             else nstate_next = S_KILL;

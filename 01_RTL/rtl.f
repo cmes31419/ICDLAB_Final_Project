@@ -52,6 +52,8 @@ TOP.sv
 
 // CS
 ./CS/chien_search.sv
+./CS/chien_search_new.sv
 ./CS/chien_checker.sv
+./CS/chien_checker_new.sv
 ./CS/chien_rotate.sv
 ./CS/sigmaV.sv
