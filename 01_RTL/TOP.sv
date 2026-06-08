@@ -13,9 +13,8 @@ module TOP (
 
     wire [2:0]  caddr;
     wire [62:0] cdata;
-    wire        cdone, cfail, cget;
-    // wire [62:0] nested_cdata;
-    wire        nested_cdone, nested_cfail, nested_cget;
+    wire        cdone, cfail;
+    wire        nested_cdone, nested_cfail;
 
     wire [2:0]  naddr;
     wire [62:0] ndata[3:0];
@@ -23,66 +22,41 @@ module TOP (
     wire [3:0]  nflag;
     wire        nkill;
 
-    wire [2:0]  cwaddr;
-    wire        cwen;
-
     wire        forward;
     wire        late_cdone;
-    wire        sdone;
     wire        Lsel_syn, Lwen_syn, Lwen_syn0, Lwen_syn1;
     wire        Lsel_kes, Lwen_kes;
-    wire        Nwen;
-    wire [6:0]  Ndata_nsu;
-    wire        Nsel_nsu, Nwen_nsu;
-
-    wire [2:0]  syn_cnt;
-    wire [5:0]  LO_syn[3:0];
-    wire        LKES_done, NKES_done, LKES_fail;
-    wire [5:0]  cs_sigma_in[6:0], LKES_sigma_out[3:0], NKES_sigma_out[6:0];
-
-    wire        LO_syn_get, HO_syn_get;
-    wire        LKES_done_new, LKES_fail_new, NKES_done_new;
-    wire [5:0]  NKES_sigma_out_new[6:0];
-
+    wire        Nwen, Nsel_nsu, Nwen_nsu;
     wire        nsu_start0, nsu_start1;
     wire        nsu_b, nsu_stage_flag;
     wire [1:0]  nsu_undecoded_idx_1, nsu_undecoded_idx_2;
     wire        nsu_stage2_match_idx, nsu_sel_idx;
 
-    wire [5:0]  LKES_b_out[3:0], LKES_delta_even_out[1:0], LKES_theta_even_out[1:0], LKES_gamma_out;
-    wire [1:0]  LKES_k_out;
-    wire [5:0]  HO_syn[1:0];
-    wire        syn_rdy;
+    wire [2:0]  cwaddr;
+    wire        cwen;
 
-    wire [5:0]  HO_syn_new[1:0];
-    wire        syn_rdy_new;
+    wire [2:0]  syn_cnt;
+    wire [5:0]  Ndata_nsu;
+    wire [5:0]  LO_syn[3:0], HO_syn[1:0];
+    wire        LO_syn_rdy, HO_syn_rdy;
+    wire        LO_syn_get, HO_syn_get;
+    wire        LKES_done, LKES_fail, NKES_done;
+    wire [5:0]  LKES_sigma_out[3:0], NKES_sigma_out[6:0];
 
     assign cwen = (cdone & ~cfail) | (nested_cdone & ~nested_cfail);
     assign cwaddr = (cdone & ~cfail) ? caddr : naddr;
 
-    assign Lwen_syn0 = Lwen_syn & sdone & LO_syn_get;
-    assign Lwen_syn1 = Lwen_syn & (cdone | LKES_fail_new) & ~late_cdone;
-
-    // temporaily set to only LKES
-    genvar gi;
-
-    generate
-        for (gi=0;gi<3;gi=gi+1) begin
-            assign cs_sigma_in[gi] = LKES_sigma_out[gi];
-        end
-        for (gi=3;gi<7;gi=gi+1) begin
-            assign cs_sigma_in[gi] = 0;
-        end
-    endgenerate
+    assign Lwen_syn0 = Lwen_syn & LO_syn_rdy & LO_syn_get;
+    assign Lwen_syn1 = Lwen_syn & (cdone | LKES_fail) & ~late_cdone;
 
     controller ctrl0(
         .clk(clk),
         .rst(rst),
         .ivalid(ivalid & iready),
         .ovalid(ovalid),
-        .sdone(sdone & LO_syn_get),
-        .LKES_done(LKES_done_new),
-        .LKES_fail(LKES_fail_new),
+        .sdone(LO_syn_rdy & LO_syn_get),
+        .LKES_done(LKES_done),
+        .LKES_fail(LKES_fail),
         .cdone(cdone),
         .cfail(cfail),
         .nflag(nflag),
@@ -130,7 +104,7 @@ module TOP (
         .cdata(cdata),
         .cwen(cwen),
         .naddr(naddr[2]),
-        .nkill(nkill),  // TODO: replace with final nested-decoding done signal
+        .nkill(nkill),
         .nflag(nflag),
         .ndata(ndata),
         .nsyn(nsyn),
@@ -147,7 +121,7 @@ module TOP (
         .ivalid(ivalid & iready),
         .sget(LO_syn_get),
         .S(LO_syn),
-        .valid(sdone)
+        .valid(LO_syn_rdy)
     );
 
     HSU_top hsu_n0(
@@ -175,9 +149,9 @@ module TOP (
         .Syndrome_3_i1(nsyn[1][5:0]), 
         .Syndrome_4_i1(nsyn[1][11:6]),
 
-        .syn_rdy(syn_rdy_new),
-        .S_out_ch1(HO_syn_new[0]),
-        .S_out_ch2(HO_syn_new[1]),
+        .syn_rdy(HO_syn_rdy),
+        .S_out_ch1(HO_syn[0]),
+        .S_out_ch2(HO_syn[1]),
         .Ndata(Ndata_nsu),
         .Nsel(Nsel_nsu),
         .Nwen(Nwen_nsu)
@@ -186,10 +160,10 @@ module TOP (
     NKES nkes_n0(
         .clk(clk),
         .rst(rst),
-        .LO_syn_rdy(sdone),
+        .LO_syn_rdy(LO_syn_rdy),
         .LO_syn(LO_syn),
-        .HO_syn_rdy(syn_rdy_new),
-        .HO_syn(HO_syn_new),
+        .HO_syn_rdy(HO_syn_rdy),
+        .HO_syn(HO_syn),
 
         .forward(forward),
         .sel_idx(nsu_sel_idx),
@@ -199,24 +173,22 @@ module TOP (
     
         .LO_syn_get(LO_syn_get),
         .HO_syn_get(HO_syn_get),
-        .Lsigma_done(LKES_done_new),
-        .Lsigma_fail(LKES_fail_new),
-        .Nsigma_done(NKES_done_new),
-        .sigma(NKES_sigma_out_new)
+        .Lsigma_done(LKES_done),
+        .Lsigma_fail(LKES_fail),
+        .Nsigma_done(NKES_done),
+        .sigma(NKES_sigma_out)
     );
 
     chien_search cs0(
         .clk(clk),
         .rst(rst),
-        .sigma(NKES_sigma_out_new),
-        .sigma_valid(LKES_done_new & ~LKES_fail_new),
-        .nested_sigma(NKES_sigma_out_new),
-        .nested_sigma_valid(NKES_done_new),
+        .sigma(NKES_sigma_out),
+        .sigma_valid(LKES_done & ~LKES_fail),
+        .nested_sigma(NKES_sigma_out),
+        .nested_sigma_valid(NKES_done),
         .cdata(cdata),
-        .cget(),
         .cdone(cdone),
         .cfail(cfail),
-        .nested_cget(),
         .nested_cdone(nested_cdone),
         .nested_cfail(nested_cfail)
     );

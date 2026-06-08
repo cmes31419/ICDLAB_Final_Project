@@ -24,7 +24,7 @@ module HSU_top (
     output reg         syn_rdy,                            // Signal to indicate that the syndrome outputs are ready
     output reg  [5:0]  S_out_ch1, S_out_ch2,
 
-    output [6:0]       Ndata,
+    output [5:0]       Ndata,
     output             Nsel,
     output             Nwen
 );

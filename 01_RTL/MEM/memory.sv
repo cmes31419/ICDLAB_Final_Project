@@ -12,7 +12,7 @@ module memory(
     input           Lswen0,
     input           Lswen1,
     // nested syndrome interface
-    input [6:0]     Nsdata,
+    input [5:0]     Nsdata,
     input           Nssel,
     input           Nswen,
     // Chien search correction interface

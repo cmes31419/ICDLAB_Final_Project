@@ -6,10 +6,8 @@ module chien_search(
     input [5:0]     nested_sigma[6:0],
     input           nested_sigma_valid,
     output [62:0]   cdata,
-    output          cget,
     output          cdone,
     output          cfail,
-    output          nested_cget,
     output          nested_cdone,
     output          nested_cfail
 );
@@ -24,6 +22,8 @@ module chien_search(
     wire [5:0]  sigma_rot[6:0];
     wire [5:0]  sigma_V[31:0];
     wire        start;
+
+    wire        cget, nested_cget;
 
     integer i;
 
