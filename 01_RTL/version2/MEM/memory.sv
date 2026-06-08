@@ -28,11 +28,15 @@ module memory(
     // output read interface
     input [5:0]     oaddr,
     output [7:0]    odata,
-    output          ovalid
+    output          ovalid,
+    output          ovalid_pre
 );
 
     reg [63:0]  data[1:0][3:0], data_next[1:0][3:0];  // bit 63: fail flag, bits 62:0: codeword
     reg         done[1:0][3:0], done_next[1:0][3:0];  // decoding done flag
+
+    reg [7:0]   data_out, data_out_next;
+    reg         valid_out, valid_out_next;
 
     reg [11:0]  syn_tmp, syn_tmp_next;
     reg [11:0]  syn[1:0][1:0], syn_next[1:0][1:0];    // buffered S3 and S4 for 2 undecoded sub-codewords
@@ -42,8 +46,9 @@ module memory(
 
     genvar gi;
 
-    assign odata = data[oaddr[5]][oaddr[4:3]][oaddr[2:0]*8+:8];
-    assign ovalid = done[oaddr[5]][oaddr[4:3]];
+    assign odata = data_out;
+    assign ovalid = valid_out;
+    assign ovalid_pre = valid_out_next;
 
     assign nflag = {~done[naddr][3], ~done[naddr][2], ~done[naddr][1], ~done[naddr][0]};
 
@@ -55,6 +60,11 @@ module memory(
             assign nsyn[gi] = syn[0][gi];
         end
     endgenerate
+
+    always @(*) begin
+        data_out_next = data[oaddr[5]][oaddr[4:3]][oaddr[2:0]*8+:8];
+        valid_out_next = done[oaddr[5]][oaddr[4:3]];
+    end
 
     always @(*) begin
         for (h=0;h<2;h=h+1) begin
@@ -110,7 +120,9 @@ module memory(
                     syn[h][i]  <= 0;
                 end
             end
-            syn_tmp <= 0;
+            data_out    <= 0;
+            valid_out   <= 0;
+            syn_tmp     <= 0;
         end
         else begin
             for (h=0;h<2;h=h+1) begin
@@ -122,7 +134,9 @@ module memory(
                     syn[h][i]  <= syn_next[h][i];
                 end
             end
-            syn_tmp <= syn_tmp_next;
+            data_out    <= data_out_next;
+            valid_out   <= valid_out_next;
+            syn_tmp     <= syn_tmp_next;
         end
     end
 

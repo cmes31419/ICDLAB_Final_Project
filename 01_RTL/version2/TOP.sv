@@ -10,6 +10,7 @@ module TOP (
 
     wire [5:0]  iaddr;
     wire [5:0]  oaddr;
+    wire        ovalid_pre;
 
     wire [2:0]  caddr;
     wire [62:0] cdata;
@@ -53,7 +54,7 @@ module TOP (
         .clk(clk),
         .rst(rst),
         .ivalid(ivalid & iready),
-        .ovalid(ovalid),
+        .ovalid(ovalid_pre),
         .sdone(LO_syn_rdy & LO_syn_get),
         .LKES_done(LKES_done),
         .LKES_fail(LKES_fail),
@@ -110,7 +111,8 @@ module TOP (
         .nsyn(nsyn),
         .oaddr(oaddr),
         .odata(odata),
-        .ovalid(ovalid)
+        .ovalid(ovalid),
+        .ovalid_pre(ovalid_pre)
     );
 
     syndrome syn0(
