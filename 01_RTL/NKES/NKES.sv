@@ -1,448 +1,164 @@
 module NKES(
-    input clk,
-    input rst,
+    input       clk,
+    input       rst,
 
-    input syn_rdy,  // high order syndrome ready
+    input       LO_syn_rdy,  // low order syndrome ready
+    input [5:0] LO_syn[3:0],
+
+    input       HO_syn_rdy,  // high order syndrome ready
     input [5:0] HO_syn[1:0],
 
-    // from low order riBM
-    input Lstate_rdy, LKES_fail,
-    input cdone, cfail,
-    input [5:0] Lsigma [3:0],
-    input [5:0] Lb [3:0],
-    input [5:0] Ldelta_even [1:0], // delta_even[0] = d0, delta_even[1] = d2
-    input [5:0] Ltheta_even [1:0], // theta_even[0] = t0, theta_even[1] = t2
-    input [5:0] Lgamma,
-    input [1:0] Lk,
+    input       forward,
+    input       sel_idx,
 
-    // high order control
-    input ncget, ncdone, ncfail,
-    input fail_num,
-    input nsu_stage_flag,
+    input       Lwaddr,
 
-    output sigma_done,
+    input       Lwen_ctrl,
+    input       Nwen_ctrl,
+
+    output       LO_syn_get,
+    output       HO_syn_get,
+    output       Lsigma_done,
+    output       Lsigma_fail,
+    output       Nsigma_done,
     output [5:0] sigma[6:0]
 );
-wire write_en, write_idx, read_idx;
-wire write_syn_en, write_syn_idx, read_syn_idx;
-wire [5:0] syn_buff_out;
 
-wire [5:0] Lsigma_out [3:0], Lb_out [3:0], Ldelta_even_out [1:0], Ltheta_even_out [1:0], Lgamma_out;
-wire [1:0] Lk_out;
+wire [5:0]  Lsigma_out[3:0], Lb_out[3:0], Ldelta_even_out[1:0], Ltheta_even_out[1:0], Lgamma_out;
+wire [3:0]  Lk_out;
 
-wire start, hold;
-wire [5:0] delta_even_in[2:0], theta_even_in[2:0], sigma_even_in[2:0], b_even_in[2:0];
-wire [5:0] delta_init[2:0], theta_init[2:0], delta_init_out[2:0], theta_init_out[2:0];
+wire [5:0]  sigma_poly_out[3:0], b_poly_out[3:0], delta_poly_out[1:0], theta_poly_out[1:0];
 
-wire [5:0] sigma_init[7:0], b_init[7:0];
-wire [5:0] delta_poly[3:0], theta_poly[3:0];
-wire [5:0] delta_delay_out[3:0], theta_delay_out[3:0];
-wire [5:0] sigma_even[3:0], sigma_odd[3:0], b_even[2:0], b_odd[2:0];
-wire [5:0] b_poly_out[5:0];
-wire [5:0] sigma_delay_out[7:0], b_delay_out[7:0];
-wire [5:0] Hsyn_odd, Hsyn_even;
-wire last_iter, store_from_PE, fail_init;
-wire re_init;
+wire        start, mode, mode_init, pe_cnt, first_iter;
+wire        Lwen, Nwen0, Nwen1;
 
-wire [5:0] discrepancy_in;
+wire [5:0]  sigma_poly_out_rec[3:0];
 
-wire [5:0] gamma_out, discrepancy_out;
-wire branch_out;
+wire [5:0]  gamma_time;
+wire [5:0]  dis_time;
+wire        branch_time;
+wire [5:0]  gamma_out;
+wire [5:0]  dis_out;
+wire        branch_out;
+wire [2:0]  k_out;
 
-// retime registers for PE1 array
-wire [5:0] gamma_init;
-wire [1:0] k_init;
-reg [5:0] gamma_time, gamma_time_next, dis_time, dis_time_next;
-reg branch_time, branch_time_next;
+wire [5:0]  discrepancy;
+wire [5:0]  gamma_init;
+wire [3:0]  k_init;
 
-assign Hsyn_even = (last_iter)? 6'b0: HO_syn[0]; 
-assign Hsyn_odd = syn_buff_out;
-
-// =========== retime registers =============
-always @(posedge clk or posedge rst) begin
-    if (rst) begin
-        gamma_time <= 6'b0;
-        dis_time <= 6'b0;
-        branch_time <= 0;
-    end
-    else begin
-        gamma_time <= gamma_time_next;
-        dis_time <= dis_time_next;
-        branch_time <= branch_time_next;
-    end
-end
-
-always @(*) begin 
-    if (start) begin
-        gamma_time_next = 6'b1;
-        dis_time_next = 6'b0;
-        branch_time_next = 1'b0;
-    end
-    else if (hold) begin
-        gamma_time_next = gamma_time;
-        dis_time_next = dis_time;
-        branch_time_next = branch_time; 
-    end
-    else begin
-        gamma_time_next = gamma_out;
-        dis_time_next = discrepancy_out;
-        branch_time_next = branch_out;        
-    end
-end
-
-// ==========================================
-
-// todo: ignore second round nested decoding for now 
 genvar gi;
+
 generate
-    // to precompute unit
-    for (gi = 0; gi < 2; gi = gi + 1) begin
-        assign delta_even_in[gi] = (fail_init)? delta_delay_out[gi] : Ldelta_even_out[gi];
-        assign theta_even_in[gi] = (fail_init)? theta_delay_out[gi] : Ltheta_even_out[gi];
-        assign sigma_even_in[gi] = (fail_init)? sigma_delay_out[gi*2] : Lsigma_out[gi*2];
-        assign b_even_in[gi]     = (fail_init)? b_delay_out[gi*2] : Lb_out[gi*2]; 
+    for (gi = 0; gi < 4; gi = gi + 1) begin
+        assign sigma[gi] = Lwen ? sigma_poly_out[gi] : sigma_poly_out_rec[gi];
     end
-        assign delta_even_in[2] = (fail_init)? delta_delay_out[2] : 6'd0;
-        assign theta_even_in[2] = (fail_init)? theta_delay_out[2] : 6'd0;
-        assign sigma_even_in[2] = (fail_init)? sigma_delay_out[4] : 6'd0;
-        assign b_even_in[2]     = (fail_init)? b_delay_out[4] : 6'd0;
-
-
-    // sigma, b init
-    for (gi=0; gi < 4; gi = gi + 1) begin
-        assign sigma_init[gi] = (store_from_PE)? sigma[gi] : Lsigma_out[gi];
-        assign b_init[gi] = (store_from_PE)? b_poly_out[gi] : Lb_out[gi];
+    for (gi = 4; gi < 7; gi = gi + 1) begin
+        assign sigma[gi] = Lwen ? 6'b0 : sigma_poly_out[gi-4];
     end
-    for (gi=4; gi < 6; gi = gi + 1) begin
-        assign sigma_init[gi] = (store_from_PE)? sigma[gi] : 6'd0;
-        assign b_init[gi] = (store_from_PE)? b_poly_out[gi] : 6'd0;
-    end
-    for (gi=6; gi < 8; gi = gi + 1) begin
-        assign sigma_init[gi] = 6'd0;
-        assign b_init[gi] = 6'd0;
-    end
-
-    // delta, theta init
-    for (gi=0 ; gi<3 ; gi = gi + 1) begin
-        assign delta_init[gi] = (store_from_PE)? delta_poly[gi] : delta_init_out[gi];
-        assign theta_init[gi] = (store_from_PE)? theta_poly[gi] : theta_init_out[gi];
-    end
-
 endgenerate
 
+assign Lsigma_done = Lwen;
+assign Lsigma_fail = Lwen & (|sigma_poly_out[3]);
+assign Nsigma_done = Nwen1;
 
 assign gamma_init = Lgamma_out;
 assign k_init = Lk_out;
 
-precompute_unit u_PU(
-    .delta_even_in(delta_even_in),
-    .theta_even_in(theta_even_in),
-    .sigma_even_in(sigma_even_in),
-    .b_even_in(b_even_in),
-    .Su(HO_syn[0]),
-
-    .delta_init_out(delta_init_out),
-    .theta_init_out(theta_init_out)
-);
-
 NKES_ctrl u_ctrl(
     .clk(clk),
     .rst(rst),
-    .syn_rdy(syn_rdy),
+    .LO_syn_rdy(LO_syn_rdy),
+    .HO_syn_rdy(HO_syn_rdy),
 
-    .read_idx(read_idx),
+    .dis_in(discrepancy),
+    .gamma_init(gamma_init),
+    .k_init(k_init),
 
-    .write_syn_en(write_syn_en),
-    .write_syn_idx(write_syn_idx),
-    .read_syn_idx(read_syn_idx),
-
-    .ncget(ncget), .ncdone(ncdone), .ncfail(ncfail),
-    .fail_num(fail_num),
-    .nsu_stage_flag(nsu_stage_flag),
-
-    .discrepancy_in(delta_poly[0]),
-    .Lgamma_init(gamma_init),
-    .Lk_init(k_init),
-    .gamma_out(gamma_out),
-    .discrepancy_out(discrepancy_out),
-    .branch_out(branch_out),
-    .store_from_PE(store_from_PE),
-    .fail_init(fail_init),
-
-    .last_iter(last_iter),
     .start(start),
-    .hold(hold),
+    .mode(mode),
+    .mode_init(mode_init),
+    .pe_cnt(pe_cnt),
+    .first_iter(first_iter),
+    .LO_syn_get(LO_syn_get),
+    .HO_syn_get(HO_syn_get),
+    .Lwen(Lwen),
+    .Nwen0(Nwen0),
+    .Nwen1(Nwen1),
 
-    .sigma_done(sigma_done)
+    .gamma_time(gamma_time),
+    .dis_time(dis_time),
+    .branch_time(branch_time),
+    .gamma_out(gamma_out),
+    .dis_out(dis_out),
+    .branch_out(branch_out),
+    .k_out(k_out)
 );
 
 state_buff u_state_buff(
     .clk(clk),
     .rst(rst),
 
-    .Lstate_rdy(Lstate_rdy),
-    .LKES_fail(LKES_fail),
-    .cdone(cdone), .cfail(cfail),
-    .read_idx(read_idx),
+    .forward(forward),
+    .pe_cnt(pe_cnt),
 
-    .Lsigma_in(Lsigma),
-    .Lb_in(Lb),
-    .Ldelta_even_in(Ldelta_even),
-    .Ltheta_even_in(Ltheta_even),
-    .Lgamma_in(Lgamma),
-    .Lk_in(Lk),
+    .raddr(sel_idx),
+
+    .Lwaddr(Lwaddr),
+    .Lwen(Lwen & Lwen_ctrl),
+    .Lsigma_in(sigma_poly_out),
+    .Lb_in(b_poly_out),
+    .Ldelta_even_in(delta_poly_out),
+    .Ltheta_even_in(theta_poly_out),
+    .Lgamma_in(gamma_out),
+    .Lk_in(k_out[1:0]),
+
+    .Nwen0(Nwen0 & Nwen_ctrl),
+    .Nwen1(Nwen1 & Nwen_ctrl),
+    .Nsigma_in(sigma_poly_out),
+    .Nb_in(b_poly_out),
+    .Ndelta_even_in(delta_poly_out),
+    .Ntheta_even_in(theta_poly_out),
+    .Ngamma_in(gamma_out),
+    .Nk_in(k_out),
+
+    .sigma_out(Lsigma_out),
+    .b_out(Lb_out),
+    .delta_even_out(Ldelta_even_out),
+    .theta_even_out(Ltheta_even_out),
+    .gamma_out(Lgamma_out),
+    .k_out(Lk_out)
+);
+
+NKES_core u_core(
+    .clk(clk),
+    .rst(rst),
+    .start(start),
+    .first_iter(first_iter),
+    .mode(mode),
+    .mode_init(mode_init),
+    .pe_cnt(pe_cnt),
+
+    .gamma_time(mode ? gamma_time : gamma_out),
+    .dis_time(mode ? dis_time : dis_out),
+    .branch_time(mode ? branch_time : branch_out),
+    .gamma_out(gamma_out),
+    .dis_out(dis_out),
+    .branch_out(branch_out),
 
     .Lsigma_out(Lsigma_out),
     .Lb_out(Lb_out),
     .Ldelta_even_out(Ldelta_even_out),
     .Ltheta_even_out(Ltheta_even_out),
-    .Lgamma_out(Lgamma_out),
-    .Lk_out(Lk_out)
-);
 
-syndrome_buff u_syn_buff(
-    .clk(clk),
-    .rst(rst),
-    .write_en(write_syn_en),
-    .write_idx(write_syn_idx),
-    .syn_in(HO_syn[1]),
+    .LO_syn(LO_syn),
+    .HO_syn(HO_syn),
 
-    .read_idx(read_syn_idx),
-    .syn_out(syn_buff_out)
-);
-
-NKES_PE_array u_pe_arr(
-    .clk(clk),
-    .rst(rst),
-    .start(start),
-    .hold(hold),
-    .fail_init(fail_init),
-
-    .gamma_time(gamma_time),
-    .dis_time(dis_time),
-    .branch_time(branch_time),
-
-    .gamma_out(gamma_out),
-    .discrepancy_out(discrepancy_out),
-    .branch_out(branch_out),
-
-    .Hsyn_odd(Hsyn_odd), 
-    .Hsyn_even(Hsyn_even),
-
-    .delta_init(delta_init),
-    .theta_init(theta_init),
-    .sigma_init(sigma_init),
-    .b_init(b_init),
-
-    .delta_poly(delta_poly),
-    .theta_poly(theta_poly),
-    .delta_delay_out(delta_delay_out),
-    .theta_delay_out(theta_delay_out),
-    
-    .sigma(sigma),
-    .sigma_delay_out(sigma_delay_out),
+    .discrepancy(discrepancy),
+    .sigma_poly_out_rec(sigma_poly_out_rec),
+    .sigma_poly_out(sigma_poly_out),
     .b_poly_out(b_poly_out),
-    .b_delay_out(b_delay_out)
+    .delta_poly_out(delta_poly_out),
+    .theta_poly_out(theta_poly_out)
 );
 
-// NKES_core_new u_core_n(
-//     .clk(clk),
-//     .rst(rst),
-//     .mode(1'b1),
-//     .start(start),
-
-//     .gamma_time(gamma_time),
-//     .dis_time(dis_time),
-//     .branch_time(branch_time),
-
-//     .gamma_out(gamma_out),
-//     .dis_out(discrepancy_out),
-//     .branch_out(branch_out),
-
-//     .Lsigma_out(Lsigma_out),
-//     .Lb_out(Lb_out),
-//     .Ldelta_even_out(Ldelta_even_out),
-//     .Ltheta_even_out(Ltheta_even_out),
-
-//     .HO_syn(HO_syn),
-
-//     .pe_cnt(),
-//     .discrepancy(discrepancy_in),
-//     .sigma_done_pre(),
-//     .sigma_done(),
-//     .sigma(),
-
-//     .Nsigma(),
-//     .Nb(),
-//     .Ndelta_even(),
-//     .Ntheta_even()
-// );
-
-endmodule
-
-
-
-
-module NKES_ctrl(
-    input clk,
-    input rst, 
-    input syn_rdy,  // high order syndrome ready
-
-    output read_idx, 
-
-    output write_syn_en,
-    output write_syn_idx,
-    output read_syn_idx,
-
-    input ncget, ncdone, ncfail,
-    input fail_num,
-    input nsu_stage_flag,
-
-    input [5:0] discrepancy_in,
-    input [5:0] Lgamma_init,
-    input [1:0] Lk_init,
-    output [5:0] gamma_out,
-    output [5:0] discrepancy_out,
-    output branch_out,
-    output store_from_PE,
-    output fail_init,
-
-    output last_iter,
-    output start,
-    output hold,
-
-    // output re_init, // for second round delta and theta init
-    output sigma_done
-);
-
-    // parameter S_STORE0  = 4'd0;
-    // parameter S_STORE1  = 4'd1;
-    // parameter S_CHECK0  = 4'd2;
-    // parameter S_CHECK1  = 4'd3;
-    // parameter S_FULL    = 4'd4;
-
-    parameter S_INIT0   = 4'd0;
-    parameter S_INIT1   = 4'd1; 
-    parameter S_CYC00   = 4'd2;
-    parameter S_CYC01   = 4'd3;
-    parameter S_CYC10   = 4'd4;
-    parameter S_CYC11   = 4'd5;
-    parameter S_WAIT1   = 4'd6;
-    parameter S_CHECK1  = 4'd7;
-    parameter S_FAIL1   = 4'd8;
-    parameter S_WAIT2   = 4'd9;
-    parameter S_CHECK2  = 4'd10;
-    parameter S_CHECK3  = 4'd11;
-    parameter S_FINIT   = 4'd12;
-
-
-    reg [3:0] state, state_next;
-    reg [5:0] gamma, gamma_next, gamma_delay, gamma_delay_next;
-    reg signed [3:0] k, k_next, k_delay, k_delay_next; 
-    wire [3:0] k_init;
-    wire [5:0] gamma_init;
-    wire init;
-
-    assign read_idx = (state == S_INIT1);
-
-    // assign re_init = (state == S_FINIT) && syn_rdy;
-    assign init = ((state == S_INIT0) && syn_rdy) || (state == S_INIT1) 
-    || ((state == S_WAIT1 || state == S_WAIT2) && ncget);
-    assign write_syn_en = (((state == S_INIT0 || state == S_FINIT) && syn_rdy) || state == S_INIT1|| state == S_CYC00 || state == S_CYC01);
-    assign write_syn_idx = (state == S_INIT1 || state == S_CYC01);
-    assign read_syn_idx = (state == S_CYC11 || state == S_CYC01);
-    assign last_iter = (state == S_CYC10 || state == S_CYC11);
-
-    assign store_from_PE = (state == S_WAIT1) || (state == S_WAIT2);
-    assign fail_init = (state == S_FINIT) && syn_rdy;
-
-    assign start = init;
-    assign hold = ((state == S_WAIT1 || state == S_WAIT2) && !ncget) 
-    || (state == S_CHECK1 || state == S_CHECK2 || state == S_CHECK3 || state == S_FAIL1 || state == S_FINIT); 
-    assign gamma_out = gamma;
-    assign discrepancy_out = discrepancy_in;
-    assign branch_out = |discrepancy_in && ($signed(k) <= $signed(2'd0));
-    assign sigma_done = (state == S_WAIT1) || (state >= 4'd8 && state <= 4'd9 && fail_num == 1'b1); 
-
-    assign k_init = (store_from_PE)? k : {{2{Lk_init[1]}}, Lk_init};
-    assign gamma_init = (store_from_PE)? gamma : Lgamma_init;
-
-    // k reg
-    always @(*) begin
-        if (start) begin
-            k_delay_next = k_init; // sign extend 
-       end
-        else if (hold) begin
-            k_delay_next = k_delay;
-        end
-        else begin
-            k_delay_next = (branch_out)? -k : k - 1'b1; 
-        end
-
-        if (hold) k_next = k;
-        else k_next = k_delay;
-    end
-
-    // gamma
-    always @(*) begin        
-        if (start) begin
-            gamma_delay_next = gamma_init;
-        end
-        else if (hold) begin
-            gamma_delay_next = gamma_delay;
-        end
-        else begin
-            gamma_delay_next = (branch_out)? discrepancy_in : gamma; 
-        end
-
-        if (hold) gamma_next = gamma;
-        else gamma_next = gamma_delay;
-    end
-
-    // FSM
-    always @(*) begin
-        case(state) 
-        S_INIT0: state_next = (syn_rdy)? S_INIT1 : state;
-        S_INIT1: state_next = S_CYC00;
-        S_CYC00: state_next = S_CYC01;
-        S_CYC01: state_next = S_CYC10;
-        S_CYC10: state_next = S_CYC11;
-        S_CYC11: state_next = S_WAIT1;
-        S_WAIT1: state_next = (ncget)? S_CHECK1 : S_WAIT1;
-        S_CHECK1: begin
-            state_next = state;
-            if (ncdone) begin
-                case({fail_num, ncfail}) // synopsys parallel_case full_case
-                2'b00: state_next = S_INIT0;
-                2'b01: state_next = (nsu_stage_flag)? S_INIT0 : S_FINIT;
-                2'b10: state_next = S_WAIT2;
-                2'b11: state_next = S_FAIL1;
-                endcase 
-            end
-        end
-        S_FAIL1: state_next = (ncget)? S_CHECK3 : state;
-        S_WAIT2: state_next = (ncget)? S_CHECK2 : state;
-        S_CHECK2: state_next = (ncdone)? ((ncfail)? S_FINIT : S_INIT0) : state;
-        S_CHECK3: state_next = (ncdone)? ((ncfail)? S_INIT0 : S_FINIT): state;
-        S_FINIT: state_next = (syn_rdy)? S_INIT1 : state;
-        default: state_next = state;
-        endcase 
-    end
-
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            state       <= S_INIT0;
-            gamma       <= 6'b0;
-            gamma_delay <= 6'b0;
-            k           <= 4'b0;
-            k_delay     <= 4'b0;
-        end
-        else begin
-            state       <= state_next;
-            gamma       <= gamma_next;
-            gamma_delay <= gamma_delay_next;
-            k           <= k_next;
-            k_delay     <= k_delay_next;
-        end
-    end
 endmodule

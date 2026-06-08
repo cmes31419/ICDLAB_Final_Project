@@ -19,36 +19,23 @@ TOP.sv
 
 // NSU
 ./NSU/Ainv.sv
-./NSU/Ainv_new.sv
 ./NSU/nsu_top.v
 ./NSU/horner_a5.v
 ./NSU/horner_a7.v
 ./NSU/horner_a9.v
 ./NSU/horner_a11.v
 ./NSU/HSU_top.v
-./NSU/HSU_top_new.v
-
-// KES
-./KES/BM.sv
-./KES/BM_PE0.sv
-./KES/BM_PE1.sv
-./KES/gf_mul.sv
 
 // NKES
 ./NKES/NKES.sv
-./NKES/NKES_new.sv
 ./NKES/NKES_PE_array.sv
-./NKES/NKES_PE_array_new.sv
-./NKES/NKES_PE0.sv
-./NKES/NKES_PE1.sv
 ./NKES/NKES_PE0_unified.sv
 ./NKES/NKES_PE1_unified.sv
-./NKES/NKES_core_new.sv
-./NKES/NKES_ctrl_new.sv
+./NKES/NKES_core.sv
+./NKES/NKES_ctrl.sv
 ./NKES/state_buff.sv
-./NKES/state_buff_new.sv
 ./NKES/precompute_unit.sv
-./NKES/syndrome_buff.sv
+./NKES/gf_mul.sv
 
 // CS
 ./CS/chien_search.sv

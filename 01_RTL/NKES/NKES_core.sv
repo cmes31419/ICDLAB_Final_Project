@@ -1,4 +1,4 @@
-module NKES_core_new(
+module NKES_core(
     input               clk,
     input               rst,
     input               start,
@@ -66,7 +66,7 @@ generate
     end
 endgenerate
 
-precompute_unit_new u_PU_n(
+precompute_unit u_PU(
     .delta_even_in(delta_even_in),
     .theta_even_in(theta_even_in),
     .sigma_even_in(sigma_even_in),
@@ -77,7 +77,7 @@ precompute_unit_new u_PU_n(
     .theta_init_out(theta_init_out)
 );
 
-NKES_PE_array_new u_pe_arr_n(
+NKES_PE_array u_pe_arr(
     .clk(clk),
     .rst(rst),
     .start(start),

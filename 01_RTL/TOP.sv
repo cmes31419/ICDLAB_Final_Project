@@ -150,7 +150,7 @@ module TOP (
         .valid(sdone)
     );
 
-    HSU_top_new hsu_n0(
+    HSU_top hsu_n0(
         .clk(clk),
         .rst(rst),
         .start0(nsu_start0),
@@ -183,7 +183,7 @@ module TOP (
         .Nwen(Nwen_nsu)
     );
 
-    NKES_new nkes_n0(
+    NKES nkes_n0(
         .clk(clk),
         .rst(rst),
         .LO_syn_rdy(sdone),

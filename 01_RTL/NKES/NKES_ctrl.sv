@@ -1,4 +1,4 @@
-module NKES_ctrl_new(
+module NKES_ctrl(
     input           clk,
     input           rst, 
     input           LO_syn_rdy,     // low order syndrome ready

@@ -1,215 +1,189 @@
-module state_buff (
-    input clk,
-    input rst,
+module state_buff(
+    input           clk,
+    input           rst,
 
-    input Lstate_rdy, LKES_fail,
-    input cdone, cfail,
-    input read_idx,
+    input           forward,
+    input           pe_cnt,
 
-    input [5:0] Lsigma_in [3:0],
-    input [5:0] Lb_in [3:0],
-    input [5:0] Ldelta_even_in [1:0], // delta_even[0] = d0, delta_even[1] = d2
-    input [5:0] Ltheta_even_in [1:0], // theta_even[0] = t0, theta_even[1] = t2
-    input [5:0] Lgamma_in,
-    input [1:0] Lk_in,
+    input           raddr,
 
-    output [5:0] Lsigma_out [3:0],
-    output [5:0] Lb_out [3:0],
-    output [5:0] Ldelta_even_out [1:0],
-    output [5:0] Ltheta_even_out [1:0],
-    output [5:0] Lgamma_out,
-    output [1:0] Lk_out
+    input           Lwaddr,
+    input           Lwen,
+    input [5:0]     Lsigma_in[3:0],
+    input [5:0]     Lb_in[3:0],
+    input [5:0]     Ldelta_even_in[1:0],    // delta_even[0] = d0, delta_even[1] = d2
+    input [5:0]     Ltheta_even_in[1:0],    // theta_even[0] = t0, theta_even[1] = t2
+    input [5:0]     Lgamma_in,
+    input [1:0]     Lk_in,
+
+    input           Nwen0,
+    input           Nwen1,
+    input [5:0]     Nsigma_in[3:0],
+    input [5:0]     Nb_in[3:0],
+    input [5:0]     Ndelta_even_in[1:0],
+    input [5:0]     Ntheta_even_in[1:0],
+    input [5:0]     Ngamma_in,
+    input [2:0]     Nk_in,
+
+    output [5:0]    sigma_out[3:0],
+    output [5:0]    b_out[3:0],
+    output [5:0]    delta_even_out[1:0],
+    output [5:0]    theta_even_out[1:0],
+    output [5:0]    gamma_out,
+    output [3:0]    k_out
 );
 
+    reg [5:0]   sigma_buff[1:0][1:0][3:0], sigma_buff_next[1:0][1:0][3:0];
+    reg [5:0]   b_buff[1:0][1:0][3:0], b_buff_next[1:0][1:0][3:0];
+    reg [5:0]   delta_buff[1:0][1:0][1:0], delta_buff_next[1:0][1:0][1:0]; // stores only even coeff
+    reg [5:0]   theta_buff[1:0][1:0][1:0], theta_buff_next[1:0][1:0][1:0]; // stores only even coeff
+    reg [5:0]   gamma_buff[1:0][1:0], gamma_buff_next[1:0][1:0];
+    reg [1:0]   k_buff[1:0][1:0], k_buff_next[1:0][1:0];
 
-    reg [5:0] sigma_buff[1:0][3:0], sigma_buff_next[1:0][3:0];
-    reg [5:0] b_buff[1:0][3:0], b_buff_next[1:0][3:0];
-    reg [5:0] delta_buff[1:0][1:0], delta_buff_next[1:0][1:0]; // stores only even coeff
-    reg [5:0] theta_buff[1:0][1:0], theta_buff_next[1:0][1:0]; // stores only even coeff
+    reg [5:0]   sigma_buff_add[1:0], sigma_buff_add_next[1:0];
+    reg [5:0]   b_buff_add[1:0], b_buff_add_next[1:0];
+    reg [5:0]   delta_buff_add, delta_buff_add_next;
+    reg [5:0]   theta_buff_add, theta_buff_add_next;
+    reg         k_buff_add, k_buff_add_next;
 
-    reg [5:0] gamma_buff[1:0], gamma_buff_next[1:0];
-    reg [1:0] k_buff[1:0], k_buff_next[1:0];
+    reg [5:0]   sigma_no_forward[1:0][1:0][3:0];
+    reg [5:0]   b_no_forward[1:0][1:0][3:0];
+    reg [5:0]   delta_no_forward[1:0][1:0][1:0];
+    reg [5:0]   theta_no_forward[1:0][1:0][1:0];
+    reg [5:0]   gamma_no_forward[1:0][1:0];
+    reg [1:0]   k_no_forward[1:0][1:0];
 
-    integer i, j;
+    integer h, i, j;
 
-    // control the write index and enable for the state buffer
-    state_buff_ctrl u_ctrl( 
-        .clk(clk), .rst(rst),
-        .Lstate_rdy(Lstate_rdy),
-        .LKES_fail(LKES_fail),
-        .cdone(cdone), .cfail(cfail),
-
-        .write_idx(write_idx),
-        .write_en(write_en)
-    );
-
-    // output assignment
     genvar gi;
+
+    assign gamma_out = gamma_buff[0][raddr];
+    assign k_out = {1'b0, raddr ? 1'b0 : k_buff_add, k_buff[0][raddr]};
+    assign delta_even_out[0] = pe_cnt ? (raddr ? 6'b0 : delta_buff_add) : delta_buff[0][raddr][0];
+    assign theta_even_out[0] = pe_cnt ? (raddr ? 6'b0 : theta_buff_add) : theta_buff[0][raddr][0];
+    assign delta_even_out[1] = pe_cnt ? 6'b0 : delta_buff[0][raddr][1];
+    assign theta_even_out[1] = pe_cnt ? 6'b0 : theta_buff[0][raddr][1];
+
     generate
-        for (gi = 0; gi < 4; gi = gi + 1) begin
-            assign Lsigma_out[gi] = sigma_buff[read_idx][gi];
-            assign Lb_out[gi] = b_buff[read_idx][gi];
-        end
-
         for (gi = 0; gi < 2; gi = gi + 1) begin
-            assign Ldelta_even_out[gi] = delta_buff[read_idx][gi];
-            assign Ltheta_even_out[gi] = theta_buff[read_idx][gi];
+            assign sigma_out[gi] = pe_cnt ? (raddr ? 6'b0 : sigma_buff_add[gi]) : sigma_buff[0][raddr][gi];
+            assign b_out[gi] = pe_cnt ? (raddr ? 6'b0 : b_buff_add[gi]) : b_buff[0][raddr][gi];
         end
-
-        assign Lgamma_out = gamma_buff[read_idx];
-        assign Lk_out = k_buff[read_idx]; 
+        for (gi = 2; gi < 4; gi = gi + 1) begin
+            assign sigma_out[gi] = pe_cnt ? 6'b0 : sigma_buff[0][raddr][gi];
+            assign b_out[gi] = pe_cnt ? 6'b0 : b_buff[0][raddr][gi];
+        end
     endgenerate
 
     always @(*) begin
-        if (write_en) begin
-            for (i = 0; i < 2; i = i + 1) begin
-                for (j = 0; j < 4; j = j + 1) begin
-                    sigma_buff_next[i][j] = (i == write_idx)? Lsigma_in[j] : sigma_buff[i][j];
-                    b_buff_next[i][j] = (i == write_idx)? Lb_in[j] : b_buff[i][j];
-                end
-
-                for (j = 0; j < 2; j = j + 1) begin
-                    delta_buff_next[i][j] = (i == write_idx)? Ldelta_even_in[j] : delta_buff[i][j];
-                    theta_buff_next[i][j] = (i == write_idx)? Ltheta_even_in[j] : theta_buff[i][j];
-                end
-
-                gamma_buff_next[i] = (i == write_idx)? Lgamma_in : gamma_buff[i];
-                k_buff_next[i] = (i == write_idx)? Lk_in : k_buff[i];
-            end 
+        for (j = 0; j < 2; j = j + 1) begin
+            sigma_buff_add_next[j] = forward ? 6'b0 :  (Nwen1 ? Nsigma_in[j] : sigma_buff_add[j]);
+            b_buff_add_next[j] = forward ? 6'b0 : (Nwen1 ? Nb_in[j] : b_buff_add[j]);
         end
-        else begin
-            for (i = 0; i < 2; i = i + 1) begin
-                for (j = 0; j < 4; j = j + 1) begin
-                    sigma_buff_next[i][j] = sigma_buff[i][j];
-                    b_buff_next[i][j] = b_buff[i][j];
-                end
-
-                for (j = 0; j < 2; j = j + 1) begin
-                    delta_buff_next[i][j] = delta_buff[i][j];
-                    theta_buff_next[i][j] = theta_buff[i][j];
-                end
-
-                gamma_buff_next[i] = gamma_buff[i];
-                k_buff_next[i] = k_buff[i];
-            end 
-        end
-    end
-
-
-    always @(posedge clk or posedge rst) begin        
-        if (rst) begin
-            for (i = 0; i < 2; i = i + 1) begin
-                for (j = 0; j < 4; j = j + 1) begin
-                    sigma_buff[i][j] <= 0;
-                    b_buff[i][j] <= 0;
-                end
-
-                for (j = 0; j < 2; j = j + 1) begin
-                    delta_buff[i][j] <= 0;
-                    theta_buff[i][j] <= 0;
-                end
-
-                gamma_buff[i] <= 0;
-                k_buff[i] <= 0;
-            end 
-        end
-        else begin
-            for (i = 0; i < 2; i = i + 1) begin
-                for (j = 0; j < 4; j = j + 1) begin
-                    sigma_buff[i][j] <= sigma_buff_next[i][j];
-                    b_buff[i][j] <= b_buff_next[i][j];
-                end
-
-                for (j = 0; j < 2; j = j + 1) begin
-                    delta_buff[i][j] <= delta_buff_next[i][j];
-                    theta_buff[i][j] <= theta_buff_next[i][j];
-                end
-
-                gamma_buff[i] <= gamma_buff_next[i];
-                k_buff[i] <= k_buff_next[i];
-            end
-        end
-
-    end
-endmodule
-
-module state_buff_ctrl(
-    input clk,
-    input rst,
-
-    input Lstate_rdy,
-    input LKES_fail,
-    input cdone, cfail,
-
-    output write_idx,
-    output write_en
-);
-
-    parameter S_STORE0  = 4'd0;
-    parameter S_STORE1  = 4'd1;
-    parameter S_CHECK0  = 4'd2;
-    parameter S_CHECK1  = 4'd3;
-    parameter S_FULL    = 4'd4;
-
-    reg [2:0] state, state_next;
-    reg [1:0] cnt, cnt_next;
-
-    assign write_en = (state == S_STORE0 || state == S_STORE1) && Lstate_rdy;
-    assign write_idx = (state == S_STORE0)? 1'b0 : 1'b1;
-
-    always @(*) begin
-        case(state)
-        S_STORE0: begin
-            if (Lstate_rdy) begin
-                if (cnt == 2'd3) state_next = S_STORE0;
-                else state_next = (LKES_fail)? S_STORE1 : S_CHECK0;
-            end
-            else state_next = state;
-        end
-        S_CHECK0: begin
-            if (cdone) begin
-                if (cnt == 2'd3) state_next = S_STORE0;
-                else state_next = (cfail)? S_STORE1 : S_STORE0;
-            end
-            else begin
-                state_next = state;
-            end 
-        end
-        S_STORE1: begin
-            if (Lstate_rdy) begin
-                if (cnt == 2'd3) state_next = S_STORE0;
-                else state_next = (LKES_fail)? S_FULL : S_CHECK1;
-            end
-            else state_next = state;
-
-        end
-        S_CHECK1: begin
-            if (cdone) begin
-                if (cnt == 2'd3) state_next = S_STORE0;
-                else state_next = (cfail)? S_FULL : S_STORE1;
-            end
-            else begin
-                state_next = state;
-            end 
-        end
-        S_FULL: state_next = (cnt == 2'd3 && (cdone || LKES_fail))? S_STORE0 : S_FULL;
-        default: state_next = S_STORE0;  
-        endcase  
+        delta_buff_add_next = forward ? 6'b0 : (Nwen1 ? Ndelta_even_in[0] : delta_buff_add);
+        theta_buff_add_next = forward ? 6'b0 : (Nwen1 ? Ntheta_even_in[0] : theta_buff_add);
+        k_buff_add_next = forward ? 1'b0 : (Nwen1 ? Nk_in[2] : k_buff_add);
     end
 
     always @(*) begin
-        cnt_next = (cdone || LKES_fail)? cnt + 1 : cnt;
+        for (j = 0; j < 4; j = j + 1) begin
+            sigma_no_forward[0][0][j] = Nwen0 ? Nsigma_in[j] : sigma_buff[0][0][j];
+            sigma_no_forward[0][1][j] = sigma_buff[0][1][j];
+            b_no_forward[0][0][j] = Nwen0 ? Nb_in[j] : b_buff[0][0][j];
+            b_no_forward[0][1][j] = b_buff[0][1][j];
+        end
+        for (j = 0; j < 2; j = j + 1) begin
+            delta_no_forward[0][0][j] = Nwen0 ? Ndelta_even_in[j] : delta_buff[0][0][j];
+            delta_no_forward[0][1][j] = delta_buff[0][1][j];
+            theta_no_forward[0][0][j] = Nwen0 ? Ntheta_even_in[j] : theta_buff[0][0][j];
+            theta_no_forward[0][1][j] = theta_buff[0][1][j];
+        end
+        gamma_no_forward[0][0] = Nwen0 ? Ngamma_in : gamma_buff[0][0];
+        gamma_no_forward[0][1] = gamma_buff[0][1];
+        k_no_forward[0][0] = Nwen0 ? Nk_in[1:0] : k_buff[0][0];
+        k_no_forward[0][1] = k_buff[0][1];
+
+        for (i = 0; i < 2; i = i + 1) begin
+            for (j = 0; j < 4; j = j + 1) begin
+                sigma_no_forward[1][i][j] = (Lwen && Lwaddr == i) ? Lsigma_in[j] : sigma_buff[1][i][j];
+                b_no_forward[1][i][j] = (Lwen && Lwaddr == i) ? Lb_in[j] : b_buff[1][i][j];
+            end
+            for (j = 0; j < 2; j = j + 1) begin
+                delta_no_forward[1][i][j] = (Lwen && Lwaddr == i) ? Ldelta_even_in[j] : delta_buff[1][i][j];
+                theta_no_forward[1][i][j] = (Lwen && Lwaddr == i) ? Ltheta_even_in[j] : theta_buff[1][i][j];
+            end
+            gamma_no_forward[1][i] = (Lwen && Lwaddr == i) ? Lgamma_in : gamma_buff[1][i];
+            k_no_forward[1][i] = (Lwen && Lwaddr == i) ? Lk_in : k_buff[1][i];
+        end
     end
 
+    always @(*) begin
+        for (i = 0; i < 2; i = i + 1) begin
+            for (j = 0; j < 4; j = j + 1) begin
+                sigma_buff_next[0][i][j] = forward ? sigma_no_forward[1][i][j] : sigma_no_forward[0][i][j];
+                sigma_buff_next[1][i][j] = forward ? 6'b0 : sigma_no_forward[1][i][j];
+                b_buff_next[0][i][j] = forward ? b_no_forward[1][i][j] : b_no_forward[0][i][j];
+                b_buff_next[1][i][j] = forward ? 6'b0 : b_no_forward[1][i][j];
+            end
+            for (j = 0; j < 2; j = j + 1) begin
+                delta_buff_next[0][i][j] = forward ? delta_no_forward[1][i][j] : delta_no_forward[0][i][j];
+                delta_buff_next[1][i][j] = forward ? 6'b0 : delta_no_forward[1][i][j];
+                theta_buff_next[0][i][j] = forward ? theta_no_forward[1][i][j] : theta_no_forward[0][i][j];
+                theta_buff_next[1][i][j] = forward ? 6'b0 : theta_no_forward[1][i][j];
+            end
+            gamma_buff_next[0][i] = forward ? gamma_no_forward[1][i] : gamma_no_forward[0][i];
+            gamma_buff_next[1][i] = forward ? 6'b0 : gamma_no_forward[1][i];
+            k_buff_next[0][i] = forward ? k_no_forward[1][i] : k_no_forward[0][i];
+            k_buff_next[1][i] = forward ? 2'b0 : k_no_forward[1][i];
+        end
+    end
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            state <= 0;
-            cnt <= 0;
+            for (h = 0; h < 2; h = h + 1) begin
+                for (i = 0; i < 2; i = i + 1) begin
+                    for (j = 0; j < 4; j = j + 1) begin
+                        sigma_buff[h][i][j] <= 0;
+                        b_buff[h][i][j]     <= 0;
+                    end
+                    for (j = 0; j < 2; j = j + 1) begin
+                        delta_buff[h][i][j] <= 0;
+                        theta_buff[h][i][j] <= 0;
+                    end
+                    gamma_buff[h][i]    <= 0;
+                    k_buff[h][i]        <= 0;
+                end
+            end
+            for (j = 0; j < 2; j = j + 1) begin
+                sigma_buff_add[j]   <= 0;
+                b_buff_add[j]       <= 0;
+            end
+            delta_buff_add  <= 0;
+            theta_buff_add  <= 0;
+            k_buff_add      <= 0;
         end
         else begin
-            state <= state_next;
-            cnt <= cnt_next;
+            for (h = 0; h < 2; h = h + 1) begin
+                for (i = 0; i < 2; i = i + 1) begin
+                    for (j = 0; j < 4; j = j + 1) begin
+                        sigma_buff[h][i][j] <= sigma_buff_next[h][i][j];
+                        b_buff[h][i][j]     <= b_buff_next[h][i][j];
+                    end
+                    for (j = 0; j < 2; j = j + 1) begin
+                        delta_buff[h][i][j] <= delta_buff_next[h][i][j];
+                        theta_buff[h][i][j] <= theta_buff_next[h][i][j];
+                    end
+                    gamma_buff[h][i]    <= gamma_buff_next[h][i];
+                    k_buff[h][i]        <= k_buff_next[h][i];
+                end
+            end
+            for (j = 0; j < 2; j = j + 1) begin
+                sigma_buff_add[j]   <= sigma_buff_add_next[j];
+                b_buff_add[j]       <= b_buff_add_next[j];
+            end
+            delta_buff_add  <= delta_buff_add_next;
+            theta_buff_add  <= theta_buff_add_next;
+            k_buff_add      <= k_buff_add_next;
         end
     end
 
