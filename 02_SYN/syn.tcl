@@ -13,7 +13,7 @@ sh mkdir -p Report
 
 ############ 修正後的 SDC 段落 ############
 # Set the Optimization Constraints 
-set cycle 10.0
+set cycle 7.0
 create_clock -period $cycle -name "clk" -waveform [list 0 [expr $cycle*0.5]] [get_ports clk]
 set_ideal_network [get_ports clk]
 # 註解掉 set_fix_hold，合成時不修 hold

@@ -22,12 +22,12 @@
 
 // NSU
 `include "../01_RTL/NSU/NSU.sv"
-`include "../01_RTL/NSU/NSU_core.v"
-`include "../01_RTL/NSU/horner_a5.v"
-`include "../01_RTL/NSU/horner_a7.v"
-`include "../01_RTL/NSU/horner_a9.v"
-`include "../01_RTL/NSU/horner_a11.v"
-`include "../01_RTL/HSU/Ainv.sv"
+`include "../01_RTL/NSU/NSU_core.sv"
+`include "../01_RTL/NSU/horner_a5.sv"
+`include "../01_RTL/NSU/horner_a7.sv"
+`include "../01_RTL/NSU/horner_a9.sv"
+`include "../01_RTL/NSU/horner_a11.sv"
+`include "../01_RTL/NSU/Ainv.sv"
 
 // NKES
 `include "../01_RTL/NKES/NKES.sv"
