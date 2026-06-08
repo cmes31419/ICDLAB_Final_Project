@@ -11,15 +11,7 @@ module NKES_new(
     input       forward,
     input       sel_idx,
 
-    // // from low order riBM
     input       Lwaddr,
-    // input       Lwen,
-    // input [5:0] Lsigma[3:0],
-    // input [5:0] Lb[3:0],
-    // input [5:0] Ldelta_even[1:0], // delta_even[0] = d0, delta_even[1] = d2
-    // input [5:0] Ltheta_even[1:0], // theta_even[0] = t0, theta_even[1] = t2
-    // input [5:0] Lgamma,
-    // input [1:0] Lk,
 
     input       Lwen_ctrl,
     input       Nwen_ctrl,
@@ -161,17 +153,7 @@ NKES_core_new u_core_n(
     .LO_syn(LO_syn),
     .HO_syn(HO_syn),
 
-    // .pe_cnt(pe_cnt),
     .discrepancy(discrepancy),
-    // .sigma_done_pre(),
-    // .sigma_done(),
-    // .sigma(sigma),
-    
-    // .Nsigma(Nsigma),
-    // .Nb(Nb),
-    // .Ndelta_even(Ndelta_even),
-    // .Ntheta_even(Ntheta_even)
-
     .sigma_poly_out_rec(sigma_poly_out_rec),
     .sigma_poly_out(sigma_poly_out),
     .b_poly_out(b_poly_out),

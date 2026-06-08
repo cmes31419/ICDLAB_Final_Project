@@ -22,10 +22,7 @@ module NKES_core_new(
     input [5:0]         LO_syn[3:0],    
     input [5:0]         HO_syn[1:0],
 
-    // output          pe_cnt,
     output [5:0]        discrepancy,
-    // output          sigma_done_pre,
-    // output          sigma_done,
     output reg [5:0]    sigma_poly_out_rec[3:0],
     output [5:0]        sigma_poly_out[3:0],
     output [5:0]        b_poly_out[3:0],
@@ -51,10 +48,7 @@ integer i;
 
 genvar gi;
 
-// assign pe_cnt = mode ? cnt[0] : 1'b0;
 assign discrepancy = pe_cnt ? delta_poly_0_rec : delta_poly_out[0];
-// assign sigma_done_pre = valid_pre;
-// assign sigma_done = valid;
 
 generate
     // to precompute unit
@@ -122,48 +116,14 @@ NKES_PE_array_new u_pe_arr_n(
     .theta_poly_out(theta_poly_out)
 );
 
-// always @(*) begin
-//     if (state == S_PROC0) valid_pre_next = (cnt == 3'd1) ? 1 : 0;
-//     else if (state == S_PROC1) valid_pre_next = (cnt == 3'd5) ? 1 : 0;
-//     else if (hold) valid_pre_next = valid_pre;
-//     else valid_pre_next = 0;
-//     valid_next = valid_pre;
-// end
-
-// always @(*) begin
-//     case (state) 
-//     S_IDLE:     cnt_next = start ? cnt + 1 : 0;
-//     S_PROC:     cnt_next = (cnt == 3'd2) ? 0 : cnt + 1;
-//     S_PROC1:    cnt_next = (cnt == 3'd5) ? 0 : cnt + 1;
-//     default:    cnt_next = 0;
-//     endcase
-// end
-
-// always @(*) begin
-//     case (state)
-//     S_IDLE:     state_next = start ? (mode ? S_PROC1 : S_PROC0) : S_IDLE;
-//     S_PROC0:    state_next = (cnt == 3'd2) ? S_IDLE : S_PROC0;
-//     S_PROC1:    state_next = (cnt == 3'd5) ? S_IDLE : S_PROC1;
-//     default:    state_next = S_IDLE;
-//     endcase
-// end
-
 always @(posedge clk or posedge rst) begin
     if (rst) begin
-        // state               <= S_IDLE;
-        // cnt                 <= 0;
-        // valid_pre           <= 0;
-        // valid               <= 0;
         delta_poly_0_rec    <= 0;
         for (i = 0; i < 4; i = i + 1) begin
             sigma_poly_out_rec[i]   <= 0;
         end
     end
     else begin
-        // state               <= state_next;
-        // cnt                 <= cnt_next;
-        // valid_pre           <= valid_pre_next;
-        // valid               <= valid_next;
         delta_poly_0_rec    <= delta_poly_out[0];
         for (i = 0; i < 4; i = i + 1) begin
             sigma_poly_out_rec[i]   <= sigma_poly_out[i];

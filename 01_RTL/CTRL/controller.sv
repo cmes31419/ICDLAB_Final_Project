@@ -25,8 +25,8 @@ module controller(
     output          forward,
     output          late_cdone,
     output [2:0]    syn_cnt,
-    output          nsu_start,
-    output          nsu_start_new,
+    output          nsu_start0,
+    output          nsu_start1,
     output          nsu_b,
     output          nsu_stage_flag,
     output [1:0]    nsu_undecoded_idx_1,
@@ -85,8 +85,8 @@ module controller(
 
     assign nkill = (nstate == S_KILL) ? 1 : 0;
 
-    assign nsu_start = (nstate == S_START1A || nstate == S_START2) ? 1 : 0;
-    assign nsu_start_new = (nstate == S_START1A || nstate == S_START1B || nstate == S_START2) ? 1 : 0;
+    assign nsu_start0 = (nstate == S_START1A || nstate == S_START2) ? 1 : 0;
+    assign nsu_start1 = (nstate == S_START1A || nstate == S_START1B || nstate == S_START2) ? 1 : 0;
     assign nsu_b = b;
     assign nsu_stage_flag = (nstate == S_START2 || nstate == S_STAGE2) ? 1 : 0;
     assign nsu_undecoded_idx_1 = npos1;

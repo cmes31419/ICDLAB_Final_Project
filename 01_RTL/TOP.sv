@@ -44,7 +44,7 @@ module TOP (
     wire        LKES_done_new, LKES_fail_new, NKES_done_new;
     wire [5:0]  NKES_sigma_out_new[6:0];
 
-    wire        nsu_start, nsu_start_new;
+    wire        nsu_start0, nsu_start1;
     wire        nsu_b, nsu_stage_flag;
     wire [1:0]  nsu_undecoded_idx_1, nsu_undecoded_idx_2;
     wire        nsu_stage2_match_idx, nsu_sel_idx;
@@ -62,7 +62,6 @@ module TOP (
 
     assign Lwen_syn0 = Lwen_syn & sdone & LO_syn_get;
     assign Lwen_syn1 = Lwen_syn & (cdone | LKES_fail_new) & ~late_cdone;
-    assign Lwen2 = Lwen_syn & ~cfail;
 
     // temporaily set to only LKES
     genvar gi;
@@ -103,8 +102,8 @@ module TOP (
         .forward(forward),
         .late_cdone(late_cdone),
         .syn_cnt(syn_cnt),
-        .nsu_start(nsu_start),
-        .nsu_start_new(nsu_start_new),
+        .nsu_start0(nsu_start0),
+        .nsu_start1(nsu_start1),
         .nsu_b(nsu_b),
         .nsu_stage_flag(nsu_stage_flag),
         .nsu_undecoded_idx_1(nsu_undecoded_idx_1),
@@ -151,45 +150,37 @@ module TOP (
         .valid(sdone)
     );
 
-    BM bm0(
+    HSU_top_new hsu_n0(
         .clk(clk),
         .rst(rst),
-        .syndrome_rdy(sdone),
-        .LO_syndrome(LO_syn),
-        .cget(cget),
-        .sigma_done(LKES_done),
-        .sigma_fail(LKES_fail),
-        .sigma_out(LKES_sigma_out),
-        .b_out(LKES_b_out),
-        .delta_even_out(LKES_delta_even_out),
-        .theta_even_out(LKES_theta_even_out),
-        .gamma_out(LKES_gamma_out),
-        .k_out(LKES_k_out)
-    );
+        .start0(nsu_start0),
+        .start1(nsu_start1),
+        .nsget(HO_syn_get),
+        .r0(ndata[0]),
+        .r1(ndata[1]),
+        .r2(ndata[2]),
+        .r3(ndata[3]),
+        .b(nsu_b),
+        .flag0(nflag[0]), 
+        .flag1(nflag[1]), 
+        .flag2(nflag[2]), 
+        .flag3(nflag[3]),
+        .stage_flag(nsu_stage_flag),
+        .undecoded_idx_1(nsu_undecoded_idx_1),
+        .undecoded_idx_2(nsu_undecoded_idx_2),
+        .stage2_match_idx(nsu_stage2_match_idx),
+        .sel_idx(nsu_sel_idx),
+        .Syndrome_3_i0(nsyn[0][5:0]), 
+        .Syndrome_4_i0(nsyn[0][11:6]), 
+        .Syndrome_3_i1(nsyn[1][5:0]), 
+        .Syndrome_4_i1(nsyn[1][11:6]),
 
-    NKES nkes0(
-        .clk(clk),
-        .rst(rst),
-        .syn_rdy(syn_rdy),
-        .HO_syn(HO_syn),
-
-        .Lstate_rdy(LKES_done),
-        .LKES_fail(LKES_fail),
-        .cdone(cdone),
-        .cfail(cfail),
-        .Lsigma(LKES_sigma_out),
-        .Lb(LKES_b_out),
-        .Ldelta_even(LKES_delta_even_out),
-        .Ltheta_even(LKES_theta_even_out),
-        .Lgamma(LKES_gamma_out),
-        .Lk(LKES_k_out),
-
-        .ncget(nested_cget), .ncdone(nested_cdone), .ncfail(nested_cfail),
-        .fail_num(nsu_b),
-        .nsu_stage_flag(nsu_stage_flag),
-
-        .sigma_done(NKES_done),
-        .sigma(NKES_sigma_out)
+        .syn_rdy(syn_rdy_new),
+        .S_out_ch1(HO_syn_new[0]),
+        .S_out_ch2(HO_syn_new[1]),
+        .Ndata(Ndata_nsu),
+        .Nsel(Nsel_nsu),
+        .Nwen(Nwen_nsu)
     );
 
     NKES_new nkes_n0(
@@ -228,67 +219,6 @@ module TOP (
         .nested_cget(),
         .nested_cdone(nested_cdone),
         .nested_cfail(nested_cfail)
-    );
-
-    HSU_top hsu0(
-        .clk(clk),
-        .rst(rst),
-        .start(nsu_start),
-        .r0(ndata[0]),
-        .r1(ndata[1]),
-        .r2(ndata[2]),
-        .r3(ndata[3]),
-        .b(nsu_b),
-        .flag0(nflag[0]), 
-        .flag1(nflag[1]), 
-        .flag2(nflag[2]), 
-        .flag3(nflag[3]),
-        .stage_flag(nsu_stage_flag),
-        .undecoded_idx_1(nsu_undecoded_idx_1),
-        .undecoded_idx_2(nsu_undecoded_idx_2),
-        .stage2_match_idx(nsu_stage2_match_idx),
-        .Syndrome_3_i0(nsyn[0][5:0]), 
-        .Syndrome_4_i0(nsyn[0][11:6]), 
-        .Syndrome_3_i1(nsyn[1][5:0]), 
-        .Syndrome_4_i1(nsyn[1][11:6]),   
-        .valid_S3_S4(nsu_start),
-
-        .syn_rdy(syn_rdy),
-        .S_out_ch1(HO_syn[0]),
-        .S_out_ch2(HO_syn[1])
-    );
-
-    HSU_top_new hsu_n0(
-        .clk(clk),
-        .rst(rst),
-        .start(nsu_start),
-        .start_new(nsu_start_new),
-        .nsget(HO_syn_get),
-        .r0(ndata[0]),
-        .r1(ndata[1]),
-        .r2(ndata[2]),
-        .r3(ndata[3]),
-        .b(nsu_b),
-        .flag0(nflag[0]), 
-        .flag1(nflag[1]), 
-        .flag2(nflag[2]), 
-        .flag3(nflag[3]),
-        .stage_flag(nsu_stage_flag),
-        .undecoded_idx_1(nsu_undecoded_idx_1),
-        .undecoded_idx_2(nsu_undecoded_idx_2),
-        .stage2_match_idx(nsu_stage2_match_idx),
-        .sel_idx(nsu_sel_idx),
-        .Syndrome_3_i0(nsyn[0][5:0]), 
-        .Syndrome_4_i0(nsyn[0][11:6]), 
-        .Syndrome_3_i1(nsyn[1][5:0]), 
-        .Syndrome_4_i1(nsyn[1][11:6]),
-
-        .syn_rdy(syn_rdy_new),
-        .S_out_ch1(HO_syn_new[0]),
-        .S_out_ch2(HO_syn_new[1]),
-        .Ndata(Ndata_nsu),
-        .Nsel(Nsel_nsu),
-        .Nwen(Nwen_nsu)
     );
 
 endmodule

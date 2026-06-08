@@ -1,8 +1,8 @@
 module HSU_top_new (
     input  wire        clk,
     input  wire        rst,
-    input  wire        start,
-    input  wire        start_new,
+    input  wire        start0,
+    input  wire        start1,
     input  wire        nsget,
 
     input  wire [62:0] r0,
@@ -34,7 +34,7 @@ module HSU_top_new (
     reg        syn_rdy_next;
 
     always @(*) begin
-        if (start_new) counter_next = 3'd1;
+        if (start1) counter_next = 3'd1;
         else if (counter == 3'd3) counter_next = nsget ? counter + 3'd1 : counter;
         else if (counter != 3'd0) counter_next = counter + 3'd1;
         else counter_next = 3'd0;
@@ -80,7 +80,7 @@ module HSU_top_new (
     nsu_top nsu_inst (
         .clk(clk),
         .rst(rst),
-        .start(start),
+        .start(start0),
         .r0(r0),
         .r1(r1),
         .r2(r2),
