@@ -16,16 +16,15 @@ module BM(
     output [1:0] k_out
 );
 
+
+wire [5:0] b_poly0;
 wire [5:0] gamma, discrepancy;
-wire       branch, first_iter;
-wire       start, hold;
+wire branch, first_iter;
+wire start, hold;
+wire [5:0] delta_poly2, delta_poly3;
 
-wire [5:0] HO_syndrome[1:0];
-
-assign HO_syndrome[0] = 6'b0;
-assign HO_syndrome[1] = 6'b0;
-
-assign discrepancy = delta_even_out[0];
+assign delta_even_out[0] = discrepancy;
+assign delta_even_out[1] = delta_poly2;
 assign gamma_out = gamma;
 assign sigma_fail = sigma_done && (|sigma_out[3]);
 
@@ -37,39 +36,62 @@ BM_control bm_ctrl( .clk(clk), .rst(rst), .syndrome_rdy(syndrome_rdy), .discrepa
     .first_iter(first_iter), .branch(branch), .sigma_done(sigma_done)
 );
 
-NKES_core_new u_core_n(
-    .clk(clk),
-    .rst(rst),
-    .start(start),
-    .hold(hold),
-    .first_iter(first_iter),
-    .mode(1'b0),
 
-    .gamma_time(gamma),
-    .dis_time(discrepancy),
-    .branch_time(branch),
-    .gamma_out(gamma),
-    .dis_out(discrepancy),
-    .branch_out(branch),
+// ============ PE0 array ==============
+BM_PE0 u_PE00(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+    .start(start), .hold(hold),
+    .sigma_init(6'b1),
+    .b_poly_in(6'b0),
 
-    .Lsigma_out(),
-    .Lb_out(),
-    .Ldelta_even_out(),
-    .Ltheta_even_out(),
+    .b_poly_out(b_out[0]),
+    .sigma_poly_out(sigma_out[0])
+);
 
-    .LO_syn(LO_syndrome),
-    .HO_syn(HO_syndrome),
+BM_PE0 u_PE01(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+    .start(start), .hold(hold),
+    .sigma_init(6'b0),
+    .b_poly_in(first_iter? 6'b1 : 6'b0),
 
-    .pe_cnt(),
-    .discrepancy(discrepancy),
-    .sigma_done_pre(),
-    .sigma_done(),
-    .sigma(),
-    
-    .Nsigma(sigma_out),
-    .Nb(b_out),
-    .Ndelta_even(delta_even_out),
-    .Ntheta_even(theta_even_out)
+    .b_poly_out(b_out[1]),
+    .sigma_poly_out(sigma_out[1])
+);
+
+BM_PE0 u_PE02(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+    .start(start), .hold(hold),
+    .sigma_init(6'b0),
+    .b_poly_in(b_out[0]),
+
+    .b_poly_out(b_out[2]),
+    .sigma_poly_out(sigma_out[2])
+);
+
+BM_PE0 u_PE03(.clk(clk), .rst(rst), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+    .start(start), .hold(hold),
+    .sigma_init(6'b0),
+    .b_poly_in(b_out[1]),
+
+    .b_poly_out(b_out[3]),
+    .sigma_poly_out(sigma_out[3])
+);
+
+
+// ============ PE1 array ==============
+BM_PE1 u_PE10(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+    .delta_init(LO_syndrome[0]),
+    .theta_init(LO_syndrome[1]),
+    .delta_poly_in(delta_poly2),
+
+    .delta_poly_out(discrepancy),
+    .theta_poly_out(theta_even_out[0])
+);
+
+BM_PE1 u_PE12(.clk(clk), .rst(rst), .start(start), .hold(hold), .gamma(gamma), .discrepancy(discrepancy), .branch(branch),
+    .delta_init(LO_syndrome[2]),
+    .theta_init(LO_syndrome[3]),
+    .delta_poly_in(6'b0),
+
+    .delta_poly_out(delta_poly2),
+    .theta_poly_out(theta_even_out[1])
 );
 
 endmodule

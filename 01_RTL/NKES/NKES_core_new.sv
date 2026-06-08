@@ -2,9 +2,10 @@ module NKES_core_new(
     input           clk,
     input           rst,
     input           start,
-    input           hold,
     input           first_iter,
     input           mode,
+    input           mode_init,
+    input           pe_cnt,
 
     input [5:0]     gamma_time,     // gamma
     input [5:0]     dis_time,       // discrepancy
@@ -21,10 +22,10 @@ module NKES_core_new(
     input [5:0]     LO_syn[3:0],    
     input [5:0]     HO_syn[1:0],    // 0, 0
 
-    output          pe_cnt,
+    // output          pe_cnt,
     output [5:0]    discrepancy,
-    output          sigma_done_pre,
-    output          sigma_done,
+    // output          sigma_done_pre,
+    // output          sigma_done,
     output [5:0]    sigma[6:0],
 
     output [5:0]    Nsigma[3:0],
@@ -33,14 +34,13 @@ module NKES_core_new(
     output [5:0]    Ntheta_even[1:0]
 );
 
-localparam S_IDLE   = 2'd0;
-localparam S_PROC0  = 2'd1;
-localparam S_PROC1  = 2'd2;
+// localparam S_IDLE   = 1'd0;
+// localparam S_PROC   = 1'd1;
 
-reg [1:0]   state, state_next;
-reg [2:0]   cnt, cnt_next;
-reg         valid_pre, valid_pre_next;
-reg         valid, valid_next;
+// reg         state, state_next;
+// reg [2:0]   cnt, cnt_next;
+// reg         valid_pre, valid_pre_next;
+// reg         valid, valid_next;
 
 reg [5:0]   delta_poly_0_rec;
 reg [5:0]   sigma_poly_out_rec[3:0];
@@ -55,10 +55,10 @@ integer i;
 
 genvar gi;
 
-assign pe_cnt = mode ? cnt[0] : 1'b0;
+// assign pe_cnt = mode ? cnt[0] : 1'b0;
 assign discrepancy = pe_cnt ? delta_poly_0_rec : delta_poly_out[0];
-assign sigma_done_pre = valid_pre;
-assign sigma_done = valid;
+// assign sigma_done_pre = valid_pre;
+// assign sigma_done = valid;
 
 generate
     for (gi = 0; gi < 4; gi = gi + 1) begin
@@ -86,17 +86,17 @@ generate
     end
 
     // sigma, b init
-        assign sigma_init[0] = mode ? Lsigma_out[0] : 6'b1;
-        assign b_init[0] = mode ? Lb_out[0] : 6'b0;
+        assign sigma_init[0] = mode_init ? Lsigma_out[0] : 6'b1;
+        assign b_init[0] = mode_init ? Lb_out[0] : 6'b0;
     for (gi=1; gi < 4; gi = gi + 1) begin
-        assign sigma_init[gi] = mode ? Lsigma_out[gi] : 6'b0;
-        assign b_init[gi] = mode ? Lb_out[gi] : 6'b0;
+        assign sigma_init[gi] = mode_init ? Lsigma_out[gi] : 6'b0;
+        assign b_init[gi] = mode_init ? Lb_out[gi] : 6'b0;
     end
 
     // delta, theta init
     for (gi=0; gi < 2 ; gi = gi + 1) begin
-        assign delta_init[gi] = mode ? delta_init_out[gi] : LO_syn[gi * 2];
-        assign theta_init[gi] = mode ? theta_init_out[gi] : LO_syn[gi * 2 + 1];
+        assign delta_init[gi] = mode_init ? delta_init_out[gi] : LO_syn[gi * 2];
+        assign theta_init[gi] = mode_init ? theta_init_out[gi] : LO_syn[gi * 2 + 1];
     end
 endgenerate
 
@@ -115,9 +115,10 @@ NKES_PE_array_new u_pe_arr_n(
     .clk(clk),
     .rst(rst),
     .start(start),
-    .hold(hold),
+    .hold(1'b0),
     .first_iter(first_iter),
     .mode(mode),
+    .mode_init(mode_init),
     .pe_cnt(pe_cnt),
 
     .gamma_time(gamma_time),
@@ -146,48 +147,48 @@ NKES_PE_array_new u_pe_arr_n(
     .theta_delay_out(theta_delay_out)
 );
 
-always @(*) begin
-    if (state == S_PROC0) valid_pre_next = (cnt == 3'd2) ? 1 : 0;
-    else if (state == S_PROC1) valid_pre_next = (cnt == 3'd5) ? 1 : 0;
-    else if (hold) valid_pre_next = valid_pre;
-    else valid_pre_next = 0;
-    valid_next = valid_pre;
-end
+// always @(*) begin
+//     if (state == S_PROC0) valid_pre_next = (cnt == 3'd1) ? 1 : 0;
+//     else if (state == S_PROC1) valid_pre_next = (cnt == 3'd5) ? 1 : 0;
+//     else if (hold) valid_pre_next = valid_pre;
+//     else valid_pre_next = 0;
+//     valid_next = valid_pre;
+// end
 
-always @(*) begin
-    case (state) 
-    S_IDLE:     cnt_next = start ? cnt + 1 : 0;
-    S_PROC0:    cnt_next = (cnt == 3'd2) ? 0 : cnt + 1;
-    S_PROC1:    cnt_next = (cnt == 3'd5) ? 0 : cnt + 1;
-    default:    cnt_next = 0;
-    endcase
-end
+// always @(*) begin
+//     case (state) 
+//     S_IDLE:     cnt_next = start ? cnt + 1 : 0;
+//     S_PROC:     cnt_next = (cnt == 3'd2) ? 0 : cnt + 1;
+//     S_PROC1:    cnt_next = (cnt == 3'd5) ? 0 : cnt + 1;
+//     default:    cnt_next = 0;
+//     endcase
+// end
 
-always @(*) begin
-    case (state)
-    S_IDLE:     state_next = start ? (mode ? S_PROC1 : S_PROC0) : S_IDLE;
-    S_PROC0:    state_next = (cnt == 3'd2) ? S_IDLE : S_PROC0;
-    S_PROC1:    state_next = (cnt == 3'd5) ? S_IDLE : S_PROC1;
-    default:    state_next = S_IDLE;
-    endcase
-end
+// always @(*) begin
+//     case (state)
+//     S_IDLE:     state_next = start ? (mode ? S_PROC1 : S_PROC0) : S_IDLE;
+//     S_PROC0:    state_next = (cnt == 3'd2) ? S_IDLE : S_PROC0;
+//     S_PROC1:    state_next = (cnt == 3'd5) ? S_IDLE : S_PROC1;
+//     default:    state_next = S_IDLE;
+//     endcase
+// end
 
 always @(posedge clk or posedge rst) begin
     if (rst) begin
-        state               <= S_IDLE;
-        cnt                 <= 0;
-        valid_pre           <= 0;
-        valid               <= 0;
+        // state               <= S_IDLE;
+        // cnt                 <= 0;
+        // valid_pre           <= 0;
+        // valid               <= 0;
         delta_poly_0_rec    <= 0;
         for (i = 0; i < 4; i = i + 1) begin
             sigma_poly_out_rec[i]   <= 0;
         end
     end
     else begin
-        state               <= state_next;
-        cnt                 <= cnt_next;
-        valid_pre           <= valid_pre_next;
-        valid               <= valid_next;
+        // state               <= state_next;
+        // cnt                 <= cnt_next;
+        // valid_pre           <= valid_pre_next;
+        // valid               <= valid_next;
         delta_poly_0_rec    <= delta_poly_out[0];
         for (i = 0; i < 4; i = i + 1) begin
             sigma_poly_out_rec[i]   <= sigma_poly_out[i];

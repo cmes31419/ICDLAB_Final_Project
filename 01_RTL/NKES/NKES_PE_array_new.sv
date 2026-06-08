@@ -5,6 +5,7 @@ module NKES_PE_array_new(
     input           hold,
     input           first_iter,
     input           mode,
+    input           mode_init,
     input           pe_cnt,         // 0
 
     input [5:0]     gamma_time,     // gamma
@@ -49,6 +50,7 @@ NKES_PE1_unified u_PE10(
     .start(start), 
     .hold(hold),
     .mode(mode), 
+    .mode_init(mode_init), 
     
     .gamma(gamma_time), 
     .discrepancy(dis_time), 
@@ -75,6 +77,7 @@ NKES_PE1_unified u_PE11(
     .start(start), 
     .hold(hold),
     .mode(mode), 
+    .mode_init(mode_init), 
     
     .gamma(gamma_time), 
     .discrepancy(dis_time), 
@@ -103,6 +106,7 @@ NKES_PE0_unified u_PE00(
     .start(start), 
     .hold(hold),
     .mode(mode), 
+    .mode_init(mode_init), 
     
     .gamma(gamma_out), 
     .discrepancy(dis_out), 
@@ -127,6 +131,7 @@ NKES_PE0_unified u_PE01(
     .start(start), 
     .hold(hold),
     .mode(mode), 
+    .mode_init(mode_init), 
     
     .gamma(gamma_out), 
     .discrepancy(dis_out), 
@@ -151,6 +156,7 @@ NKES_PE0_unified u_PE02(
     .start(start), 
     .hold(hold),
     .mode(mode), 
+    .mode_init(mode_init), 
     
     .gamma(gamma_out), 
     .discrepancy(dis_out), 
@@ -175,6 +181,7 @@ NKES_PE0_unified u_PE03(
     .start(start), 
     .hold(hold),
     .mode(mode), 
+    .mode_init(mode_init), 
     
     .gamma(gamma_out), 
     .discrepancy(dis_out), 

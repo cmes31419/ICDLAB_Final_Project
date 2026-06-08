@@ -4,6 +4,7 @@ module NKES_PE1_unified(
     input       start,
     input       hold,
     input       mode,
+    input       mode_init,
     
     input [5:0] gamma,
     input [5:0] discrepancy,
@@ -51,7 +52,7 @@ always @(*) begin
         theta_delay_next = theta_poly ^ b_even ^ b_odd;
     end
 
-    if (start & ~mode) begin
+    if (start & ~mode_init) begin
         delta_poly_next = delta_init;
         theta_poly_next = theta_init;
     end 
@@ -61,7 +62,7 @@ always @(*) begin
     end
     else begin
         delta_poly_next = gfmul0_out ^ gfmul1_out;
-        theta_poly_next = (branch)? (mode ? delta_delay : delta_poly_in) : (mode ? theta_delay : theta_poly);  
+        theta_poly_next = branch ? (mode ? delta_delay : delta_poly_in) : (mode ? theta_delay : theta_poly);  
     end        
 end
 

@@ -36,12 +36,11 @@ wire [5:0] sigma_even[3:0], sigma_odd[3:0];
 wire [5:0] b_even[2:0], b_odd[2:0];
 
 // ============ PE1 array ====================
-NKES_PE1_unified u_PE10(
+NKES_PE1 u_PE10(
     .clk(clk), 
     .rst(rst), 
     .start(start || fail_init), 
     .hold(hold), 
-    .mode(1'b1), 
     
     .gamma(gamma_time), 
     .discrepancy(dis_time), 
@@ -50,24 +49,21 @@ NKES_PE1_unified u_PE10(
     .delta_init(delta_init[0]),
     .theta_init(theta_init[0]),
     .delta_poly_in(delta_poly[1]),
-    .nested_delta_poly_in(delta_poly[1]),
 
     .sigma_even(sigma_even[0]), .sigma_odd(sigma_odd[0]),
     .b_even(6'b0), .b_odd(6'b0),
 
-    .delta_poly_pre_out(),
     .delta_poly_out(delta_poly[0]),
     .theta_poly_out(theta_poly[0]),
     .delta_delay_out(delta_delay_out[0]),
     .theta_delay_out(theta_delay_out[0])
 );
 
-NKES_PE1_unified u_PE11(
+NKES_PE1 u_PE11(
     .clk(clk), 
     .rst(rst), 
     .start(start || fail_init), 
     .hold(hold), 
-    .mode(1'b1), 
     
     .gamma(gamma_time), 
     .discrepancy(dis_time), 
@@ -76,12 +72,10 @@ NKES_PE1_unified u_PE11(
     .delta_init(delta_init[1]),
     .theta_init(theta_init[1]),
     .delta_poly_in(delta_poly[2]),
-    .nested_delta_poly_in(delta_poly[2]),
 
     .sigma_even(sigma_even[1]), .sigma_odd(sigma_odd[1]),
     .b_even(b_even[0]), .b_odd(b_odd[0]),
     
-    .delta_poly_pre_out(),
     .delta_poly_out(delta_poly[1]),
     .theta_poly_out(theta_poly[1]),
     .delta_delay_out(delta_delay_out[1]),
@@ -136,12 +130,11 @@ NKES_PE1 u_PE13(
 // =========================================
 
 // ============ PE0 array ====================
-NKES_PE0_unified u_PE00(
+NKES_PE0 u_PE00(
     .clk(clk), 
     .rst(rst), 
     .start(start), 
     .hold(hold), 
-    .mode(1'b1), 
     
     .gamma(gamma_out), 
     .discrepancy(discrepancy_out), 
@@ -160,12 +153,11 @@ NKES_PE0_unified u_PE00(
     .b_delay_out(b_delay_out[0])
 );
 
-NKES_PE0_unified u_PE02(
+NKES_PE0 u_PE02(
     .clk(clk), 
     .rst(rst), 
     .start(start), 
     .hold(hold), 
-    .mode(1'b1), 
     
     .gamma(gamma_out), 
     .discrepancy(discrepancy_out), 
@@ -230,12 +222,11 @@ NKES_PE0 u_PE06(
     .b_delay_out(b_delay_out[6])
 );
 
-NKES_PE0_unified u_PE01(
+NKES_PE0 u_PE01(
     .clk(clk), 
     .rst(rst), 
     .start(start), 
     .hold(hold), 
-    .mode(1'b1), 
     
     .gamma(gamma_out), 
     .discrepancy(discrepancy_out), 
