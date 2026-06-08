@@ -18,13 +18,13 @@ TOP.sv
 ./LSU/syndrome_pow.sv
 
 // NSU
+./NSU/NSU.sv
+./NSU/NSU_core.sv
+./NSU/horner_a5.sv
+./NSU/horner_a7.sv
+./NSU/horner_a9.sv
+./NSU/horner_a11.sv
 ./NSU/Ainv.sv
-./NSU/nsu_top.v
-./NSU/horner_a5.v
-./NSU/horner_a7.v
-./NSU/horner_a9.v
-./NSU/horner_a11.v
-./NSU/HSU_top.v
 
 // NKES
 ./NKES/NKES.sv

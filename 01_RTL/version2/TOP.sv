@@ -124,7 +124,7 @@ module TOP (
         .valid(LO_syn_rdy)
     );
 
-    HSU_top hsu_n0(
+    NSU hsu_n0(
         .clk(clk),
         .rst(rst),
         .start0(nsu_start0),
