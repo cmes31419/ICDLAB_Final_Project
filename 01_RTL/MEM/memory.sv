@@ -9,7 +9,8 @@ module memory(
     // low-level syndrome interface
     input [11:0]    Lsdata,
     input           Lssel,
-    input           Lswen,
+    input           Lswen0,
+    input           Lswen1,
     // nested syndrome interface
     input [6:0]     Nsdata,
     input           Nssel,
@@ -33,6 +34,7 @@ module memory(
     reg [63:0]  data[1:0][3:0], data_next[1:0][3:0];  // bit 63: fail flag, bits 62:0: codeword
     reg         done[1:0][3:0], done_next[1:0][3:0];  // decoding done flag
 
+    reg [11:0]  syn_tmp, syn_tmp_next;
     reg [11:0]  syn[1:0][1:0], syn_next[1:0][1:0];    // buffered S3 and S4 for 2 undecoded sub-codewords
     reg [11:0]  syn_no_forward[1:0][1:0];
 
@@ -85,11 +87,12 @@ module memory(
         syn_no_forward[0][0] = Nswen ? (Nssel ? {Nsdata, syn[0][0][5:0]} : {syn[0][0][11:6], Nsdata}) : syn[0][0];
         syn_no_forward[0][1] = syn[0][1];
         for (i=0;i<2;i=i+1) begin
-            syn_no_forward[1][i] = (Lswen && Lssel == i) ? Lsdata : syn[1][i];
+            syn_no_forward[1][i] = ((Lswen0 | Lswen1) && Lssel == i) ? syn_tmp : syn[1][i];
         end
     end
 
     always @(*) begin
+        syn_tmp_next = Lswen0 ? Lsdata : syn_tmp;
         for (i=0;i<2;i=i+1) begin
             syn_next[0][i] = forward ? syn_no_forward[1][i] : syn_no_forward[0][i];
             syn_next[1][i] = forward ? 12'b0 : syn_no_forward[1][i];
@@ -107,6 +110,7 @@ module memory(
                     syn[h][i]  <= 0;
                 end
             end
+            syn_tmp <= 0;
         end
         else begin
             for (h=0;h<2;h=h+1) begin
@@ -118,6 +122,7 @@ module memory(
                     syn[h][i]  <= syn_next[h][i];
                 end
             end
+            syn_tmp <= syn_tmp_next;
         end
     end
 

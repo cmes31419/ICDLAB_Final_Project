@@ -1,37 +1,36 @@
 module NKES_core_new(
-    input           clk,
-    input           rst,
-    input           start,
-    input           first_iter,
-    input           mode,
-    input           mode_init,
-    input           pe_cnt,
+    input               clk,
+    input               rst,
+    input               start,
+    input               first_iter,
+    input               mode,
+    input               mode_init,
+    input               pe_cnt,
 
-    input [5:0]     gamma_time,     // gamma
-    input [5:0]     dis_time,       // discrepancy
-    input           branch_time,    // branch
-    input [5:0]     gamma_out,      // gamma
-    input [5:0]     dis_out,        // discrepancy
-    input           branch_out,     // branch
+    input [5:0]         gamma_time,
+    input [5:0]         dis_time,
+    input               branch_time,
+    input [5:0]         gamma_out,
+    input [5:0]         dis_out,
+    input               branch_out,
 
-    input [5:0]     Lsigma_out[3:0],        // 0, 0, 0, 0
-    input [5:0]     Lb_out[3:0],            // 0, 0, 0, 0
-    input [5:0]     Ldelta_even_out[1:0],   // 0, 0
-    input [5:0]     Ltheta_even_out[1:0],   // 0, 0
+    input [5:0]         Lsigma_out[3:0],
+    input [5:0]         Lb_out[3:0],
+    input [5:0]         Ldelta_even_out[1:0],
+    input [5:0]         Ltheta_even_out[1:0],
 
-    input [5:0]     LO_syn[3:0],    
-    input [5:0]     HO_syn[1:0],    // 0, 0
+    input [5:0]         LO_syn[3:0],    
+    input [5:0]         HO_syn[1:0],
 
     // output          pe_cnt,
-    output [5:0]    discrepancy,
+    output [5:0]        discrepancy,
     // output          sigma_done_pre,
     // output          sigma_done,
-    output [5:0]    sigma[6:0],
-
-    output [5:0]    Nsigma[3:0],
-    output [5:0]    Nb[3:0],
-    output [5:0]    Ndelta_even[1:0],
-    output [5:0]    Ntheta_even[1:0]
+    output reg [5:0]    sigma_poly_out_rec[3:0],
+    output [5:0]        sigma_poly_out[3:0],
+    output [5:0]        b_poly_out[3:0],
+    output [5:0]        delta_poly_out[1:0],
+    output [5:0]        theta_poly_out[1:0]
 );
 
 // localparam S_IDLE   = 1'd0;
@@ -43,12 +42,9 @@ module NKES_core_new(
 // reg         valid, valid_next;
 
 reg [5:0]   delta_poly_0_rec;
-reg [5:0]   sigma_poly_out_rec[3:0];
 
 wire [5:0]  delta_even_in[1:0], theta_even_in[1:0], sigma_even_in[1:0], b_even_in[1:0];
 wire [5:0]  delta_init[1:0], theta_init[1:0], sigma_init[3:0], b_init[3:0];
-wire [5:0]  delta_delay_out[1:0], theta_delay_out[1:0], sigma_delay_out[3:0], b_delay_out[3:0];
-wire [5:0]  delta_poly_out[1:0], theta_poly_out[1:0], sigma_poly_out[3:0], b_poly_out[3:0];
 wire [5:0]  delta_init_out[1:0], theta_init_out[1:0];
 
 integer i;
@@ -61,22 +57,6 @@ assign discrepancy = pe_cnt ? delta_poly_0_rec : delta_poly_out[0];
 // assign sigma_done = valid;
 
 generate
-    for (gi = 0; gi < 4; gi = gi + 1) begin
-        assign sigma[gi] = sigma_poly_out_rec[gi];
-    end
-    for (gi = 4; gi < 7; gi = gi + 1) begin
-        assign sigma[gi] = sigma_poly_out[gi-4];
-    end
-
-    for (gi = 0; gi < 4; gi = gi + 1) begin
-        assign Nsigma[gi] = sigma_poly_out[gi];
-        assign Nb[gi] = b_poly_out[gi];
-    end
-    for (gi = 0; gi < 2; gi = gi + 1) begin
-        assign Ndelta_even[gi] = delta_poly_out[gi];
-        assign Ntheta_even[gi] = theta_poly_out[gi];
-    end
-    
     // to precompute unit
     for (gi = 0; gi < 2; gi = gi + 1) begin
         assign delta_even_in[gi] = Ldelta_even_out[gi];
@@ -139,12 +119,7 @@ NKES_PE_array_new u_pe_arr_n(
     .sigma_poly_out(sigma_poly_out),
     .b_poly_out(b_poly_out),
     .delta_poly_out(delta_poly_out),
-    .theta_poly_out(theta_poly_out),
-    
-    .sigma_delay_out(sigma_delay_out),
-    .b_delay_out(b_delay_out),
-    .delta_delay_out(delta_delay_out),
-    .theta_delay_out(theta_delay_out)
+    .theta_poly_out(theta_poly_out)
 );
 
 // always @(*) begin

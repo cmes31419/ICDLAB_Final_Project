@@ -11,37 +11,36 @@ module NKES_new(
     input       forward,
     input       sel_idx,
 
-    // from low order riBM
+    // // from low order riBM
     input       Lwaddr,
-    input       Lwen,
-    input [5:0] Lsigma[3:0],
-    input [5:0] Lb[3:0],
-    input [5:0] Ldelta_even[1:0], // delta_even[0] = d0, delta_even[1] = d2
-    input [5:0] Ltheta_even[1:0], // theta_even[0] = t0, theta_even[1] = t2
-    input [5:0] Lgamma,
-    input [1:0] Lk,
+    // input       Lwen,
+    // input [5:0] Lsigma[3:0],
+    // input [5:0] Lb[3:0],
+    // input [5:0] Ldelta_even[1:0], // delta_even[0] = d0, delta_even[1] = d2
+    // input [5:0] Ltheta_even[1:0], // theta_even[0] = t0, theta_even[1] = t2
+    // input [5:0] Lgamma,
+    // input [1:0] Lk,
 
+    input       Lwen_ctrl,
     input       Nwen_ctrl,
 
     output       LO_syn_get,
     output       HO_syn_get,
-    output       sigma_done,
+    output       Lsigma_done,
+    output       Lsigma_fail,
+    output       Nsigma_done,
     output [5:0] sigma[6:0]
 );
-
-parameter S_IDLE    = 2'd0;
-parameter S_PROC0   = 2'd1;
-parameter S_PROC1   = 2'd2;
-
-reg [3:0]   state, state_next;
 
 wire [5:0]  Lsigma_out[3:0], Lb_out[3:0], Ldelta_even_out[1:0], Ltheta_even_out[1:0], Lgamma_out;
 wire [3:0]  Lk_out;
 
-wire [5:0]  Nsigma[3:0], Nb[3:0], Ndelta_even[1:0], Ntheta_even[1:0];
+wire [5:0]  sigma_poly_out[3:0], b_poly_out[3:0], delta_poly_out[1:0], theta_poly_out[1:0];
 
 wire        start, mode, mode_init, pe_cnt, first_iter;
-wire        Nwen0, Nwen1;
+wire        Lwen, Nwen0, Nwen1;
+
+wire [5:0]  sigma_poly_out_rec[3:0];
 
 wire [5:0]  gamma_time;
 wire [5:0]  dis_time;
@@ -54,6 +53,21 @@ wire [2:0]  k_out;
 wire [5:0]  discrepancy;
 wire [5:0]  gamma_init;
 wire [3:0]  k_init;
+
+genvar gi;
+
+generate
+    for (gi = 0; gi < 4; gi = gi + 1) begin
+        assign sigma[gi] = Lwen ? sigma_poly_out[gi] : sigma_poly_out_rec[gi];
+    end
+    for (gi = 4; gi < 7; gi = gi + 1) begin
+        assign sigma[gi] = Lwen ? 6'b0 : sigma_poly_out[gi-4];
+    end
+endgenerate
+
+assign Lsigma_done = Lwen;
+assign Lsigma_fail = Lwen & (|sigma_poly_out[3]);
+assign Nsigma_done = Nwen1;
 
 assign gamma_init = Lgamma_out;
 assign k_init = Lk_out;
@@ -75,9 +89,9 @@ NKES_ctrl_new u_ctrl_n(
     .first_iter(first_iter),
     .LO_syn_get(LO_syn_get),
     .HO_syn_get(HO_syn_get),
+    .Lwen(Lwen),
     .Nwen0(Nwen0),
     .Nwen1(Nwen1),
-    .sigma_done(sigma_done),
 
     .gamma_time(gamma_time),
     .dis_time(dis_time),
@@ -98,20 +112,20 @@ state_buff_new u_state_buff_n(
     .raddr(sel_idx),
 
     .Lwaddr(Lwaddr),
-    .Lwen(Lwen),
-    .Lsigma_in(Lsigma),
-    .Lb_in(Lb),
-    .Ldelta_even_in(Ldelta_even),
-    .Ltheta_even_in(Ltheta_even),
-    .Lgamma_in(Lgamma),
-    .Lk_in(Lk),
+    .Lwen(Lwen & Lwen_ctrl),
+    .Lsigma_in(sigma_poly_out),
+    .Lb_in(b_poly_out),
+    .Ldelta_even_in(delta_poly_out),
+    .Ltheta_even_in(theta_poly_out),
+    .Lgamma_in(gamma_out),
+    .Lk_in(k_out[1:0]),
 
     .Nwen0(Nwen0 & Nwen_ctrl),
     .Nwen1(Nwen1 & Nwen_ctrl),
-    .Nsigma_in(Nsigma),
-    .Nb_in(Nb),
-    .Ndelta_even_in(Ndelta_even),
-    .Ntheta_even_in(Ntheta_even),
+    .Nsigma_in(sigma_poly_out),
+    .Nb_in(b_poly_out),
+    .Ndelta_even_in(delta_poly_out),
+    .Ntheta_even_in(theta_poly_out),
     .Ngamma_in(gamma_out),
     .Nk_in(k_out),
 
@@ -151,12 +165,18 @@ NKES_core_new u_core_n(
     .discrepancy(discrepancy),
     // .sigma_done_pre(),
     // .sigma_done(),
-    .sigma(sigma),
+    // .sigma(sigma),
     
-    .Nsigma(Nsigma),
-    .Nb(Nb),
-    .Ndelta_even(Ndelta_even),
-    .Ntheta_even(Ntheta_even)
+    // .Nsigma(Nsigma),
+    // .Nb(Nb),
+    // .Ndelta_even(Ndelta_even),
+    // .Ntheta_even(Ntheta_even)
+
+    .sigma_poly_out_rec(sigma_poly_out_rec),
+    .sigma_poly_out(sigma_poly_out),
+    .b_poly_out(b_poly_out),
+    .delta_poly_out(delta_poly_out),
+    .theta_poly_out(theta_poly_out)
 );
 
 endmodule

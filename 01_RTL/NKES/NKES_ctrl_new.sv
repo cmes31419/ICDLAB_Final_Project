@@ -15,9 +15,9 @@ module NKES_ctrl_new(
     output          first_iter,
     output          LO_syn_get,
     output          HO_syn_get,
+    output          Lwen,
     output          Nwen0,
     output          Nwen1,
-    output          sigma_done,
 
     output [5:0]    gamma_time,
     output [5:0]    dis_time,
@@ -62,9 +62,9 @@ module NKES_ctrl_new(
     assign first_iter = (state == S_PROC0 && cnt == 0) ? 1 : 0;
     assign LO_syn_get = start0;
     assign HO_syn_get = start1a;
+    assign Lwen = done0;
     assign Nwen0 = done1_next;
     assign Nwen1 = done1;
-    assign sigma_done = done0 | done1;
 
     assign gamma_time = gamma_rec;
     assign dis_time = dis_rec;

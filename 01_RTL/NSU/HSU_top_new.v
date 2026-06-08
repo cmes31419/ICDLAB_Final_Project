@@ -35,7 +35,7 @@ module HSU_top_new (
 
     always @(*) begin
         if (start_new) counter_next = 3'd1;
-        else if (counter == 3'd2) counter_next = nsget ? counter + 3'd1 : counter;
+        else if (counter == 3'd3) counter_next = nsget ? counter + 3'd1 : counter;
         else if (counter != 3'd0) counter_next = counter + 3'd1;
         else counter_next = 3'd0;
         if (counter == 3'd2) syn_rdy_next = 1'b1;

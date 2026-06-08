@@ -17,10 +17,13 @@ module controller(
     output [2:0]    caddr,
     output [2:0]    naddr,
     output          nkill,
-    output          Lsel,
-    output          Lwen,
+    output          Lsel_syn,
+    output          Lwen_syn,
+    output          Lsel_kes,
+    output          Lwen_kes,
     output          Nwen,
     output          forward,
+    output          late_cdone,
     output [2:0]    syn_cnt,
     output          nsu_start,
     output          nsu_start_new,
@@ -41,13 +44,6 @@ module controller(
     localparam S_START2     = 4'd6;
     localparam S_STAGE2     = 4'd7;
     localparam S_KILL       = 4'd8;
-    // localparam S_WAIT0      = 4'd9;
-    // localparam S_WAIT1      = 4'd10;
-    // localparam S_WAIT2      = 4'd11;
-    // localparam S_WAIT3      = 4'd12;
-    // localparam S_WAIT4      = 4'd13;
-    // localparam S_WAIT5      = 4'd14;
-    // localparam S_WAIT6      = 4'd15;
 
     reg [6:0]   icnt, icnt_next;    // input byte counter with wrap bit
     reg [6:0]   ocnt, ocnt_next;    // output byte counter with wrap bit
@@ -63,6 +59,8 @@ module controller(
     reg         nested_err_num, nested_err_num_next;
     reg         b, b_next;
 
+    reg [1:0]   sdone_num, sdone_num_next;
+
     wire [2:0]  npending;
     wire        npos_test;
 
@@ -75,10 +73,15 @@ module controller(
     assign caddr = ccnt[2:0];
     assign naddr = {ncnt[0], npos};
 
-    assign Lsel = err_num[0];
-    assign Lwen = ~err_num[1];
+    assign Lsel_syn = err_num[0];
+    assign Lwen_syn = ~err_num[1];
+    assign Lsel_kes = err_num[0];
+    assign Lwen_kes = ~err_num[1] & ~cfail;
+    // assign Lsel_kes = (cfail | LKES_fail) ? ~err_num[0] : err_num[0];
+    // assign Lwen_kes = ~err_num[1] | ~(err_num[0] & (cfail | LKES_fail));
     assign Nwen = ~nested_err_num;
     assign forward = (nstate == S_IDLE && ncnt != ccnt[3:2]) ? 1 : 0;
+    assign late_cdone = (sdone_num == 2) ? 1 : 0;
 
     assign syn_cnt = icnt[2:0];
 
@@ -91,7 +94,6 @@ module controller(
     assign nsu_undecoded_idx_1 = npos1;
     assign nsu_undecoded_idx_2 = npos2;
     assign nsu_stage2_match_idx = (npos == npos2) ? 1 : 0;
-    // assign nsu_sel_idx = (nstate == S_START1B || nstate == S_STAGE1B || nstate >= 4'd9) ? 1 : 0;
     assign nsu_sel_idx = (nstate == S_START1B || nstate == S_STAGE1B) ? 1 : 0;
 
     // FIFO-style full check
@@ -102,7 +104,7 @@ module controller(
         else icnt_next = icnt;
         if (ovalid) ocnt_next = ocnt + 1;
         else ocnt_next = ocnt;
-        if (cdone | (LKES_done & LKES_fail)) ccnt_next = ccnt + 1;
+        if (cdone | LKES_fail) ccnt_next = ccnt + 1;
         else ccnt_next = ccnt;
         if (nstate == S_KILL) ncnt_next = ncnt + 1;
         else ncnt_next = ncnt;
@@ -111,19 +113,25 @@ module controller(
     always @(*) begin
         if (icnt[4:0] == 5'd7) err_num_next = 2'd0;
         else if (err_num == 2'd2) err_num_next = err_num;
-        else if ((cdone & cfail) | (LKES_done & LKES_fail)) err_num_next = err_num + 1;
+        else if (cfail | LKES_fail) err_num_next = err_num + 1;
         else err_num_next = err_num;
     end
 
     always @(*) begin
         if (nstate == S_KILL) nested_err_num_next = 1'd0;
-        else if (nested_cdone & nested_cfail) nested_err_num_next = 1'd1;
+        else if (nested_cfail) nested_err_num_next = 1'd1;
         else nested_err_num_next = nested_err_num;
     end
 
     always @(*) begin
         if (nstate == S_IDLE || nstate == S_CHECK) b_next = (npending == 3'd2) ? 1 : 0;
         else b_next = b;
+    end
+
+    always @(*) begin
+        if (sdone & ~(cdone | LKES_fail)) sdone_num_next = sdone_num + 1;
+        else if (~sdone & (cdone | LKES_fail)) sdone_num_next = sdone_num - 1;
+        else sdone_num_next = sdone_num;
     end
 
     always @(*) begin
@@ -172,14 +180,6 @@ module controller(
         S_STAGE1A:  nstate_next = nested_cdone ? (b ? S_START1B : S_CHECK) : S_STAGE1A;
         S_START1B:  nstate_next = S_STAGE1B;
         S_STAGE1B:  nstate_next = nested_cdone ? S_CHECK : S_STAGE1B;
-        // S_STAGE1B:  nstate_next = nested_cdone ? S_WAIT0 : S_STAGE1B;
-        // S_WAIT0:    nstate_next = S_WAIT1;
-        // S_WAIT1:    nstate_next = S_WAIT2;
-        // S_WAIT2:    nstate_next = S_WAIT3;
-        // S_WAIT3:    nstate_next = S_WAIT4;
-        // S_WAIT4:    nstate_next = S_WAIT5;
-        // S_WAIT5:    nstate_next = S_WAIT6;
-        // S_WAIT6:    nstate_next = S_CHECK;
         S_CHECK: begin
             if (npending == 3'd1) nstate_next = S_START2;
             else nstate_next = S_KILL;
@@ -203,6 +203,7 @@ module controller(
             npos2           <= 0;
             err_num         <= 0;
             nested_err_num  <= 0;
+            sdone_num       <= 0;
             b               <= 0;
         end
         else begin
@@ -216,6 +217,7 @@ module controller(
             npos2           <= npos2_next;
             err_num         <= err_num_next;
             nested_err_num  <= nested_err_num_next;
+            sdone_num       <= sdone_num_next;
             b               <= b_next;
         end
     end

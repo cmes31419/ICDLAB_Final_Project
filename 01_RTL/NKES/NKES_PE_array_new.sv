@@ -6,32 +6,27 @@ module NKES_PE_array_new(
     input           first_iter,
     input           mode,
     input           mode_init,
-    input           pe_cnt,         // 0
+    input           pe_cnt,
 
-    input [5:0]     gamma_time,     // gamma
-    input [5:0]     dis_time,       // discrepancy
-    input           branch_time,    // branch
-    input [5:0]     gamma_out,      // gamma
-    input [5:0]     dis_out,        // discrepancy
-    input           branch_out,     // branch
+    input [5:0]     gamma_time,
+    input [5:0]     dis_time,
+    input           branch_time,
+    input [5:0]     gamma_out,
+    input [5:0]     dis_out,
+    input           branch_out,
 
-    input [5:0]     Hsyn_even,      // 0
-    input [5:0]     Hsyn_odd,       // 0
+    input [5:0]     Hsyn_even,
+    input [5:0]     Hsyn_odd,
 
-    input [5:0]     sigma_init[3:0],    // 0, 0, 0, 1
-    input [5:0]     b_init[3:0],        // 0, 0, 0, 0
-    input [5:0]     delta_init[1:0],    // LO_syndrome[2], LO_syndrome[0]
-    input [5:0]     theta_init[1:0],    // LO_syndrome[3], LO_syndrome[1]
+    input [5:0]     sigma_init[3:0],
+    input [5:0]     b_init[3:0],
+    input [5:0]     delta_init[1:0],
+    input [5:0]     theta_init[1:0],
 
-    output [5:0]    sigma_poly_out[3:0],    // sigma_out[3:0]
-    output [5:0]    b_poly_out[3:0],        // b_out[3:0]
-    output [5:0]    delta_poly_out[1:0],    // delta_poly_out[0] = discrepancy
-    output [5:0]    theta_poly_out[1:0],    // theta_even_out[1:0]
-
-    output [5:0]    b_delay_out[3:0],
-    output [5:0]    sigma_delay_out[3:0],
-    output [5:0]    delta_delay_out[1:0],
-    output [5:0]    theta_delay_out[1:0]
+    output [5:0]    sigma_poly_out[3:0],
+    output [5:0]    b_poly_out[3:0],
+    output [5:0]    delta_poly_out[1:0],
+    output [5:0]    theta_poly_out[1:0]
 );
 
 reg [5:0]   b_poly_2_rec;
@@ -67,8 +62,8 @@ NKES_PE1_unified u_PE10(
     .delta_poly_pre_out(delta_poly_pre_0),
     .delta_poly_out(delta_poly_out[0]),
     .theta_poly_out(theta_poly_out[0]),
-    .delta_delay_out(delta_delay_out[0]),
-    .theta_delay_out(theta_delay_out[0])
+    .delta_delay_out(),
+    .theta_delay_out()
 );
 
 NKES_PE1_unified u_PE11(
@@ -94,8 +89,8 @@ NKES_PE1_unified u_PE11(
     .delta_poly_pre_out(),
     .delta_poly_out(delta_poly_out[1]),
     .theta_poly_out(theta_poly_out[1]),
-    .delta_delay_out(delta_delay_out[1]),
-    .theta_delay_out(theta_delay_out[1])
+    .delta_delay_out(),
+    .theta_delay_out()
 );
 // =========================================
 
@@ -121,8 +116,8 @@ NKES_PE0_unified u_PE00(
     .b_syn(b_even[0]),
     .sigma_poly_out(sigma_poly_out[0]),
     .b_poly_out(b_poly_out[0]),
-    .sigma_delay_out(sigma_delay_out[0]),
-    .b_delay_out(b_delay_out[0])
+    .sigma_delay_out(),
+    .b_delay_out()
 );
 
 NKES_PE0_unified u_PE01(
@@ -146,8 +141,8 @@ NKES_PE0_unified u_PE01(
     .b_syn(b_odd[0]),
     .sigma_poly_out(sigma_poly_out[1]),
     .b_poly_out(b_poly_out[1]),
-    .sigma_delay_out(sigma_delay_out[1]),
-    .b_delay_out(b_delay_out[1])
+    .sigma_delay_out(),
+    .b_delay_out()
 );
 
 NKES_PE0_unified u_PE02(
@@ -171,8 +166,8 @@ NKES_PE0_unified u_PE02(
     .b_syn(b_even[1]),
     .sigma_poly_out(sigma_poly_out[2]),
     .b_poly_out(b_poly_out[2]),
-    .sigma_delay_out(sigma_delay_out[2]),
-    .b_delay_out(b_delay_out[2])
+    .sigma_delay_out(),
+    .b_delay_out()
 );
 
 NKES_PE0_unified u_PE03(
@@ -196,8 +191,8 @@ NKES_PE0_unified u_PE03(
     .b_syn(b_odd[1]),
     .sigma_poly_out(sigma_poly_out[3]),
     .b_poly_out(b_poly_out[3]),
-    .sigma_delay_out(sigma_delay_out[3]),
-    .b_delay_out(b_delay_out[3])
+    .sigma_delay_out(),
+    .b_delay_out()
 );
 
 always @(posedge clk or posedge rst) begin
