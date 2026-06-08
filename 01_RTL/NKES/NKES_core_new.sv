@@ -30,14 +30,6 @@ module NKES_core_new(
     output [5:0]        theta_poly_out[1:0]
 );
 
-// localparam S_IDLE   = 1'd0;
-// localparam S_PROC   = 1'd1;
-
-// reg         state, state_next;
-// reg [2:0]   cnt, cnt_next;
-// reg         valid_pre, valid_pre_next;
-// reg         valid, valid_next;
-
 reg [5:0]   delta_poly_0_rec;
 
 wire [5:0]  delta_even_in[1:0], theta_even_in[1:0], sigma_even_in[1:0], b_even_in[1:0];
