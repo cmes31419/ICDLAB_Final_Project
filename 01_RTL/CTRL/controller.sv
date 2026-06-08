@@ -75,10 +75,8 @@ module controller(
 
     assign Lsel_syn = err_num[0];
     assign Lwen_syn = ~err_num[1];
-    assign Lsel_kes = err_num[0];
-    assign Lwen_kes = ~err_num[1] & ~cfail;
-    // assign Lsel_kes = (cfail | LKES_fail) ? ~err_num[0] : err_num[0];
-    // assign Lwen_kes = ~err_num[1] | ~(err_num[0] & (cfail | LKES_fail));
+    assign Lsel_kes = (err_num[0] | cfail);
+    assign Lwen_kes = ~err_num[1] & ~(err_num[0] & cfail);
     assign Nwen = ~nested_err_num;
     assign forward = (nstate == S_IDLE && ncnt != ccnt[3:2]) ? 1 : 0;
     assign late_cdone = (sdone_num == 2) ? 1 : 0;
